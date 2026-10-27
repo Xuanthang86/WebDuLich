@@ -1,0 +1,1367 @@
+MASTER PROMPT — THIẾT KẾ, PHÁT TRIỂN VÀ BÀN GIAO WEBSITE FULLSTACK WANDERER’S JOURNEYS
+
+VAI TRÒ VÀ NHIỆM VỤ
+
+Hãy đóng vai trò là một Senior Fullstack Engineer, Software Architect, UI/UX Designer, Database Engineer, DevSecOps Engineer và QA Engineer, có kinh nghiệm xây dựng các website dịch vụ cao cấp, hệ thống quản trị CMS, nền tảng thu thập khách hàng tiềm năng và các ứng dụng web vận hành với chi phí thấp.
+
+Nhiệm vụ của bạn là phân tích yêu cầu, thiết kế kiến trúc, xây dựng, kiểm thử và bàn giao một hệ thống website hoàn chỉnh cho thương hiệu Wanderer’s Journeys.
+
+Đây phải là sản phẩm có thể triển khai và vận hành thực tế, không phải bản demo giao diện, landing page tĩnh, prototype hoặc tập hợp các đoạn code rời rạc.
+
+Hệ thống bao gồm:
+
+1. Website Frontend dành cho khách hàng quốc tế.
+2. Backend API và Database.
+3. Trang quản trị Admin Dashboard / CMS.
+4. Hệ thống xác thực, phân quyền và bảo mật.
+5. Hệ thống tiếp nhận, lưu trữ, quản lý và theo dõi khách hàng tiềm năng (Lead Management).
+6. Hệ thống thông báo qua email.
+7. Tích hợp liên kết và các tính năng được nền tảng cho phép đối với Facebook, Instagram và TikTok.
+8. Hệ thống thống kê, xuất dữ liệu và báo cáo.
+9. Quy trình triển khai, sao lưu, khôi phục và bảo trì.
+10. Tài liệu kỹ thuật và hướng dẫn sử dụng dành cho quản trị viên không chuyên lập trình.
+
+Nguyên tắc bắt buộc: Ưu tiên giải pháp đơn giản, dễ hiểu, dễ vận hành, ít phụ thuộc dịch vụ trả phí, dễ mở rộng và không tạo ra các thành phần phức tạp nếu không có nhu cầu nghiệp vụ thực tế.
+
+⸻
+
+PHẦN I — TỔNG QUAN DỰ ÁN VÀ MỤC TIÊU KINH DOANH
+
+1. Thông tin thương hiệu
+
+* Tên thương hiệu: Wanderer’s Journeys.
+* Slogan thương hiệu: “Where curiosity leads, possibilities unfold”.
+* Thông điệp chính: “Live Freely, Retire Happily in Vietnam”.
+* Lĩnh vực hoạt động: Cung cấp các giải pháp nghỉ dưỡng dài hạn, trải nghiệm lưu trú và hỗ trợ cuộc sống tại Việt Nam dành cho người nước ngoài, đặc biệt là người nghỉ hưu đến từ các quốc gia phương Tây.
+* Khách hàng mục tiêu: Người nước ngoài có nhu cầu khám phá, trải nghiệm hoặc nghỉ hưu tại Việt Nam; người độc thân, cặp đôi và gia đình phù hợp với các gói dịch vụ.
+* Ngôn ngữ mặc định: Tiếng Anh.
+* Định hướng thương hiệu: Premium – Warm – Trustworthy – Relaxed.
+* Mục tiêu chuyển đổi: Thu hút khách hàng tiềm năng, giúp khách hiểu rõ dịch vụ và gửi yêu cầu tư vấn hoặc đề xuất gói lưu trú.
+
+2. Mục tiêu sản phẩm
+
+Xây dựng một website có giao diện cao cấp, đáng tin cậy, dễ đọc đối với người lớn tuổi và hoạt động ổn định trên điện thoại, máy tính bảng và máy tính.
+
+Website phải đồng thời đáp ứng hai nhóm người dùng:
+
+Khách truy cập:
+
+* Tìm hiểu dịch vụ và chi phí.
+* Xem gói lưu trú, tiện ích và địa điểm.
+* So sánh các lựa chọn.
+* Gửi biểu mẫu yêu cầu tư vấn.
+* Liên hệ và truy cập các kênh mạng xã hội.
+
+Quản trị viên và nhân viên:
+
+* Cập nhật nội dung mà không cần sửa code.
+* Quản lý dịch vụ, gói lưu trú, hình ảnh và thông tin địa điểm.
+* Tiếp nhận và xử lý khách hàng tiềm năng.
+* Theo dõi hiệu quả kinh doanh.
+* Xuất báo cáo và quản lý tài khoản theo quyền được cấp.
+
+3. Nguyên tắc chi phí
+
+Mục tiêu là tối thiểu hóa tổng chi phí sở hữu và vận hành, không mặc định rằng mọi dịch vụ đều miễn phí vĩnh viễn.
+
+Chỉ mua tên miền riêng, ưu tiên tên miền .com. Ưu tiên các nền tảng có gói miễn phí phù hợp, chẳng hạn:
+
+* Static hosting/serverless hosting: Cloudflare Pages, Vercel hoặc Netlify.
+* Database và Backend: các giải pháp có gói miễn phí phù hợp như Supabase, Neon hoặc dịch vụ PostgreSQL tương đương.
+* Lưu trữ ảnh: dịch vụ lưu trữ đối tượng có hạn mức miễn phí phù hợp.
+* Email: dịch vụ SMTP hoặc email API có hạn mức miễn phí đáp ứng nhu cầu.
+* Quản lý mã nguồn: GitHub.
+* Công cụ phát triển và kiểm thử: ưu tiên công cụ miễn phí hoặc mã nguồn mở.
+
+Đây là danh sách ứng viên, không phải yêu cầu sử dụng đồng thời tất cả dịch vụ.
+
+Trước khi lựa chọn công nghệ, hãy so sánh các phương án và xác minh các điều kiện sau:
+
+1. Hạn mức miễn phí hiện hành.
+2. Giới hạn số request, băng thông, dung lượng database và lưu trữ.
+3. Giới hạn gửi email.
+4. Khả năng sử dụng tên miền riêng.
+5. Khả năng sao lưu, khôi phục và xuất dữ liệu.
+6. Chính sách ngừng hoạt động, giới hạn tài nguyên hoặc xóa dữ liệu do không hoạt động.
+7. Khả năng chuyển dữ liệu sang nhà cung cấp khác.
+8. Chi phí có thể phát sinh khi lượng truy cập tăng.
+
+Lập bảng ước tính chi phí theo tháng và năm cho ít nhất ba kịch bản: lưu lượng thấp, lưu lượng tăng trưởng và vượt hạn mức miễn phí.
+
+Không khẳng định chi phí bằng 0 tuyệt đối nếu vẫn cần mua tên miền, dịch vụ email, lưu trữ hoặc tài nguyên vượt hạn mức.
+
+Không kích hoạt dịch vụ trả phí, đăng ký gói nâng cấp hoặc phát sinh khoản thanh toán nếu chưa được chủ dự án phê duyệt.
+
+⸻
+
+PHẦN II — QUY TRÌNH PHÂN TÍCH VÀ THIẾT KẾ KIẾN TRÚC
+
+1. Khảo sát trước khi lập trình
+
+Trước khi viết code, hãy:
+
+1. Phân tích toàn bộ yêu cầu nghiệp vụ.
+2. Xác định các nhóm người dùng, luồng nghiệp vụ và quyền truy cập.
+3. Xác định các trang Frontend, trang Admin, API và dữ liệu tương ứng.
+4. Xác định các tích hợp bên ngoài và điều kiện để chúng hoạt động.
+5. Xác định rủi ro bảo mật, rủi ro chi phí và các điểm phụ thuộc nhà cung cấp.
+6. Xây dựng kiến trúc hệ thống và sơ đồ luồng dữ liệu.
+7. Lập danh sách các giả định cần xác nhận, không tự biến giả định thành dữ kiện kinh doanh đã được xác thực.
+
+Nếu thiếu thông tin không thiết yếu, hãy đưa ra phương án mặc định hợp lý, ghi rõ giả định và tiếp tục công việc. Chỉ hỏi lại khi thông tin thiếu có thể ảnh hưởng đáng kể đến kiến trúc, bảo mật, chi phí hoặc nghiệp vụ.
+
+2. Kiến trúc đề xuất
+
+Ưu tiên kiến trúc đơn giản, có thể bảo trì bởi một người hoặc một nhóm nhỏ:
+
+* Frontend: React + TypeScript + Vite, hoặc một framework hiện đại tương đương nếu có lý do kỹ thuật rõ ràng.
+* Routing: React Router hoặc giải pháp phù hợp.
+* Styling: CSS có cấu trúc, CSS Modules hoặc giải pháp ổn định tương đương.
+* Backend: TypeScript trên nền Node.js, sử dụng API serverless hoặc một backend được quản lý.
+* Database: PostgreSQL hoặc hệ quản trị quan hệ phù hợp.
+* Authentication: giải pháp xác thực an toàn, hỗ trợ phiên đăng nhập và phân quyền.
+* Validation: xác thực dữ liệu ở cả Frontend và Backend.
+* Image storage: lưu trữ ảnh bên ngoài database, có quản lý quyền truy cập.
+* Email: dịch vụ SMTP hoặc email API phù hợp với giới hạn chi phí.
+* Testing: unit test, integration test và end-to-end test cho các luồng quan trọng.
+* Version control: Git và GitHub.
+
+Không bắt buộc sử dụng đúng bộ công nghệ trên nếu khảo sát cho thấy một lựa chọn khác phù hợp hơn. Mọi thay đổi phải có lý do kỹ thuật và so sánh chi phí, độ phức tạp, khả năng bảo trì.
+
+Không sử dụng microservices, Kubernetes hoặc hạ tầng phức tạp khi quy mô chưa yêu cầu.
+
+3. Quy tắc phân tách hệ thống
+
+Phải phân biệt rõ:
+
+* Giao diện Frontend.
+* Backend API.
+* Database.
+* Xác thực và phân quyền.
+* Dữ liệu nội dung công khai.
+* Dữ liệu khách hàng và dữ liệu nhạy cảm.
+* Dữ liệu cấu hình hệ thống.
+* Tài nguyên ảnh và file.
+* Dịch vụ bên ngoài.
+
+Không lưu dữ liệu khách hàng lâu dài chỉ trong localStorage, sessionStorage, file JSON tĩnh hoặc state của ứng dụng.
+
+Không để khóa bí mật, thông tin xác thực database hoặc quyền quản trị xuất hiện trong mã Frontend.
+
+Các API quản trị phải kiểm tra quyền ở phía server. Không xem việc ẩn nút trên giao diện là biện pháp phân quyền.
+
+⸻
+
+PHẦN III — THIẾT KẾ GIAO DIỆN WEBSITE FRONTEND
+
+1. Ngôn ngữ thiết kế
+
+Thiết kế website theo phong cách nghỉ dưỡng cao cấp, sang trọng nhưng gần gũi, tạo cảm giác an tâm và đáng tin cậy.
+
+Bảng màu thương hiệu:
+
+* Gold: #C9A45C.
+* Deep Gold: #A77A32.
+* Deep Navy/Blue: lựa chọn màu xanh đậm hài hòa với màu vàng.
+* Warm White: nền trắng ấm.
+* Neutral Gray: màu chữ phụ, đường viền và nền phân khu.
+
+Quy định:
+
+* Chữ có độ tương phản tốt.
+* Kích thước chữ đủ lớn cho người lớn tuổi.
+* Nút bấm dễ nhận biết và có vùng thao tác rộng.
+* Khoảng cách giữa các thành phần hợp lý.
+* Không lạm dụng hiệu ứng, chuyển động hoặc hình ảnh gây mất tập trung.
+* Không để nội dung bị tràn, cắt hoặc chồng lên nhau.
+* Header, navigation, footer và các thành phần dùng chung phải thống nhất trên toàn website.
+* Hỗ trợ bàn phím, focus state, thông báo lỗi rõ ràng và các nguyên tắc accessibility phù hợp, hướng tới WCAG 2.2 AA.
+
+2. Cấu trúc các trang
+
+Thiết kế theo cấu trúc trang dài hoặc các trang riêng phù hợp với trải nghiệm người dùng. Nội dung phải được tổ chức rõ ràng và điều hướng thuận tiện.
+
+2.1. Header và Navigation
+
+Bao gồm:
+
+* Logo Wanderer’s Journeys.
+* Điều hướng đến các khu vực chính.
+* Nút CTA “Request a Proposal”.
+* Liên kết mạng xã hội khi được cấu hình.
+* Menu mobile dễ sử dụng.
+* Trạng thái hiển thị nhất quán khi cuộn trang.
+* Hỗ trợ keyboard navigation và các trạng thái tương tác cần thiết.
+
+Không để menu mobile hoặc CTA bị che khuất trên màn hình nhỏ.
+
+2.2. Hero Section
+
+Nội dung chính:
+
+* “Live Freely, Retire Happily in Vietnam”.
+* “Where curiosity leads, possibilities unfold”.
+* Giới thiệu mô hình Westerner Retirement Communities (WRCs).
+* Hình ảnh nghỉ dưỡng chất lượng cao.
+* CTA “Request a Proposal”.
+* CTA phụ để khám phá dịch vụ hoặc các gói lưu trú.
+
+Thông điệp phải truyền tải được sự thoải mái, an toàn, tính linh hoạt và sự hỗ trợ trong cuộc sống tại Việt Nam.
+
+2.3. Why Vietnam
+
+Giới thiệu những lợi ích thực tế của Việt Nam đối với khách hàng mục tiêu:
+
+* Chi phí sinh hoạt.
+* Khí hậu và phong cách sống.
+* Văn hóa, ẩm thực và trải nghiệm.
+* Các lựa chọn lưu trú.
+* Khả năng tiếp cận dịch vụ thiết yếu.
+
+Không đưa ra khẳng định y tế, pháp lý, visa, chi phí hoặc mức sống mang tính tuyệt đối khi chưa có nguồn đáng tin cậy.
+
+2.4. Core Services & Benefits
+
+Trình bày các dịch vụ và quyền lợi cơ bản, gồm:
+
+* Căn hộ hai phòng ngủ: giá tham khảo từ $2,250/tháng.
+* Hỗ trợ chi phí điện nước: tối đa $150/tháng, cần nêu rõ đây là hạn mức dự kiến và điều kiện áp dụng.
+* Tiện ích resort: clubhouse, hồ bơi, tennis và gym tùy cơ sở.
+* Trợ lý cá nhân.
+* Dọn dẹp ba lần mỗi tuần.
+* Internet 100 Mbps.
+* Hỗ trợ thủ tục visa.
+* Hỗ trợ tìm hiểu bảo hiểm y tế.
+* Hỗ trợ tìm hiểu dịch vụ chuyển tiền quốc tế.
+* Hỗ trợ định hướng cuộc sống tại địa phương.
+* Thông tin vị trí và khả năng tiếp cận dịch vụ thiết yếu.
+
+Mọi mức giá, tiện ích, điều kiện áp dụng và phạm vi dịch vụ phải lấy từ CMS hoặc dữ liệu được cấu hình. Không hardcode các thông tin kinh doanh này ở nhiều nơi trong code.
+
+Các nội dung liên quan visa, bảo hiểm, chuyển tiền và y tế phải sử dụng ngôn ngữ chính xác, không hứa hẹn kết quả hoặc thay thế tư vấn chuyên môn.
+
+2.5. Additional Fee-Based Services
+
+Xây dựng khu vực dịch vụ bổ sung, có thể quản lý từ Admin:
+
+* Dịch vụ hỗ trợ y tế tại nhà, tùy điều kiện và nhà cung cấp.
+* Giúp việc toàn thời gian.
+* Xe đưa đón riêng.
+* Tour khám phá và trải nghiệm trọn gói.
+* Chuyên gia hoặc dịch vụ hỗ trợ theo yêu cầu.
+* Các dịch vụ bổ sung khác do quản trị viên tạo mới.
+
+Mỗi dịch vụ có tên, mô tả, hình ảnh, mức giá hoặc cách báo giá, điều kiện sử dụng, trạng thái hiển thị và CTA.
+
+2.6. Package Options
+
+Xây dựng năm gói lưu trú chính:
+
+1. Private Discovery Tour — khám phá ngắn hạn.
+2. 30-Day Trial — trải nghiệm 30 ngày.
+3. Snowbird Special — lưu trú theo mùa từ 30–90 ngày.
+4. Six-Month Exploratory Stay — trải nghiệm sáu tháng.
+5. Retirement Package — gói lưu trú 12 tháng.
+
+Mỗi gói có:
+
+* Tên và mô tả.
+* Thời gian lưu trú.
+* Giá hoặc trạng thái yêu cầu báo giá.
+* Dịch vụ bao gồm.
+* Dịch vụ không bao gồm.
+* Điều kiện áp dụng.
+* Hình ảnh.
+* CTA gửi yêu cầu tư vấn.
+* Trạng thái xuất bản.
+
+Bổ sung khu vực truyền thông so sánh ngân sách với thông điệp dự kiến “$40K sống như $90K” nếu chủ dự án xác nhận đây là thông điệp chính thức.
+
+Không tự trình bày con số này như cam kết tiết kiệm hoặc kết quả tài chính đã được chứng minh. Phải có điều kiện, giả định và chú thích phù hợp nếu sử dụng.
+
+2.7. Accommodation Showcase
+
+Xây dựng bộ sưu tập căn hộ mẫu, nhà phố và lựa chọn lưu trú tại:
+
+* Thành phố Hồ Chí Minh.
+* Đà Nẵng.
+* Nha Trang.
+
+Mỗi accommodation cần có:
+
+* Tên.
+* Thành phố và khu vực.
+* Mô tả.
+* Bộ sưu tập ảnh.
+* Số phòng ngủ và phòng tắm nếu có dữ liệu.
+* Tiện ích.
+* Giá tham khảo hoặc trạng thái yêu cầu báo giá.
+* Trạng thái còn hiển thị.
+* CTA yêu cầu tư vấn.
+
+Hỗ trợ gallery, lightbox, phóng to ảnh, điều hướng ảnh và đóng bằng bàn phím Escape.
+
+Không sử dụng hình ảnh giả làm ảnh thật của một cơ sở. Ảnh minh họa phải được xác định rõ và chỉ xuất bản tài nguyên mà dự án có quyền sử dụng.
+
+2.8. Inquiry Questionnaire Form
+
+Xây dựng biểu mẫu yêu cầu tư vấn nhiều nhóm thông tin, dễ thao tác và thân thiện với người lớn tuổi.
+
+Các trường dữ liệu gồm:
+
+1. Họ và tên.
+2. Email.
+3. Số điện thoại và mã quốc gia nếu phù hợp.
+4. Ngày dự kiến bắt đầu.
+5. Thời gian lưu trú dự kiến.
+6. Số lượng người.
+7. Nhóm tuổi của từng người hoặc các nhóm tuổi phù hợp.
+8. Gói lưu trú quan tâm.
+9. Khu vực hoặc thành phố mong muốn.
+10. Hoạt động và sở thích.
+11. Hạng phòng hoặc loại accommodation.
+12. Phương tiện di chuyển.
+13. Ngân sách dự kiến nếu cần thiết.
+14. Comments / Additional Notes.
+15. Đồng ý với thông báo quyền riêng tư và việc xử lý dữ liệu theo chính sách được công bố.
+
+Yêu cầu giao diện:
+
+* Các trường bắt buộc phải được xác định rõ.
+* Kiểm tra định dạng email, ngày tháng và số lượng hợp lệ.
+* Các lựa chọn phải dễ đọc và dễ chạm trên mobile.
+* Trạng thái đang gửi, gửi thành công và lỗi phải rõ ràng.
+* Khi xảy ra lỗi, giữ lại dữ liệu người dùng đã nhập.
+* Hiển thị trang hoặc bước xác nhận thông tin trước khi gửi nếu biểu mẫu nhiều trường.
+* Không gửi trùng lead do double-click hoặc retry.
+* Có cơ chế chống spam và lạm dụng phù hợp.
+
+Sau khi Submit:
+
+1. Backend xác thực dữ liệu.
+2. Kiểm tra chống spam và giới hạn request.
+3. Lưu lead vào database.
+4. Tạo mã định danh duy nhất.
+5. Ghi nhận thời điểm tạo và nguồn tiếp nhận.
+6. Đưa email thông báo vào quy trình gửi có thể retry.
+7. Gửi thông báo đến info@wanderersjourneys.com.
+8. Trả kết quả thành công hoặc lỗi phù hợp cho khách.
+
+Việc gửi email thất bại không được làm mất lead đã lưu thành công. Phải ghi nhận trạng thái gửi, có khả năng retry và cho phép quản trị viên kiểm tra lỗi.
+
+Không gửi toàn bộ dữ liệu cá nhân của khách hàng qua email nếu không cần thiết. Ưu tiên email thông báo có mã lead và đường dẫn đăng nhập an toàn đến Admin.
+
+2.9. Các khu vực khác
+
+Bổ sung:
+
+* Why Choose Us.
+* FAQ.
+* CTA cuối trang.
+* Contact.
+* Social Media.
+* Footer.
+* Privacy Policy.
+* Terms of Service.
+* Cookie notice hoặc cơ chế consent khi cần thiết.
+* Trang 404 và các trạng thái lỗi.
+* SEO metadata và Open Graph.
+
+Nội dung liên hệ, chính sách, liên kết và thông tin doanh nghiệp phải chỉnh sửa được từ Admin trong phạm vi CMS đã triển khai.
+
+⸻
+
+PHẦN IV — ADMIN DASHBOARD / CMS
+
+1. Mục tiêu quản trị
+
+Xây dựng trang quản trị riêng, bảo vệ bằng xác thực và phân quyền phía server.
+
+Quản trị viên phải có thể vận hành các nghiệp vụ thông thường mà không cần sửa source code, chỉnh database thủ công hoặc triển khai lại ứng dụng chỉ để thay đổi nội dung.
+
+CMS phải sử dụng dữ liệu thực từ Backend và Database. Không dùng dữ liệu giả lập để tuyên bố chức năng đã hoàn thành.
+
+2. Dashboard
+
+Hiển thị các chỉ số:
+
+* Tổng số lead.
+* Lead mới.
+* Lead đang xử lý.
+* Lead đã chuyển đổi.
+* Lead theo thời gian.
+* Gói lưu trú được quan tâm nhiều nhất.
+* Thành phố hoặc khu vực được quan tâm nhiều nhất.
+* Tỷ lệ chuyển đổi khi có đủ dữ liệu.
+* Trạng thái các tác vụ gửi email quan trọng nếu phù hợp.
+
+Mỗi chỉ số phải có định nghĩa rõ ràng, được tính từ dữ liệu thực và có khả năng lọc theo thời gian.
+
+3. General Settings
+
+Cho phép quản lý:
+
+* Tên website.
+* Slogan.
+* SEO title và description mặc định.
+* Logo.
+* Favicon.
+* Màu sắc thương hiệu trong phạm vi cho phép.
+* Email liên hệ công khai.
+* Email nhận thông báo lead.
+* Số điện thoại công khai nếu có.
+* Liên kết Facebook.
+* Liên kết Instagram.
+* Liên kết TikTok.
+* Các thông tin footer.
+* Các cấu hình hiển thị chung.
+
+Không cho phép chỉnh sửa trực tiếp các khóa bí mật, connection string hoặc cấu hình bảo mật quan trọng thông qua một biểu mẫu CMS thông thường.
+
+4. Content CMS — CRUD
+
+Xây dựng đầy đủ các chức năng Create, Read, Update, Delete cho các loại nội dung:
+
+* Hero.
+* Why Vietnam.
+* Core Services.
+* Additional Services.
+* Packages.
+* Accommodation.
+* Why Choose Us.
+* FAQ.
+* CTA.
+* Footer.
+* Contact.
+* SEO.
+* Social Media.
+* Thư viện ảnh.
+
+Mỗi loại nội dung phải có các trường phù hợp, trạng thái nháp/xuất bản nếu cần và thông báo xác nhận khi xóa.
+
+Phải có quy tắc xử lý quan hệ dữ liệu: ví dụ không xóa một gói đang được tham chiếu bởi lead mà làm mất lịch sử nghiệp vụ.
+
+Ưu tiên soft delete cho dữ liệu cần giữ lịch sử. Các hành động phá hủy dữ liệu phải có xác nhận và kiểm tra quyền.
+
+5. Dynamic Form Builder
+
+Xây dựng giao diện quản trị biểu mẫu Inquiry Form.
+
+Quản trị viên được phép:
+
+* Bật hoặc tắt trường không bắt buộc.
+* Chỉnh sửa label.
+* Chỉnh sửa mô tả và placeholder.
+* Thay đổi thứ tự hiển thị.
+* Cấu hình trường bắt buộc.
+* Thêm lựa chọn cho trường select, checkbox hoặc radio.
+* Cấu hình validation phù hợp.
+* Xem trước biểu mẫu trước khi xuất bản.
+
+Các trường hệ thống quan trọng như mã lead, định danh, timestamp và trạng thái xử lý không được xóa bằng Form Builder.
+
+Mọi thay đổi phải được kiểm tra cả ở Frontend và Backend. Backend phải sử dụng cấu hình phiên bản phù hợp và không được tin tưởng dữ liệu validation do trình duyệt gửi lên.
+
+Các lead đã gửi phải giữ nguyên dữ liệu lịch sử. Thay đổi nhãn hoặc tùy chọn trong tương lai không được làm sai lệch các câu trả lời cũ.
+
+6. Lead Management
+
+Xây dựng module quản lý khách hàng tiềm năng.
+
+Các chức năng bắt buộc:
+
+* Xem danh sách lead.
+* Phân trang.
+* Tìm kiếm.
+* Lọc theo ngày tạo.
+* Lọc theo trạng thái.
+* Lọc theo gói dịch vụ.
+* Lọc theo thành phố hoặc khu vực.
+* Xem đầy đủ chi tiết một lead.
+* Cập nhật trạng thái.
+* Ghi chú nội bộ.
+* Ghi nhận người phụ trách.
+* Ghi nhận thời điểm cập nhật.
+* Theo dõi lịch sử thay đổi.
+* Xuất dữ liệu theo bộ lọc và quyền được cấp.
+
+Các trạng thái mặc định:
+
+* NEW.
+* CONTACTED.
+* QUALIFIED.
+* CONVERTED.
+* CLOSED.
+
+Cho phép mở rộng trạng thái có kiểm soát nếu nghiệp vụ yêu cầu.
+
+Phân biệt rõ ghi chú nội bộ với dữ liệu khách hàng. Ghi chú nội bộ không được hiển thị trên website công khai hoặc gửi cho khách ngoài ý muốn.
+
+Nếu cần gửi email cho khách, phải có quy trình riêng, xác nhận nội dung và ghi nhận kết quả gửi.
+
+7. Analytics & Export
+
+Triển khai:
+
+* Thống kê theo khoảng thời gian.
+* Biểu đồ lead theo ngày, tuần hoặc tháng.
+* Thống kê theo gói lưu trú.
+* Thống kê theo khu vực.
+* Tỷ lệ chuyển đổi.
+* Bộ lọc trước khi xuất dữ liệu.
+
+Định dạng xuất:
+
+* CSV.
+* Excel .xlsx.
+* Báo cáo PDF phục vụ in ấn.
+
+Yêu cầu:
+
+* Xuất đúng dữ liệu và bộ lọc đang áp dụng.
+* Không vượt quyền truy cập.
+* Hạn chế dữ liệu cá nhân không cần thiết.
+* Xử lý an toàn dữ liệu CSV/Excel để tránh công thức độc hại khi mở file.
+* PDF phải có tiêu đề, thời gian báo cáo, bộ lọc và tổng số bản ghi.
+* Không để quá trình xuất dữ liệu làm treo giao diện khi dữ liệu tăng.
+* Ghi audit log cho các hoạt động xuất dữ liệu nhạy cảm khi phù hợp.
+
+8. Quản lý tài khoản Admin
+
+Xây dựng:
+
+* Đăng nhập.
+* Đăng xuất.
+* Xem thông tin tài khoản.
+* Chỉnh sửa thông tin được phép.
+* Đổi mật khẩu.
+* Quy trình quên và đặt lại mật khẩu.
+* Quản lý tài khoản nhân viên.
+* Kích hoạt hoặc khóa tài khoản.
+* Quản lý vai trò và quyền.
+* Thu hồi phiên đăng nhập khi cần.
+
+Không tạo đường dẫn đăng nhập công khai cho phép người dùng tự nâng quyền quản trị.
+
+Việc tạo Admin đầu tiên phải có quy trình bootstrap an toàn, chẳng hạn thông qua lệnh quản trị hoặc cơ chế thiết lập ban đầu có kiểm soát.
+
+⸻
+
+PHẦN V — DATABASE SCHEMA VÀ QUẢN LÝ DỮ LIỆU
+
+1. Thiết kế database
+
+Trước khi triển khai API, hãy thiết kế schema có quan hệ rõ ràng, khóa chính, khóa ngoại, unique constraint, index và quy tắc xóa dữ liệu.
+
+Tối thiểu đánh giá sự cần thiết của các bảng sau:
+
+1. users
+2. roles
+3. permissions
+4. user_roles
+5. role_permissions
+6. sessions hoặc cấu trúc phiên xác thực tương đương
+7. password_reset_tokens
+8. site_settings
+9. content_pages
+10. services
+11. packages
+12. accommodations
+13. accommodation_images
+14. media_assets
+15. faqs
+16. inquiry_form_versions
+17. inquiry_form_fields
+18. leads
+19. lead_answers hoặc JSONB có schema validation khi phù hợp
+20. lead_notes
+21. lead_status_history
+22. audit_logs
+23. email_jobs hoặc cấu trúc outbox tương đương
+24. social_links nếu cần tách riêng.
+
+Không bắt buộc tạo tất cả các bảng nếu một cấu trúc đơn giản hơn vẫn đáp ứng đầy đủ nghiệp vụ. Mọi quyết định phải được giải thích.
+
+2. Các yêu cầu dữ liệu
+
+* Dùng UUID hoặc khóa định danh phù hợp.
+* Lưu timestamp nhất quán, xử lý múi giờ rõ ràng.
+* Tạo index cho các trường thường xuyên tìm kiếm và lọc.
+* Ràng buộc dữ liệu tại database ở nơi thích hợp.
+* Có migration để quản lý thay đổi schema.
+* Không thay đổi schema production thủ công mà không có migration.
+* Có seed data riêng cho môi trường development/demo.
+* Không đưa tài khoản mặc định và mật khẩu mẫu vào production.
+* Có chiến lược giữ lịch sử lead và các phiên bản biểu mẫu.
+* Có quy định lưu giữ và xóa dữ liệu theo chính sách quyền riêng tư.
+* Hạn chế thu thập thông tin cá nhân không cần thiết.
+
+3. Tài liệu schema bắt buộc
+
+Bàn giao:
+
+* Sơ đồ ERD.
+* Mô tả từng bảng.
+* Mô tả từng cột quan trọng.
+* Kiểu dữ liệu.
+* Primary key và foreign key.
+* Unique constraint.
+* Index.
+* Quan hệ giữa các bảng.
+* Quy tắc xóa và cập nhật.
+* Migration files.
+* Seed files.
+* Các truy vấn chính phục vụ Lead Management và Analytics.
+
+Không chỉ viết mô tả schema bằng văn bản mà phải triển khai schema có thể chạy được.
+
+⸻
+
+PHẦN VI — API VÀ NGHIỆP VỤ BACKEND
+
+1. API công khai
+
+Thiết kế API rõ ràng, có validation và tài liệu.
+
+Các nhóm API:
+
+* Site content.
+* Services.
+* Packages.
+* Accommodations.
+* FAQs.
+* Inquiry form configuration.
+* Submit inquiry.
+* Health check tối thiểu.
+* Các API cần thiết cho metadata hoặc nội dung công khai.
+
+Chỉ trả dữ liệu cần thiết cho website. Không trả dữ liệu nội bộ, thông tin tài khoản hoặc thông tin khách hàng khác.
+
+2. API quản trị
+
+Các nhóm API:
+
+* Authentication.
+* Account management.
+* User and role management.
+* General settings.
+* Content management.
+* Media management.
+* Form builder.
+* Lead management.
+* Analytics.
+* Export.
+* Audit logs.
+* Email job monitoring nếu được triển khai.
+
+Mỗi API phải xác định:
+
+* Method.
+* Path.
+* Request schema.
+* Response schema.
+* Authentication requirement.
+* Permission requirement.
+* Validation.
+* Error handling.
+* Logging cần thiết.
+
+3. Chuẩn hóa xử lý lỗi
+
+Xây dựng cấu trúc lỗi thống nhất.
+
+Phải phân biệt:
+
+* Dữ liệu không hợp lệ.
+* Chưa xác thực.
+* Không đủ quyền.
+* Không tìm thấy dữ liệu.
+* Xung đột dữ liệu.
+* Giới hạn request.
+* Lỗi tích hợp bên ngoài.
+* Lỗi hệ thống.
+
+Không trả stack trace, SQL, secret hoặc thông tin nhạy cảm cho người dùng cuối.
+
+4. Tính nhất quán dữ liệu
+
+Các nghiệp vụ liên quan nhiều thao tác phải có transaction hoặc cơ chế đảm bảo tính nhất quán phù hợp.
+
+Ví dụ:
+
+* Tạo lead và ghi nhận dữ liệu biểu mẫu.
+* Cập nhật trạng thái và lịch sử trạng thái.
+* Thay đổi quyền người dùng.
+* Cập nhật nội dung có quan hệ.
+* Ghi nhận tác vụ email cần xử lý.
+
+Thiết kế idempotency cho những thao tác cần chống tạo bản ghi trùng.
+
+⸻
+
+PHẦN VII — AUTHENTICATION, RBAC VÀ SECURITY
+
+1. Vai trò và phân quyền
+
+Thiết kế RBAC với các vai trò có thể bao gồm:
+
+* Admin.
+* Manager.
+* Product Manager.
+* Order Manager hoặc Lead Manager.
+* Customer nếu hệ thống có khu vực tài khoản khách hàng.
+
+Quyền cụ thể phải được định nghĩa theo nghiệp vụ và tuân thủ nguyên tắc least privilege.
+
+Ví dụ:
+
+* Admin: quản trị hệ thống và quản lý quyền theo chính sách.
+* Manager: quản lý nội dung và nghiệp vụ được cấp.
+* Product Manager: quản lý dịch vụ, gói lưu trú và accommodation.
+* Lead Manager: xem và xử lý lead theo quyền được cấp.
+* Customer: chỉ truy cập dữ liệu thuộc tài khoản của mình nếu chức năng này được triển khai.
+
+Không mặc định mọi tài khoản thiếu role là Admin. Không sử dụng quyền quản trị dự phòng khi token thiếu claim hoặc dữ liệu không hợp lệ.
+
+Phải kiểm tra tài khoản trong database, trạng thái hoạt động và quyền hiện hành khi xác thực theo mô hình đã chọn.
+
+2. Các yêu cầu bảo mật
+
+* Hash mật khẩu bằng thuật toán phù hợp như Argon2id hoặc bcrypt với cấu hình an toàn.
+* Không lưu mật khẩu dạng văn bản thuần.
+* Có chính sách cookie/session hoặc JWT phù hợp với kiến trúc.
+* Nếu dùng access token và refresh token, phải có rotation và cơ chế phát hiện/revoke token bị lạm dụng phù hợp.
+* Bảo vệ CSRF khi sử dụng cookie xác thực theo mô hình dễ bị tấn công CSRF.
+* Kiểm tra Origin/CSRF cho các request thay đổi dữ liệu khi phù hợp.
+* Cấu hình CORS theo allowlist.
+* Rate limiting cho login, password reset và inquiry submission.
+* Chống brute-force và dò tài khoản.
+* Không tiết lộ tài khoản có tồn tại hay không trong các phản hồi nhạy cảm.
+* Xác minh quyền ở phía server cho mọi API quản trị.
+* Xác thực quyền truy cập file và tài nguyên.
+* Chống SQL injection, XSS, CSRF, SSRF và các lỗ hổng liên quan đến công nghệ thực tế sử dụng.
+* Kiểm tra MIME type, dung lượng và nội dung upload.
+* Không cho phép upload tùy ý rồi thực thi file.
+* Không ghi mật khẩu, token, secret hoặc toàn bộ dữ liệu cá nhân vào log.
+
+3. Password reset và session revocation
+
+Nếu triển khai quên mật khẩu:
+
+* Token phải ngẫu nhiên, có thời hạn, sử dụng một lần.
+* Chỉ lưu hash token nếu phù hợp với thiết kế.
+* Không tiết lộ token trong log.
+* Có giới hạn số lần yêu cầu.
+* Thông báo phản hồi không làm lộ sự tồn tại của tài khoản.
+* Sau khi đổi mật khẩu thành công, thu hồi các phiên hoặc refresh token theo chính sách bảo mật.
+* Có audit log cho sự kiện bảo mật quan trọng.
+
+4. Bảo vệ dữ liệu khách hàng
+
+* Chỉ nhân sự được phân quyền mới được xem lead.
+* Hạn chế hiển thị thông tin nhạy cảm trong danh sách.
+* Không đưa lead vào API công khai.
+* Không lưu thông tin nhạy cảm trong URL.
+* Không xuất dữ liệu vượt quyền.
+* Có chính sách lưu giữ, xóa hoặc ẩn danh dữ liệu.
+* Xem xét các nghĩa vụ về quyền riêng tư áp dụng đối với khách hàng quốc tế và hoạt động tại Việt Nam.
+
+5. Audit log
+
+Ghi nhận các sự kiện quan trọng như:
+
+* Đăng nhập và đăng xuất.
+* Thất bại đăng nhập theo chính sách.
+* Thay đổi quyền.
+* Tạo, khóa hoặc thay đổi tài khoản.
+* Thay đổi nội dung đã xuất bản.
+* Thay đổi cấu hình hệ thống.
+* Cập nhật trạng thái lead.
+* Xuất dữ liệu.
+* Các sự kiện bảo mật quan trọng.
+
+Audit log phải tránh lưu thông tin bí mật và không cho người dùng thông thường sửa hoặc xóa tùy ý.
+
+⸻
+
+PHẦN VIII — QUẢN LÝ ẢNH, EMAIL VÀ TÍCH HỢP MẠNG XÃ HỘI
+
+1. Quản lý ảnh
+
+Xây dựng Media Library trong Admin với các chức năng:
+
+* Upload.
+* Preview.
+* Chỉnh sửa alt text.
+* Quản lý tên file.
+* Phân loại.
+* Gắn ảnh vào nội dung.
+* Thay ảnh.
+* Xóa ảnh khi không còn tham chiếu.
+* Tối ưu kích thước và định dạng.
+* Hỗ trợ responsive images.
+* Hiển thị trạng thái lỗi tải ảnh.
+
+Không lưu binary ảnh lớn trực tiếp vào các cột dữ liệu thông thường nếu không có lý do đặc biệt.
+
+Không cho phép xóa tài nguyên đang được nội dung xuất bản sử dụng mà không xử lý các tham chiếu liên quan.
+
+2. Email
+
+Xây dựng hệ thống gửi email có khả năng kiểm soát:
+
+* Email thông báo lead mới gửi đến info@wanderersjourneys.com.
+* Email xác nhận gửi yêu cầu cho khách nếu được cấu hình.
+* Email đặt lại mật khẩu.
+* Trạng thái queued, sent, failed hoặc trạng thái tương đương.
+* Retry có giới hạn và backoff.
+* Xử lý lỗi provider.
+* Chống gửi trùng.
+* Log an toàn.
+
+Địa chỉ gửi email phải được cấu hình theo domain đã xác minh với nhà cung cấp. Không giả mạo địa chỉ From hoặc cam kết email hoạt động khi chưa có SMTP/API key hợp lệ.
+
+3. Facebook, Instagram và TikTok
+
+Xây dựng khu vực quản lý liên kết và thông tin mạng xã hội.
+
+Tối thiểu phải hỗ trợ:
+
+* Cấu hình URL Facebook Fanpage.
+* Cấu hình URL Instagram profile.
+* Cấu hình URL TikTok profile.
+* Thay đổi các liên kết từ Admin.
+* Hiển thị icon và CTA thống nhất.
+* Mở liên kết an toàn.
+* Theo dõi lượt nhấp nếu có triển khai analytics và có cơ sở pháp lý phù hợp.
+
+Phân biệt hai cấp độ tích hợp:
+
+Cấp độ 1 — Social links: Liên kết tới các kênh chính thức. Đây là phạm vi cơ bản.
+
+Cấp độ 2 — API integrations: Đăng bài tự động, lấy dữ liệu, quản lý bình luận, tin nhắn hoặc đồng bộ lead khi nền tảng cho phép.
+
+Cấp độ 2 chỉ được triển khai khi có API chính thức, quyền truy cập cần thiết, thông tin xác thực, chính sách phù hợp và cấu hình thực tế.
+
+Không giả lập rằng đã kết nối Fanpage chỉ vì đã thêm icon hoặc URL. Không yêu cầu người dùng cung cấp mật khẩu Facebook, Instagram hoặc TikTok để tích hợp.
+
+⸻
+
+PHẦN IX — SEO, PERFORMANCE VÀ ACCESSIBILITY
+
+1. SEO
+
+Triển khai:
+
+* Title và meta description.
+* Canonical URL.
+* Open Graph.
+* Sitemap XML.
+* Robots.txt.
+* Cấu trúc heading hợp lý.
+* URL dễ đọc.
+* Internal linking.
+* Alt text.
+* Structured data phù hợp với nội dung thực tế.
+* Trang 404.
+* Chuyển hướng khi thay đổi URL quan trọng.
+
+Không sử dụng structured data để khai báo thông tin không có thật.
+
+2. Hiệu năng
+
+Ưu tiên:
+
+* Tối ưu ảnh.
+* Lazy loading.
+* Code splitting.
+* Hạn chế thư viện không cần thiết.
+* Giảm JavaScript gửi xuống trình duyệt.
+* Cache đúng cách.
+* Tránh truy vấn database không cần thiết.
+* Phân trang dữ liệu quản trị.
+* Tối ưu tải nội dung trên mobile.
+
+Đặt mục tiêu kiểm thử Core Web Vitals phù hợp với website thực tế, đồng thời ghi rõ điều kiện đo và các giới hạn do hạ tầng bên ngoài.
+
+3. Accessibility
+
+* Semantic HTML.
+* Điều hướng bằng bàn phím.
+* Focus state rõ ràng.
+* Label gắn đúng input.
+* Error message có thể nhận biết bằng công nghệ hỗ trợ.
+* Độ tương phản phù hợp.
+* Không chỉ dùng màu để truyền tải trạng thái.
+* Hỗ trợ zoom và bố cục responsive.
+* Lightbox và menu có thể điều khiển bằng bàn phím.
+
+⸻
+
+PHẦN X — TESTING VÀ TIÊU CHÍ NGHIỆM THU
+
+1. Unit testing
+
+Kiểm thử các thành phần và logic quan trọng:
+
+* Validation.
+* Authentication.
+* RBAC.
+* Business rules.
+* Form Builder.
+* Tính toán thống kê.
+* Chuẩn hóa dữ liệu.
+* Xử lý trạng thái lead.
+
+2. Integration testing
+
+Kiểm thử:
+
+* API với database.
+* CRUD nội dung.
+* Gửi inquiry.
+* Lưu lead.
+* Xử lý email.
+* Upload ảnh.
+* Phân quyền API.
+* Password reset.
+* Export dữ liệu.
+* Audit log.
+
+3. End-to-end testing
+
+Tối thiểu phải có các luồng sau:
+
+1. Khách truy cập website trên mobile và desktop.
+2. Khách xem dịch vụ, gói lưu trú và accommodation.
+3. Khách gửi inquiry hợp lệ.
+4. Backend lưu lead và phản hồi chính xác.
+5. Email thông báo được xử lý theo trạng thái thực tế.
+6. Admin đăng nhập thành công.
+7. Tải lại trang Admin không làm mất phiên hợp lệ ngoài dự kiến.
+8. Admin xem và xử lý lead.
+9. Nhân viên không đủ quyền bị từ chối truy cập.
+10. Admin sửa nội dung và xuất bản.
+11. Website công khai hiển thị nội dung mới.
+12. Form Builder thay đổi biểu mẫu mà vẫn giữ dữ liệu lịch sử.
+13. Xuất CSV, Excel và PDF đúng dữ liệu.
+14. Đổi mật khẩu và kiểm tra chính sách thu hồi phiên.
+15. Upload ảnh và kiểm tra quyền truy cập.
+16. Các trang hoạt động đúng ở các kích thước màn hình phổ biến.
+
+4. Security testing
+
+Kiểm thử tối thiểu:
+
+* Truy cập API quản trị khi chưa đăng nhập.
+* Truy cập API bằng role không đủ quyền.
+* Sử dụng token hết hạn hoặc bị thu hồi.
+* CSRF/CORS theo mô hình xác thực.
+* SQL injection và XSS.
+* Upload file không hợp lệ.
+* Brute-force và rate limiting.
+* Rò rỉ dữ liệu qua API hoặc log.
+* Truy cập trái phép lead và tài nguyên.
+* Lạm dụng export.
+* Xử lý lỗi database và email provider.
+
+Không tuyên bố hệ thống an toàn tuyệt đối chỉ dựa trên việc các test đã chạy thành công.
+
+5. Điều kiện nghiệm thu
+
+Một chức năng chỉ được đánh dấu hoàn thành khi:
+
+* Có code thực tế.
+* Có dữ liệu và luồng nghiệp vụ thực tế.
+* Có kiểm thử phù hợp.
+* Có kết quả kiểm thử ghi nhận.
+* Không còn lỗi nghiêm trọng chưa được xử lý.
+* Có hướng dẫn cấu hình và sử dụng.
+* Có xác minh trên môi trường phù hợp.
+
+Phân loại rõ:
+
+* PASS.
+* FAIL.
+* BLOCKED — thiếu credential, quyền hoặc dịch vụ bên ngoài.
+* NOT TESTED.
+* PARTIAL — chỉ hoàn thành một phần.
+
+Không đánh dấu PASS cho một tích hợp chưa được kiểm thử thực tế.
+
+⸻
+
+PHẦN XI — DEPLOYMENT, BACKUP VÀ VẬN HÀNH
+
+1. Môi trường
+
+Tách biệt:
+
+* Development.
+* Test/Staging khi cần.
+* Production.
+
+Mỗi môi trường có cấu hình và secrets riêng.
+
+Không đưa file .env chứa thông tin nhạy cảm vào GitHub.
+
+Tạo .env.example chỉ chứa tên biến và giá trị minh họa không nhạy cảm.
+
+2. CI/CD
+
+Thiết lập quy trình tự động phù hợp:
+
+* Cài đặt dependencies.
+* Lint.
+* Type checking.
+* Unit tests.
+* Integration tests phù hợp với môi trường.
+* Build.
+* Kiểm tra cấu hình.
+* Deploy sau khi được cho phép.
+
+Không tự động triển khai production hoặc thực hiện thay đổi có tác động lớn nếu chưa được chủ dự án phê duyệt.
+
+3. Database và backup
+
+* Có migration rõ ràng.
+* Có kế hoạch backup.
+* Có hướng dẫn restore.
+* Có quy trình xuất dữ liệu dự phòng.
+* Kiểm thử khả năng khôi phục.
+* Xác định RPO và RTO phù hợp với quy mô dự án.
+* Không mặc định gói miễn phí có backup đầy đủ.
+* Xác minh thời hạn lưu backup và điều kiện khôi phục của nhà cung cấp.
+
+4. Monitoring
+
+Triển khai giải pháp giám sát phù hợp với ngân sách:
+
+* API health.
+* Lỗi ứng dụng.
+* Tác vụ email thất bại.
+* Database và giới hạn tài nguyên.
+* Lỗi Frontend quan trọng.
+* Các sự kiện bảo mật cần theo dõi.
+
+Ưu tiên dịch vụ miễn phí hoặc logging tích hợp sẵn. Không bổ sung công cụ trả phí nếu chưa có nhu cầu và phê duyệt.
+
+⸻
+
+PHẦN XII — CẤU TRÚC SOURCE CODE VÀ QUY TẮC LẬP TRÌNH
+
+1. Cấu trúc mã nguồn
+
+Đề xuất cấu trúc rõ ràng, ví dụ:
+
+* frontend/src/components/
+* frontend/src/pages/
+* frontend/src/layouts/
+* frontend/src/services/
+* frontend/src/hooks/
+* frontend/src/context/ hoặc providers/
+* frontend/src/types/
+* frontend/src/utils/
+* backend/src/routes/
+* backend/src/controllers/
+* backend/src/services/
+* backend/src/repositories/
+* backend/src/middleware/
+* backend/src/validators/
+* backend/src/config/
+* backend/src/types/
+* backend/src/utils/
+* database/migrations/
+* database/seeds/
+* tests/
+* docs/
+
+Đây là cấu trúc định hướng. Điều chỉnh theo framework và kiến trúc thực tế, tránh tạo thư mục hoặc lớp trừu tượng không cần thiết.
+
+2. Nguyên tắc code
+
+* Dùng TypeScript khi phù hợp.
+* Tách business logic khỏi giao diện.
+* Tái sử dụng component.
+* Tránh code trùng lặp.
+* Không tạo nhiều nguồn cấu hình cho cùng một chức năng.
+* Không hardcode URL, giá dịch vụ, nội dung CMS hoặc quyền quản trị ở nhiều nơi.
+* Không bỏ qua validation chỉ vì Frontend đã kiểm tra.
+* Không nuốt lỗi bằng catch rỗng.
+* Không dùng dữ liệu giả để che lỗi API.
+* Không thêm dependencies không cần thiết.
+* Không sửa toàn bộ CSS để xử lý một lỗi cục bộ.
+* Giữ nguyên những chức năng đã hoạt động tốt khi thực hiện sửa đổi.
+* Không tự ý thay đổi nghiệp vụ đã được phê duyệt.
+
+3. Quy tắc chỉnh sửa dự án hiện hữu
+
+Nếu làm việc trên repository đã có code:
+
+1. Kiểm tra repository và nhánh hiện tại.
+2. Đọc package.json, lockfile và cấu hình build.
+3. Kiểm tra cấu trúc source code thực tế.
+4. Xác định routes, providers, contexts, services, middleware, API và schema liên quan.
+5. Kiểm tra imports/exports và dependency trước khi sửa.
+6. Xác định nguyên nhân gốc của lỗi.
+7. Chỉ thay đổi các file thực sự cần thiết.
+8. Không giả định rằng file hoặc component tồn tại nếu chưa xác minh.
+9. Không ghi đè toàn bộ CSS khi chỉ cần sửa một selector hoặc một nhóm style.
+10. Không xóa hoặc thay thế code hiện hữu nếu chưa đánh giá ảnh hưởng.
+
+Nếu chưa có repository, hãy tạo dự án mới theo kiến trúc đã chọn và cung cấp đầy đủ các file cần thiết.
+
+Nếu không có quyền truy cập repository, không được tuyên bố đã đọc hoặc sửa repository. Hãy nêu rõ giới hạn và cung cấp phương án tiếp tục phù hợp.
+
+⸻
+
+PHẦN XIII — QUY TRÌNH TRIỂN KHAI THEO GIAI ĐOẠN
+
+Thực hiện tuần tự các giai đoạn sau.
+
+Phase 1 — Architecture Audit & Foundation
+
+* Phân tích yêu cầu.
+* Chọn stack công nghệ.
+* Thiết kế kiến trúc.
+* Thiết kế schema và ERD.
+* Khởi tạo repository hoặc kiểm tra repository hiện có.
+* Thiết lập môi trường.
+* Cấu hình lint, type checking và test cơ bản.
+* Tạo migrations.
+* Xây dựng cấu hình môi trường.
+* Viết tài liệu kiến trúc và triển khai.
+
+Điều kiện nghiệm thu: Kiến trúc rõ ràng, dự án build được, schema chạy được, cấu hình môi trường hợp lệ và có tài liệu nền tảng.
+
+Phase 2 — Authentication, RBAC & Security
+
+* Đăng nhập và đăng xuất.
+* Session/token theo kiến trúc được chọn.
+* Quản lý tài khoản.
+* Phân quyền server-side.
+* Đổi mật khẩu.
+* Quên và đặt lại mật khẩu.
+* Khóa tài khoản.
+* Audit log.
+* Bảo vệ API.
+* Security tests.
+
+Điều kiện nghiệm thu: Kiểm thử được các luồng đăng nhập, giữ phiên, thu hồi phiên, quyền truy cập và các trường hợp bị từ chối.
+
+Phase 3 — Frontend Website & Design System
+
+* Xây dựng layout.
+* Header và navigation.
+* Hero.
+* Why Vietnam.
+* Core Services.
+* Additional Services.
+* Packages.
+* Accommodation.
+* Inquiry Form.
+* FAQ.
+* CTA.
+* Footer.
+* Responsive design.
+* Accessibility.
+
+Điều kiện nghiệm thu: Các trang hiển thị đúng, responsive, dùng dữ liệu theo kiến trúc đã thiết kế và không có lỗi giao diện nghiêm trọng.
+
+Phase 4 — Backend API & CMS
+
+* API nội dung.
+* General Settings.
+* CRUD dịch vụ.
+* CRUD packages.
+* CRUD accommodation.
+* Quản lý ảnh.
+* FAQ.
+* Dynamic Form Builder.
+* Preview và publish.
+* Validation.
+* Phân quyền.
+* Đồng bộ dữ liệu giữa CMS và website.
+
+Điều kiện nghiệm thu: Thay đổi trên Admin được lưu và phản ánh đúng trên website; dữ liệu không mất sau khi tải lại hoặc triển khai lại.
+
+Phase 5 — Inquiry, Lead Management & Email
+
+* Submit form.
+* Database persistence.
+* Chống spam.
+* Chống tạo lead trùng.
+* Email notification.
+* Retry và xử lý lỗi.
+* Quản lý lead.
+* Bộ lọc.
+* Ghi chú.
+* Phân công người phụ trách.
+* Lịch sử trạng thái.
+
+Điều kiện nghiệm thu: Lead được lưu đúng, xử lý email có thể kiểm tra, quản trị viên có thể theo dõi toàn bộ quy trình.
+
+Phase 6 — Analytics, Export & Social Integration
+
+* Dashboard analytics.
+* Báo cáo theo thời gian.
+* Thống kê theo gói và khu vực.
+* CSV.
+* Excel.
+* PDF.
+* Liên kết mạng xã hội.
+* Tích hợp API mạng xã hội nếu đủ điều kiện.
+
+Điều kiện nghiệm thu: Số liệu đối chiếu được với database, file xuất đúng nội dung và mọi tích hợp được đánh dấu đúng trạng thái xác minh.
+
+Phase 7 — Testing, Deployment & Handover
+
+* Unit testing.
+* Integration testing.
+* End-to-end testing.
+* Security testing.
+* Performance testing.
+* Production build.
+* Deploy.
+* Backup/restore.
+* Monitoring.
+* Tài liệu bàn giao.
+* Checklist nghiệm thu.
+
+Điều kiện nghiệm thu: Hệ thống triển khai được, các luồng quan trọng vượt qua kiểm thử, cấu hình vận hành được bàn giao đầy đủ và các giới hạn còn tồn tại được công bố.
+
+Quy tắc quản lý tiến độ: Không tự động chuyển sang Phase tiếp theo khi Phase hiện tại chưa đạt tiêu chí nghiệm thu. Báo cáo kết quả và chờ chủ dự án xác nhận trước khi tiếp tục.
+
+⸻
+
+PHẦN XIV — QUY TẮC LÀM VIỆC VÀ BÀN GIAO
+
+1. Yêu cầu triển khai
+
+Không chỉ trả lời bằng lý thuyết, kế hoạch chung hoặc các đoạn code minh họa khi môi trường cho phép triển khai thực tế.
+
+Hãy thực hiện công việc theo thứ tự:
+
+1. Khảo sát.
+2. Phân tích.
+3. Thiết kế.
+4. Lập trình.
+5. Kiểm thử.
+6. Sửa lỗi.
+7. Xác minh.
+8. Tài liệu hóa.
+9. Báo cáo nghiệm thu.
+
+Nếu môi trường hiện tại hỗ trợ chỉnh sửa file, terminal hoặc repository, hãy sử dụng các công cụ phù hợp để triển khai và kiểm thử trực tiếp.
+
+Nếu không có quyền truy cập hoặc không thể thực thi một bước, phải chỉ rõ bước nào chưa thực hiện, nguyên nhân và cách để chủ dự án hoàn tất.
+
+2. Quy tắc GitHub
+
+* Không tự ý commit hoặc push code lên GitHub.
+* Không tự ý thay đổi repository từ xa.
+* Không đưa node_modules/, dist/, file .env hoặc secrets vào repository.
+* Có .gitignore phù hợp.
+* Giữ nguyên các thay đổi chưa được phê duyệt.
+* Trước những thao tác có khả năng phá hủy dữ liệu hoặc thay đổi production, phải có xác nhận.
+
+3. Hướng dẫn chỉnh sửa code
+
+Mỗi lần sửa lỗi hoặc triển khai chức năng, phải cung cấp:
+
+* Nguyên nhân gốc.
+* Đường dẫn file chính xác.
+* Danh sách file thêm mới.
+* Danh sách file sửa đổi.
+* Phần code hoàn chỉnh cần thay thế hoặc thêm vào.
+* Vị trí chính xác để chèn code: trước hoặc sau đoạn nào.
+* Các thay đổi database hoặc environment variables.
+* Lệnh cài đặt, migration, build và test.
+* Kết quả kiểm thử thực tế.
+* Những ảnh hưởng đến chức năng hiện có.
+* Cách rollback nếu thay đổi gây lỗi.
+
+Không hướng dẫn tìm một đoạn code chưa được xác minh là tồn tại.
+
+Không đưa ra hướng dẫn mơ hồ như “hãy kiểm tra lại backend” mà không xác định file, luồng thực thi và cách kiểm chứng.
+
+4. Báo cáo sau mỗi Phase
+
+Mỗi báo cáo phải bao gồm:
+
+1. Phạm vi đã triển khai.
+2. Các chức năng hoàn thành.
+3. Các file được tạo và sửa.
+4. Schema/API đã triển khai.
+5. Các lệnh kiểm thử đã chạy.
+6. Kết quả PASS/FAIL/BLOCKED/NOT TESTED/PARTIAL.
+7. Các lỗi còn tồn tại.
+8. Các vấn đề bảo mật hoặc chi phí còn cần xử lý.
+9. Hướng dẫn chạy và kiểm tra.
+10. Checklist nghiệm thu.
+11. Những việc chưa hoàn thành và lý do.
+12. Xác nhận rằng chưa tự chuyển sang Phase tiếp theo.
+
+Không báo cáo “hoàn thành 100%” nếu chưa có bằng chứng kiểm thử phù hợp.
+
+⸻
+
+PHẦN XV — SẢN PHẨM CUỐI CÙNG PHẢI BÀN GIAO
+
+Khi tất cả các Phase đã được nghiệm thu, bàn giao:
+
+1. Source code Frontend.
+2. Source code Backend.
+3. Database schema và migrations.
+4. Seed data không chứa thông tin nhạy cảm.
+5. Admin Dashboard/CMS hoạt động thực tế.
+6. API documentation.
+7. ERD và tài liệu database.
+8. Tài liệu thiết lập môi trường.
+9. File .env.example.
+10. Hướng dẫn tạo tài khoản Admin đầu tiên an toàn.
+11. Hướng dẫn cập nhật nội dung qua CMS.
+12. Hướng dẫn quản lý lead.
+13. Hướng dẫn quản lý hình ảnh.
+14. Hướng dẫn cấu hình email.
+15. Hướng dẫn cấu hình Facebook, Instagram và TikTok.
+16. Hướng dẫn deploy.
+17. Hướng dẫn backup và restore.
+18. Hướng dẫn xử lý các lỗi phổ biến.
+19. Báo cáo test.
+20. Báo cáo security checklist.
+21. Bảng ước tính chi phí vận hành.
+22. Danh sách các dịch vụ bên ngoài và trạng thái kết nối.
+23. Danh sách các tính năng còn giới hạn hoặc chưa được xác minh.
+24. Checklist bàn giao cho người không chuyên lập trình.
+
+Tiêu chuẩn bàn giao cuối cùng
+
+Sản phẩm phải đáp ứng các nguyên tắc:
+
+* Website công khai hoạt động thực tế.
+* Admin CMS hoạt động thực tế.
+* Nội dung được quản trị qua database và CMS.
+* Lead được lưu trữ an toàn và có thể quản lý.
+* Email được kiểm tra theo trạng thái gửi thực tế.
+* Phân quyền được kiểm tra phía server.
+* Giao diện responsive và dễ sử dụng.
+* Có quy trình backup và phục hồi.
+* Có tài liệu để tự vận hành.
+* Không phụ thuộc vào việc sửa code cho các thay đổi nội dung thông thường.
+* Chi phí và giới hạn nhà cung cấp được công khai.
+* Không có tuyên bố hoàn thành giả tạo đối với các chức năng chưa kiểm thử.
+
+⸻
+
+LỆNH BẮT ĐẦU THỰC HIỆN
+
+Hãy bắt đầu ngay với Phase 1 — Architecture Audit & Foundation.
+
+Trước tiên, hãy xác định môi trường hiện có: repository đã tồn tại hay chưa, có thể truy cập source code hay không, các công nghệ và dịch vụ nào đã được cấu hình.
+
+Nếu có repository hiện hữu, hãy kiểm tra source code thực tế trước khi đề xuất hoặc thay đổi kiến trúc. Nếu là dự án mới, hãy lựa chọn stack công nghệ và giải thích ngắn gọn lý do dựa trên chi phí, bảo mật, khả năng bảo trì và yêu cầu nghiệp vụ.
+
+Sau đó, hãy triển khai các công việc thuộc Phase 1, tạo các file thực tế khi môi trường cho phép, chạy các kiểm tra phù hợp và báo cáo kết quả theo tiêu chí nghiệm thu.
+
+Không chuyển sang Phase 2 cho đến khi Phase 1 được nghiệm thu rõ ràng. Không commit hoặc push code lên GitHub nếu chưa được chủ dự án cho phép.

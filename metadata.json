@@ -1,0 +1,6 @@
+{
+  "name": "Wanderer's Journeys",
+  "description": "Premium retirement living, long-term exploratory stays, and lifestyle concierge in Vietnam. Where curiosity leads, possibilities unfold.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
