@@ -174,7 +174,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToLead
           </button>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-stone-200 text-slate-400 uppercase text-[10px] tracking-wider font-semibold">
@@ -205,6 +206,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToLead
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Quick Inquiries List */}
+        <div className="sm:hidden divide-y divide-stone-100 -mx-2">
+          {recentLeads?.map((l: any) => (
+            <div key={l.id} className="p-3 space-y-1.5 hover:bg-stone-50 rounded-xl">
+              <div className="flex items-center justify-between">
+                <span className="font-mono font-bold text-[#A77A32] text-xs">{l.leadCode}</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-stone-100 text-slate-700">
+                  {l.status}
+                </span>
+              </div>
+              <div className="font-medium text-slate-900 text-xs">{l.fullName}</div>
+              <div className="text-[11px] text-slate-500 flex items-center justify-between">
+                <span>{l.packageName} • {l.destinationCity}</span>
+                <span className="text-slate-400">{new Date(l.createdAt).toLocaleDateString()}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

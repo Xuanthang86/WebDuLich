@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
-import { getCurrentUser, login as apiLogin, logout as apiLogout, getAuthToken } from '../api';
+import { getCurrentUser, login as apiLogin, logout as apiLogout, getAuthToken, clearAuthToken } from '../api';
 
 interface AuthContextType {
   user: User | null;
@@ -28,6 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(res.user);
       })
       .catch(() => {
+        clearAuthToken();
         setUser(null);
       })
       .finally(() => {
@@ -41,8 +42,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    await apiLogout();
-    setUser(null);
+    try {
+      await apiLogout();
+    } catch (err) {
+      console.warn('Logout notification error ignored:', err);
+    } finally {
+      clearAuthToken();
+      setUser(null);
+    }
   };
 
   const fastLoginAs = async (role: 'ADMIN' | 'MANAGER' | 'LEAD_MANAGER') => {

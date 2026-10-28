@@ -171,9 +171,10 @@ export const AdminLeads: React.FC = () => {
         </div>
       </div>
 
-      {/* Leads Table */}
+      {/* Leads Container (Dual View: Desktop Table + Mobile Card Stack) */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs sm:text-sm">
             <thead>
               <tr className="bg-[#FDFBF7] border-b border-stone-200 text-slate-500 font-semibold text-[11px] uppercase tracking-wider">
@@ -263,10 +264,95 @@ export const AdminLeads: React.FC = () => {
           </table>
         </div>
 
+        {/* Mobile Card Stack View (< 768px) */}
+        <div className="md:hidden divide-y divide-stone-100">
+          {loading ? (
+            <div className="py-12 text-center text-slate-400 text-xs">
+              Loading inquiries...
+            </div>
+          ) : leads.length === 0 ? (
+            <div className="py-12 text-center text-slate-400 text-xs p-4">
+              No leads match the specified search or filter criteria.
+            </div>
+          ) : (
+            leads.map(lead => (
+              <div
+                key={lead.id}
+                onClick={() => setSelectedLeadId(lead.id)}
+                className="p-4 hover:bg-amber-50/30 transition-colors active:bg-amber-50 cursor-pointer space-y-3"
+              >
+                {/* Header row: code + badges */}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono font-bold text-[#A77A32] text-xs bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                    {lead.leadCode}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {getStatusBadge(lead.status)}
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                      lead.priority === 'HIGH'
+                        ? 'bg-rose-100 text-rose-800'
+                        : lead.priority === 'MEDIUM'
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-slate-100 text-slate-700'
+                    }`}>
+                      {lead.priority}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Client info */}
+                <div>
+                  <h4 className="font-serif font-bold text-slate-900 text-sm">
+                    {lead.fullName}
+                  </h4>
+                  <div className="text-slate-500 text-xs font-sans mt-0.5">
+                    {lead.email} {lead.countryCode ? `• ${lead.countryCode}` : ''}
+                  </div>
+                </div>
+
+                {/* Package & Stay details */}
+                <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-stone-50 border border-stone-100 text-[11px]">
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">Package / Hub</span>
+                    <span className="font-semibold text-slate-800">{lead.packageName}</span>
+                    <span className="text-slate-500 block">{lead.destinationCity}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">Stay / Party</span>
+                    <span className="font-semibold text-slate-800">{lead.duration}</span>
+                    <span className="text-slate-500 block">{lead.guestCount} Guests</span>
+                  </div>
+                </div>
+
+                {/* Footer with date and action button */}
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    {new Date(lead.createdAt).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </span>
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      setSelectedLeadId(lead.id);
+                    }}
+                    className="px-3.5 py-1.5 rounded-lg bg-[#0F172A] text-white hover:bg-slate-800 text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Eye className="w-3.5 h-3.5 text-[#C9A45C]" />
+                    <span>View Profile</span>
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
         {/* Table Footer Count */}
-        <div className="p-4 bg-[#FDFBF7] border-t border-stone-200 text-xs text-slate-500 flex items-center justify-between">
+        <div className="p-3 sm:p-4 bg-[#FDFBF7] border-t border-stone-200 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-1 text-center sm:text-left">
           <span>Showing {leads.length} total proposal inquiries</span>
-          <span>Click any row to open the complete concierge profile</span>
+          <span>Click any card/row to open the complete concierge profile</span>
         </div>
       </div>
 

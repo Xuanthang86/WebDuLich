@@ -110,19 +110,27 @@ router.get('/me', authenticate, (req: Request, res: Response): void => {
   });
 });
 
-// Logout
-router.post('/logout', authenticate, (req: Request, res: Response): void => {
-  if (req.sessionToken) {
-    db.deleteSession(req.sessionToken);
+// Logout (resilient: always succeeds even if session already expired/revoked)
+router.post('/logout', (req: Request, res: Response): void => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    const session = db.getSession(token);
+    if (session) {
+      const user = db.getUserById(session.userId);
+      db.deleteSession(token);
+      if (user) {
+        db.addAuditLog({
+          userId: user.id,
+          userEmail: user.email,
+          action: 'LOGOUT',
+          entityType: 'AUTH',
+          details: 'User logged out.',
+          ipAddress: req.ip || (req.headers['x-forwarded-for'] as string),
+        });
+      }
+    }
   }
-  db.addAuditLog({
-    userId: req.user!.id,
-    userEmail: req.user!.email,
-    action: 'LOGOUT',
-    entityType: 'AUTH',
-    details: 'User logged out.',
-    ipAddress: req.ip || (req.headers['x-forwarded-for'] as string),
-  });
   res.json({ success: true, message: 'Logged out successfully.' });
 });
 

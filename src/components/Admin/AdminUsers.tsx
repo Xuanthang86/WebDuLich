@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Shield, CheckCircle, Ban, RefreshCw, KeyRound } from 'lucide-react';
+import { UserPlus, Shield, CheckCircle, Ban, RefreshCw, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { User, UserRole } from '../../types';
 import { fetchAdminUsers, createAdminUser, toggleAdminUserStatus } from '../../api';
 
@@ -10,6 +10,7 @@ export const AdminUsers: React.FC = () => {
   const [newEmail, setNewEmail] = useState<string>('');
   const [newFullName, setNewFullName] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [newRole, setNewRole] = useState<UserRole>('LEAD_MANAGER');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -102,14 +103,24 @@ export const AdminUsers: React.FC = () => {
             </div>
             <div>
               <label className="font-semibold block mb-1">Temporary Initial Password</label>
-              <input
-                type="password"
-                required
-                value={newPassword}
-                onChange={e => setNewPassword(e.target.value)}
-                placeholder="Min 8 characters"
-                className="w-full p-2.5 rounded-lg border border-stone-300 bg-white"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="Min 8 characters"
+                  className="w-full pl-2.5 pr-9 py-2.5 rounded-lg border border-stone-300 bg-white"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             <div>
               <label className="font-semibold block mb-1">Assigned RBAC Role</label>

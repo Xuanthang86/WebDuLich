@@ -47,6 +47,9 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
+    if (response.status === 401 && !endpoint.includes('/api/auth/login')) {
+      clearAuthToken();
+    }
     throw new Error(data?.error?.message || `Request failed with status ${response.status}`);
   }
 
@@ -98,6 +101,8 @@ export async function getCurrentUser(): Promise<{ user: User }> {
 export async function logout(): Promise<void> {
   try {
     await request('/api/auth/logout', { method: 'POST' });
+  } catch (err) {
+    console.warn('Backend logout request returned error (handled gracefully):', err);
   } finally {
     clearAuthToken();
   }
