@@ -238,7 +238,7 @@ router.put('/packages/:id', requireRole(['ADMIN', 'MANAGER']), (req: Request, re
   res.json({ success: true, data: pkg });
 });
 
-router.delete('/packages/:id', requireRole(['ADMIN']), (req: Request, res: Response): void => {
+router.delete('/packages/:id', requireRole(['ADMIN', 'MANAGER']), (req: Request, res: Response): void => {
   const { id } = req.params;
   const pkg = db.getState().packages.find(p => p.id === id);
   if (!pkg) {
@@ -308,7 +308,7 @@ router.put('/accommodations/:id', requireRole(['ADMIN', 'MANAGER']), (req: Reque
   res.json({ success: true, data: acc });
 });
 
-router.delete('/accommodations/:id', requireRole(['ADMIN']), (req: Request, res: Response): void => {
+router.delete('/accommodations/:id', requireRole(['ADMIN', 'MANAGER']), (req: Request, res: Response): void => {
   const { id } = req.params;
   db.getState().accommodations = db.getState().accommodations.filter(a => a.id !== id);
   db.save();
@@ -640,7 +640,7 @@ router.post('/media', requireRole(['ADMIN', 'MANAGER']), (req: Request, res: Res
   res.json({ success: true, data: asset });
 });
 
-router.delete('/media/:id', requireRole(['ADMIN']), (req: Request, res: Response): void => {
+router.delete('/media/:id', requireRole(['ADMIN', 'MANAGER']), (req: Request, res: Response): void => {
   const { id } = req.params;
   db.getState().mediaAssets = db.getState().mediaAssets.filter(m => m.id !== id);
   db.save();

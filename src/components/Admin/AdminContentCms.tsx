@@ -10,6 +10,10 @@ import {
   Trash2,
   Check,
   AlertCircle,
+  Upload,
+  X,
+  Image as ImageIcon,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   fetchAdminHero,
@@ -45,6 +49,14 @@ export const AdminContentCms: React.FC = () => {
   const [editingAcc, setEditingAcc] = useState<Partial<AccommodationItem> | null>(null);
   // FAQ Edit State
   const [editingFaq, setEditingFaq] = useState<Partial<FAQItem> | null>(null);
+
+  // Custom Delete Modal State (replaces blocked window.confirm in iframe)
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: 'package' | 'accommodation' | 'faq';
+    id: string;
+    title: string;
+  } | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   useEffect(() => {
     // Load all content
@@ -87,14 +99,6 @@ export const AdminContentCms: React.FC = () => {
     triggerSaveNotification('Living package saved.');
   };
 
-  const handleDeletePackage = async (id: string) => {
-    if (!confirm('Are you sure you want to delete or unpublish this package?')) return;
-    await deleteAdminPackage(id);
-    const refreshed = await fetchAdminPackages();
-    setPackages(refreshed);
-    triggerSaveNotification('Package removed.');
-  };
-
   // 4. Save Accommodation
   const handleSaveAccommodation = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,14 +108,6 @@ export const AdminContentCms: React.FC = () => {
     setAccommodations(refreshed);
     setEditingAcc(null);
     triggerSaveNotification('Accommodation residence saved.');
-  };
-
-  const handleDeleteAccommodation = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this residence?')) return;
-    await deleteAdminAccommodation(id);
-    const refreshed = await fetchAdminAccommodations();
-    setAccommodations(refreshed);
-    triggerSaveNotification('Accommodation deleted.');
   };
 
   // 5. Save FAQ
@@ -125,12 +121,33 @@ export const AdminContentCms: React.FC = () => {
     triggerSaveNotification('FAQ saved.');
   };
 
-  const handleDeleteFaq = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this FAQ?')) return;
-    await deleteAdminFaq(id);
-    const refreshed = await fetchAdminFaqs();
-    setFaqs(refreshed);
-    triggerSaveNotification('FAQ deleted.');
+  // Reliable deletion handler (avoids iframe-blocked window.confirm)
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      if (deleteTarget.type === 'package') {
+        await deleteAdminPackage(deleteTarget.id);
+        const refreshed = await fetchAdminPackages();
+        setPackages(refreshed);
+        triggerSaveNotification(`Package deleted.`);
+      } else if (deleteTarget.type === 'accommodation') {
+        await deleteAdminAccommodation(deleteTarget.id);
+        const refreshed = await fetchAdminAccommodations();
+        setAccommodations(refreshed);
+        triggerSaveNotification(`Residence deleted.`);
+      } else if (deleteTarget.type === 'faq') {
+        await deleteAdminFaq(deleteTarget.id);
+        const refreshed = await fetchAdminFaqs();
+        setFaqs(refreshed);
+        triggerSaveNotification('FAQ deleted.');
+      }
+    } catch (err: any) {
+      triggerSaveNotification(err.message || 'Failed to delete item.');
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
+    }
   };
 
   return (
@@ -483,8 +500,9 @@ export const AdminContentCms: React.FC = () => {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDeletePackage(pkg.id)}
-                    className="p-2 rounded-lg hover:bg-red-50 text-xs font-medium text-red-600"
+                    onClick={() => setDeleteTarget({ type: 'package', id: pkg.id, title: pkg.title })}
+                    className="p-2 rounded-lg hover:bg-red-50 text-xs font-medium text-red-600 cursor-pointer"
+                    title="Delete package"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -605,26 +623,102 @@ export const AdminContentCms: React.FC = () => {
                     className="w-full p-2.5 rounded-lg border border-stone-300 bg-white"
                   />
                 </div>
-                <div className="sm:col-span-3">
-                  <label className="font-semibold block mb-1">Primary Photo URL</label>
-                  <input
-                    type="text"
-                    value={editingAcc.images?.[0]?.url || ''}
-                    onChange={e =>
-                      setEditingAcc({
-                        ...editingAcc,
-                        images: [
-                          {
-                            id: 'img_primary',
-                            url: e.target.value,
-                            caption: editingAcc.title || '',
-                            isPrimary: true,
-                          },
-                        ],
-                      })
-                    }
-                    className="w-full p-2.5 rounded-lg border border-stone-300 bg-white font-mono"
-                  />
+                <div className="sm:col-span-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="font-semibold block text-slate-700">Primary Residence Image</label>
+                    <span className="text-[11px] text-slate-500">Upload file from PC/Laptop or enter image URL</span>
+                  </div>
+
+                  {/* Image Preview if available */}
+                  {editingAcc.images?.[0]?.url && (
+                    <div className="relative rounded-xl overflow-hidden h-48 bg-slate-900 border border-stone-200 group">
+                      <img
+                        src={editingAcc.images[0].url}
+                        alt="Residence Preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditingAcc({ ...editingAcc, images: [] })}
+                          className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold flex items-center gap-1 cursor-pointer shadow-md"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          <span>Remove Photo</span>
+                        </button>
+                      </div>
+                      <div className="absolute bottom-2 left-2 px-2.5 py-1 rounded-md bg-black/70 backdrop-blur-xs text-[10px] text-white">
+                        {editingAcc.images[0].caption || 'Selected Residence Photo'}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    {/* PC/Laptop File Upload */}
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                        Option A: Upload File from PC / Laptop
+                      </label>
+                      <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-[#C9A45C]/70 hover:border-[#C9A45C] bg-[#FDFBF7] hover:bg-[#F7F3EA] text-xs font-semibold text-[#0F172A] cursor-pointer transition-colors shadow-xs">
+                        <Upload className="w-4 h-4 text-[#C9A45C]" />
+                        <span>Choose Image File...</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = evt => {
+                                const base64 = evt.target?.result as string;
+                                setEditingAcc({
+                                  ...editingAcc,
+                                  images: [
+                                    {
+                                      id: `img_${Date.now()}`,
+                                      url: base64,
+                                      caption: file.name,
+                                      isPrimary: true,
+                                    },
+                                  ],
+                                });
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                      </label>
+                      <p className="text-[10px] text-slate-400 mt-1">Accepts JPG, PNG, WebP up to 5MB</p>
+                    </div>
+
+                    {/* Image URL Link */}
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                        Option B: Or Paste Image URL Link
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="https://images.unsplash.com/photo-..."
+                        value={editingAcc.images?.[0]?.url?.startsWith('data:') ? '' : (editingAcc.images?.[0]?.url || '')}
+                        onChange={e =>
+                          setEditingAcc({
+                            ...editingAcc,
+                            images: [
+                              {
+                                id: 'img_primary',
+                                url: e.target.value,
+                                caption: editingAcc.title || 'Residence Showcase',
+                                isPrimary: true,
+                              },
+                            ],
+                          })
+                        }
+                        className="w-full p-2.5 rounded-xl border border-stone-300 bg-white text-xs font-mono"
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1">Direct web link or CDN asset</p>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-2">
@@ -663,8 +757,8 @@ export const AdminContentCms: React.FC = () => {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDeleteAccommodation(acc.id)}
-                    className="text-xs font-bold text-red-600 hover:underline flex items-center gap-1"
+                    onClick={() => setDeleteTarget({ type: 'accommodation', id: acc.id, title: acc.title })}
+                    className="text-xs font-bold text-red-600 hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>Delete</span>
@@ -774,14 +868,53 @@ export const AdminContentCms: React.FC = () => {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDeleteFaq(faq.id)}
-                    className="p-2 text-xs font-bold text-red-600 hover:underline"
+                    onClick={() => setDeleteTarget({ type: 'faq', id: faq.id, title: faq.question })}
+                    className="p-2 text-xs font-bold text-red-600 hover:underline cursor-pointer"
+                    title="Delete FAQ"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Custom Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-stone-200 space-y-4">
+            <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <div className="text-center">
+              <h4 className="font-serif text-lg font-bold text-[#0F172A]">Confirm Deletion</h4>
+              <p className="text-xs text-slate-500 mt-1">
+                Are you sure you want to permanently delete this {deleteTarget.type}?
+              </p>
+              <p className="text-xs font-semibold text-[#0F172A] mt-2 bg-stone-50 p-2.5 rounded-xl border border-stone-200 line-clamp-2">
+                "{deleteTarget.title}"
+              </p>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={isDeleting}
+                className="flex-1 py-2.5 rounded-xl border border-stone-300 text-xs font-semibold text-slate-700 hover:bg-stone-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold cursor-pointer shadow-sm disabled:opacity-50"
+              >
+                {isDeleting ? 'Deleting...' : 'Yes, Delete'}
+              </button>
+            </div>
           </div>
         </div>
       )}

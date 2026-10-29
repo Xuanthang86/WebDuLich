@@ -280,4 +280,36 @@ router.put('/users/:id/status', authenticate, requireRole(['ADMIN']), (req: Requ
   res.json({ success: true, data: { id: user.id, isActive: user.isActive } });
 });
 
+router.post('/users/:id/reset-password', authenticate, requireRole(['ADMIN']), (req: Request, res: Response): void => {
+  const { id } = req.params;
+  const { newPassword } = req.body;
+
+  if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 6) {
+    res.status(400).json({ success: false, error: { message: 'New password must be at least 6 characters.' } });
+    return;
+  }
+
+  const user = db.getUserById(id);
+  if (!user) {
+    res.status(404).json({ success: false, error: { message: 'Staff user not found.' } });
+    return;
+  }
+
+  const hashed = hashPassword(newPassword);
+  db.updateUser(id, { passwordHash: hashed });
+  db.revokeUserSessions(id);
+
+  db.addAuditLog({
+    userId: req.user!.id,
+    userEmail: req.user!.email,
+    action: 'USER_PASSWORD_RESET',
+    entityType: 'USER',
+    entityId: id,
+    details: `Admin reset password for staff user ${user.fullName} (${user.email}).`,
+    ipAddress: req.ip || (req.headers['x-forwarded-for'] as string),
+  });
+
+  res.json({ success: true, message: `Password reset successfully for ${user.fullName}.` });
+});
+
 export default router;

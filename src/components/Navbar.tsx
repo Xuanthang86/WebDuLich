@@ -88,14 +88,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Mobile Menu Toggle Button */}
-          <div className="flex md:hidden items-center gap-2">
-            <button
-              onClick={onOpenAdmin}
-              className="p-2 text-slate-300 hover:text-[#C9A45C]"
-              title="Staff Portal"
-            >
-              <Shield className="w-5 h-5 text-[#C9A45C]" />
-            </button>
+          <div className="flex md:hidden items-center">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 text-slate-200 hover:text-white"

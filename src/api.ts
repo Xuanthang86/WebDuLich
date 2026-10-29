@@ -320,6 +320,13 @@ export async function toggleAdminUserStatus(id: string, isActive: boolean): Prom
   });
 }
 
+export async function resetAdminUserPassword(id: string, newPassword: string): Promise<any> {
+  return request<any>(`/api/auth/users/${id}/reset-password`, {
+    method: 'POST',
+    body: JSON.stringify({ newPassword }),
+  });
+}
+
 export async function resetDemoData(): Promise<any> {
   return request<any>('/api/admin/system/reset-demo', { method: 'POST' });
 }

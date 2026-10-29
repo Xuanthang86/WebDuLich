@@ -7,9 +7,9 @@
       "fullName": "Alexander Vance",
       "role": "ADMIN",
       "isActive": true,
-      "lastLoginAt": "2026-10-28T14:43:16.141Z",
+      "lastLoginAt": "2026-10-29T02:06:55.758Z",
       "createdAt": "2026-01-01T00:00:00Z",
-      "updatedAt": "2026-10-28T14:43:16.141Z"
+      "updatedAt": "2026-10-29T02:06:55.758Z"
     },
     {
       "id": "usr_mgr_01",
@@ -18,9 +18,9 @@
       "fullName": "Mai Nguyen",
       "role": "MANAGER",
       "isActive": true,
-      "lastLoginAt": "2026-10-28T14:43:16.153Z",
+      "lastLoginAt": "2026-10-29T02:06:55.799Z",
       "createdAt": "2026-01-10T00:00:00Z",
-      "updatedAt": "2026-10-28T14:43:16.153Z"
+      "updatedAt": "2026-10-29T02:06:55.804Z"
     },
     {
       "id": "usr_lead_01",
@@ -43,15 +43,6 @@
       "userAgent": "curl/7.88.1",
       "ipAddress": "127.0.0.1",
       "createdAt": "2026-10-28T13:19:57.133Z"
-    },
-    {
-      "id": "ses_1793193603192_ea219c13",
-      "token": "2cc4293a058a4ce5c660c4cc86745ab56d4d25a383354d19c369375eda5691ee",
-      "userId": "usr_mgr_01",
-      "expiresAt": "2026-10-29T13:20:03.192Z",
-      "userAgent": "curl/7.88.1",
-      "ipAddress": "127.0.0.1",
-      "createdAt": "2026-10-28T13:20:03.192Z"
     },
     {
       "id": "ses_1793193603245_2506eebc",
@@ -108,15 +99,6 @@
       "createdAt": "2026-10-28T14:43:16.140Z"
     },
     {
-      "id": "ses_1793198596152_069d9c63",
-      "token": "efec818416d8a933457f2317bbd47a0363e78e0bb2e65d4bd410302d809b741b",
-      "userId": "usr_mgr_01",
-      "expiresAt": "2026-10-29T14:43:16.152Z",
-      "userAgent": "node",
-      "ipAddress": "127.0.0.1",
-      "createdAt": "2026-10-28T14:43:16.152Z"
-    },
-    {
       "id": "ses_1793198596163_eef346eb",
       "token": "7024a0674b3deda1ae427e924c60265272b2df51f6ef913d5358c4c2c31160af",
       "userId": "usr_lead_01",
@@ -124,6 +106,15 @@
       "userAgent": "node",
       "ipAddress": "127.0.0.1",
       "createdAt": "2026-10-28T14:43:16.163Z"
+    },
+    {
+      "id": "ses_1793239615757_b0edd4a0",
+      "token": "8d6bebd78a1b8b9823eaa61912fbaac69b52ad317e6b653637a9e275af4fd8b4",
+      "userId": "usr_admin_01",
+      "expiresAt": "2026-10-30T02:06:55.757Z",
+      "userAgent": "node",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-29T02:06:55.757Z"
     }
   ],
   "passwordResetTokens": [],
@@ -568,6 +559,138 @@
       "isPublished": true,
       "displayOrder": 3,
       "updatedAt": "2026-10-27T14:41:54.124Z"
+    },
+    {
+      "id": "acc_dn_02",
+      "title": "Son Tra Peninsula Clifftop Villa",
+      "city": "Da Nang",
+      "district": "Son Tra Nature Reserve & Ocean Edge",
+      "propertyType": "Ocean Villa",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "areaSqm": 165,
+      "priceMonthUsd": 2850,
+      "isQuoteOnly": false,
+      "description": "Private secluded clifftop sanctuary overlooking both the ocean bay and lush jungle mountains. Features an infinity plunge pool, wrap-around teak deck, and direct private path to tranquil coves.",
+      "amenities": [
+        "Private Plunge Pool",
+        "Mountain & Bay Views",
+        "Wrap-around Deck",
+        "Butler & Chef Service",
+        "Wine Cellar",
+        "Dual Walk-in Closets",
+        "24/7 Gatehouse Guard"
+      ],
+      "images": [
+        {
+          "id": "img_dn_clifftop_1",
+          "url": "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1200&q=80",
+          "caption": "Panoramic cliffside villa with sunlit infinity deck",
+          "isPrimary": true
+        }
+      ],
+      "isPublished": true,
+      "displayOrder": 4,
+      "updatedAt": "2026-10-28T14:00:00.000Z"
+    },
+    {
+      "id": "acc_nt_02",
+      "title": "An Vien Marina Waterfront Residence",
+      "city": "Nha Trang",
+      "district": "An Vien Private Gated Community",
+      "propertyType": "Resort Suite",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "areaSqm": 125,
+      "priceMonthUsd": 2400,
+      "isQuoteOnly": false,
+      "description": "Quiet, secure gated coastal neighborhood with private yacht harbor, tree-lined walking avenues, and tropical breezes. Perfect for peaceful morning jogs and sailing enthusiasts.",
+      "amenities": [
+        "Yacht Marina Access",
+        "Gated Security",
+        "Private Boat Slip Available",
+        "Private Garden",
+        "Solar Water Heating",
+        "Clubhouse Gym",
+        "High-speed Fiber"
+      ],
+      "images": [
+        {
+          "id": "img_nt_marina_1",
+          "url": "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=1200&q=80",
+          "caption": "Elegant marina residence with tranquil harbor breezes",
+          "isPrimary": true
+        }
+      ],
+      "isPublished": true,
+      "displayOrder": 5,
+      "updatedAt": "2026-10-28T14:00:00.000Z"
+    },
+    {
+      "id": "acc_sg_02",
+      "title": "The Grand Saigon Riverside Penthouse",
+      "city": "Ho Chi Minh City",
+      "district": "District 1 Riverside Heritage Quarter",
+      "propertyType": "Luxury Apartment",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "areaSqm": 175,
+      "priceMonthUsd": 2950,
+      "isQuoteOnly": false,
+      "description": "Panoramic floor-to-ceiling skyline and river vistas from the 32nd floor. Walk to the Saigon Opera House, Dong Khoi heritage street, Michelin-starred dining, and riverside boardwalk.",
+      "amenities": [
+        "Saigon River Skyline Views",
+        "Private Elevator Keycard",
+        "Concierge Valet",
+        "Sky Lounge Access",
+        "Gourmet Miele Kitchen",
+        "Marble En-suite Spas",
+        "24/7 Doorman"
+      ],
+      "images": [
+        {
+          "id": "img_sg_penthouse_1",
+          "url": "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80",
+          "caption": "Floor-to-ceiling glass penthouse overlooking Saigon skyline",
+          "isPrimary": true
+        }
+      ],
+      "isPublished": true,
+      "displayOrder": 6,
+      "updatedAt": "2026-10-28T14:00:00.000Z"
+    },
+    {
+      "id": "acc_dn_03",
+      "title": "Hoi An Heritage Garden Villa",
+      "city": "Da Nang",
+      "district": "Cam Chau / Hoi An Heritage Hub",
+      "propertyType": "Boutique Townhouse",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "areaSqm": 140,
+      "priceMonthUsd": 2100,
+      "isQuoteOnly": false,
+      "description": "Tranquil courtyard residence nestled among lotus ponds and organic gardens. Combines classic French-Vietnamese colonial architecture with state-of-the-art modern comforts.",
+      "amenities": [
+        "Private Lotus Courtyard",
+        "Colonial Veranda",
+        "Bicycle Fleet Included",
+        "Organic Garden",
+        "Weekly Private Cook Option",
+        "Air Purifier Systems",
+        "Swimming Pool"
+      ],
+      "images": [
+        {
+          "id": "img_ha_heritage_1",
+          "url": "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80",
+          "caption": "Colonial courtyard garden villa with shaded veranda",
+          "isPrimary": true
+        }
+      ],
+      "isPublished": true,
+      "displayOrder": 7,
+      "updatedAt": "2026-10-28T14:00:00.000Z"
     }
   ],
   "mediaAssets": [
@@ -639,6 +762,51 @@
       "displayOrder": 5,
       "isPublished": true,
       "updatedAt": "2026-10-27T14:41:54.124Z"
+    },
+    {
+      "id": "faq_06",
+      "category": "General",
+      "question": "How safe is Vietnam for international retirees and solo seniors?",
+      "answer": "Vietnam is widely recognized as one of the safest destinations in Southeast Asia. Violent crime is exceptionally rare, and senior residents frequently walk along coastal esplanades and city quarters late into the evening with complete peace of mind. Vietnamese culture holds immense respect and kindness for elders.",
+      "displayOrder": 6,
+      "isPublished": true,
+      "updatedAt": "2026-10-28T14:00:00.000Z"
+    },
+    {
+      "id": "faq_07",
+      "category": "General",
+      "question": "Can I drive in Vietnam, or is it better to use concierge transport?",
+      "answer": "International driver’s licenses can be converted into Vietnamese licenses with our team’s guidance. However, almost all of our residents prefer using on-demand private rides (Grab) or our dedicated Wanderer's concierge shuttle, completely eliminating driving stress for only $3–$6 across town.",
+      "displayOrder": 7,
+      "isPublished": true,
+      "updatedAt": "2026-10-28T14:00:00.000Z"
+    },
+    {
+      "id": "faq_08",
+      "category": "Healthcare",
+      "question": "Which international health insurance policies are accepted by local hospitals?",
+      "answer": "Premier international insurers including Cigna Global, Allianz Care, Bupa, GeoBlue, and Aetna International have direct-billing agreements with top JCI-accredited hospitals in Vietnam (Vinmec, FV Hospital). Our team assists you in submitting claims and coordinating coverage.",
+      "displayOrder": 8,
+      "isPublished": true,
+      "updatedAt": "2026-10-28T14:00:00.000Z"
+    },
+    {
+      "id": "faq_09",
+      "category": "Accommodation",
+      "question": "Can I try a flexible month-to-month lease before committing to a full year?",
+      "answer": "Yes, flexibility is a cornerstone of Wanderer's Journeys. You can begin with a 14-Day Exploratory Stay or 30-Day Living Trial, and smoothly transition to our Snowbird or 12-Month Retirement package without having to relocate or renegotiate leases.",
+      "displayOrder": 9,
+      "isPublished": true,
+      "updatedAt": "2026-10-28T14:00:00.000Z"
+    },
+    {
+      "id": "faq_10",
+      "category": "Finance",
+      "question": "How are US Social Security, Canadian CPP, or UK state pensions received in Vietnam?",
+      "answer": "You can keep your existing bank account in your home country and receive your pension deposits via direct deposit as usual. Using low-fee global debit cards or services like Wise, funds can be spent or transferred to local Vietnamese accounts in seconds at real interbank exchange rates with zero penalty.",
+      "displayOrder": 10,
+      "isPublished": true,
+      "updatedAt": "2026-10-28T14:00:00.000Z"
     }
   ],
   "formFields": [
@@ -1185,6 +1353,68 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "aud_1793239615820_603on",
+      "userId": "usr_admin_01",
+      "userEmail": "admin@wanderersjourneys.com",
+      "action": "MEDIA_UPLOADED",
+      "entityType": "MEDIA",
+      "entityId": "med_1793239615819",
+      "details": "Added media asset: temp_test.jpg",
+      "createdAt": "2026-10-29T02:06:55.820Z"
+    },
+    {
+      "id": "aud_1793239615810_6un66",
+      "userId": "usr_admin_01",
+      "userEmail": "admin@wanderersjourneys.com",
+      "action": "ACCOMMODATION_CREATED",
+      "entityType": "ACCOMMODATION",
+      "entityId": "acc_1793239615809",
+      "details": "Created accommodation: Temp Test Residence in Da Nang",
+      "createdAt": "2026-10-29T02:06:55.810Z"
+    },
+    {
+      "id": "aud_1793239615805_zdava",
+      "userId": "usr_admin_01",
+      "userEmail": "admin@wanderersjourneys.com",
+      "action": "USER_PASSWORD_RESET",
+      "entityType": "USER",
+      "entityId": "usr_mgr_01",
+      "details": "Admin reset password for staff user Mai Nguyen (manager@wanderersjourneys.com).",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-29T02:06:55.805Z"
+    },
+    {
+      "id": "aud_1793239615800_lpibp",
+      "userId": "usr_mgr_01",
+      "userEmail": "manager@wanderersjourneys.com",
+      "action": "LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "details": "User logged in successfully with role MANAGER.",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-29T02:06:55.800Z"
+    },
+    {
+      "id": "aud_1793239615793_7d392",
+      "userId": "usr_admin_01",
+      "userEmail": "admin@wanderersjourneys.com",
+      "action": "USER_PASSWORD_RESET",
+      "entityType": "USER",
+      "entityId": "usr_mgr_01",
+      "details": "Admin reset password for staff user Mai Nguyen (manager@wanderersjourneys.com).",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-29T02:06:55.793Z"
+    },
+    {
+      "id": "aud_1793239615758_ec8bb",
+      "userId": "usr_admin_01",
+      "userEmail": "admin@wanderersjourneys.com",
+      "action": "LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "details": "User logged in successfully with role ADMIN.",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-29T02:06:55.758Z"
+    },
     {
       "id": "aud_1793198596175_3tt02",
       "userId": "usr_lead_01",
