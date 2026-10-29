@@ -25,10 +25,10 @@ export const CoreServicesSection: React.FC<CoreServicesSectionProps> = ({
   onOpenQuestionnaire,
 }) => {
   return (
-    <section id="core-services" className="py-24 bg-[#F7F3EA] text-[#0F172A] border-b border-stone-200">
+    <section id="core-services" className="py-12 sm:py-16 md:py-20 bg-[#F7F3EA] text-[#0F172A] border-b border-stone-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
+        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12">
           <div className="text-xs sm:text-sm font-semibold tracking-widest text-[#A77A32] uppercase mb-2">
             The Wanderer’s Standard
           </div>
@@ -42,7 +42,7 @@ export const CoreServicesSection: React.FC<CoreServicesSectionProps> = ({
         </div>
 
         {/* Highlight Card: Core Residence Package */}
-        <div className="bg-white rounded-3xl border border-stone-200 shadow-md p-8 sm:p-12 mb-16 relative overflow-hidden">
+        <div className="bg-white rounded-3xl border border-stone-200 shadow-md p-6 sm:p-10 mb-10 sm:mb-12 relative overflow-hidden">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between pb-8 border-b border-stone-100 gap-6">
             <div>
               <div className="inline-block px-3 py-1 rounded-md bg-[#C9A45C]/15 text-[#A77A32] text-xs font-semibold uppercase tracking-wider mb-2">

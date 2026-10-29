@@ -40,10 +40,10 @@ export const AccommodationsSection: React.FC<AccommodationsSectionProps> = ({
   };
 
   return (
-    <section id="accommodations" className="py-24 bg-[#F7F3EA] text-[#0F172A] border-b border-stone-200">
+    <section id="accommodations" className="py-12 sm:py-16 md:py-20 bg-[#F7F3EA] text-[#0F172A] border-b border-stone-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12">
+        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
           <div className="text-xs sm:text-sm font-semibold tracking-widest text-[#A77A32] uppercase mb-2">
             Sanctuary Residences
           </div>

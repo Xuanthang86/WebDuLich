@@ -54,7 +54,8 @@ export const AdminEmailJobs: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-[#FDFBF7] border-b border-stone-200 text-slate-400 uppercase text-[10px] tracking-wider font-semibold">
@@ -125,6 +126,53 @@ export const AdminEmailJobs: React.FC = () => {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card Stack */}
+        <div className="md:hidden divide-y divide-stone-100">
+          {loading ? (
+            <div className="p-6 text-center text-xs text-slate-400">Loading email jobs...</div>
+          ) : jobs.length === 0 ? (
+            <div className="p-6 text-center text-xs text-slate-400">No email jobs in outbox.</div>
+          ) : (
+            jobs.map(job => (
+              <div key={job.id} className="p-4 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs font-bold text-slate-600">{job.id}</span>
+                  {job.status === 'SENT' ? (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                      SENT
+                    </span>
+                  ) : job.status === 'QUEUED' ? (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                      QUEUED
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">
+                      FAILED
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs font-semibold text-slate-900">{job.subject}</div>
+                <div className="text-[11px] text-slate-500 font-sans">{job.recipientEmail}</div>
+                <div className="text-[11px] text-slate-400 bg-stone-50 p-2 rounded-lg font-light leading-relaxed">
+                  {job.bodyPreview}
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                  <span>{new Date(job.scheduledAt).toLocaleString()}</span>
+                  {job.status === 'FAILED' && (
+                    <button
+                      onClick={() => handleRetry(job.id)}
+                      disabled={retryingId === job.id}
+                      className="px-3 py-1 rounded-lg bg-[#0F172A] text-white text-[10px] font-bold"
+                    >
+                      {retryingId === job.id ? 'Retrying...' : 'Retry'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

@@ -154,64 +154,117 @@ export const AdminUsers: React.FC = () => {
       )}
 
       <div className="bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden">
-        <table className="w-full text-left border-collapse text-xs sm:text-sm">
-          <thead>
-            <tr className="bg-[#FDFBF7] border-b border-stone-200 text-slate-400 uppercase text-[10px] tracking-wider font-semibold">
-              <th className="py-3.5 px-4">Staff Member</th>
-              <th className="py-3.5 px-4">Role</th>
-              <th className="py-3.5 px-4">Status</th>
-              <th className="py-3.5 px-4">User ID</th>
-              <th className="py-3.5 px-4 text-right">Access Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-stone-100 text-slate-800">
-            {users.map(u => (
-              <tr key={u.id} className="hover:bg-stone-50">
-                <td className="py-3.5 px-4">
-                  <div className="font-bold text-[#0F172A]">{u.fullName}</div>
-                  <div className="text-slate-400 text-xs">{u.email}</div>
-                </td>
-                <td className="py-3.5 px-4">
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                    u.role === 'ADMIN'
-                      ? 'bg-purple-100 text-purple-800'
-                      : u.role === 'MANAGER'
-                      ? 'bg-blue-100 text-blue-800'
-                      : 'bg-stone-100 text-slate-700'
-                  }`}>
-                    {u.role}
-                  </span>
-                </td>
-                <td className="py-3.5 px-4">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs sm:text-sm">
+            <thead>
+              <tr className="bg-[#FDFBF7] border-b border-stone-200 text-slate-400 uppercase text-[10px] tracking-wider font-semibold">
+                <th className="py-3.5 px-4">Staff Member</th>
+                <th className="py-3.5 px-4">Role</th>
+                <th className="py-3.5 px-4">Status</th>
+                <th className="py-3.5 px-4">User ID</th>
+                <th className="py-3.5 px-4 text-right">Access Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-100 text-slate-800">
+              {users.map(u => (
+                <tr key={u.id} className="hover:bg-stone-50">
+                  <td className="py-3.5 px-4">
+                    <div className="font-bold text-[#0F172A]">{u.fullName}</div>
+                    <div className="text-slate-400 text-xs">{u.email}</div>
+                  </td>
+                  <td className="py-3.5 px-4">
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                      u.role === 'ADMIN'
+                        ? 'bg-purple-100 text-purple-800'
+                        : u.role === 'MANAGER'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-stone-100 text-slate-700'
+                    }`}>
+                      {u.role}
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4">
+                    {u.isActive !== false ? (
+                      <span className="inline-flex items-center gap-1 text-emerald-700 text-xs font-semibold">
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        <span>Active</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-rose-600 text-xs font-semibold">
+                        <Ban className="w-3.5 h-3.5" />
+                        <span>Suspended</span>
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3.5 px-4 font-mono text-xs text-slate-400">{u.id}</td>
+                  <td className="py-3.5 px-4 text-right">
+                    <button
+                      onClick={() => handleToggleStatus(u)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${
+                        u.isActive !== false
+                          ? 'border border-stone-200 hover:bg-rose-50 text-rose-600'
+                          : 'border border-emerald-300 hover:bg-emerald-50 text-emerald-700'
+                      }`}
+                    >
+                      {u.isActive !== false ? 'Deactivate' : 'Reactivate'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Card Stack (< 768px) */}
+        <div className="md:hidden divide-y divide-stone-100">
+          {users.map(u => (
+            <div key={u.id} className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-[#0F172A] text-sm">{u.fullName}</div>
+                  <div className="text-slate-500 text-xs">{u.email}</div>
+                </div>
+                <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                  u.role === 'ADMIN'
+                    ? 'bg-purple-100 text-purple-800'
+                    : u.role === 'MANAGER'
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'bg-stone-100 text-slate-700'
+                }`}>
+                  {u.role}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between text-xs pt-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-slate-400 font-mono text-[11px]">{u.id}</span>
+                  <span>•</span>
                   {u.isActive !== false ? (
-                    <span className="inline-flex items-center gap-1 text-emerald-700 text-xs font-semibold">
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      <span>Active</span>
+                    <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" /> Active
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-rose-600 text-xs font-semibold">
-                      <Ban className="w-3.5 h-3.5" />
-                      <span>Suspended</span>
+                    <span className="text-rose-600 font-semibold flex items-center gap-1">
+                      <Ban className="w-3 h-3" /> Suspended
                     </span>
                   )}
-                </td>
-                <td className="py-3.5 px-4 font-mono text-xs text-slate-400">{u.id}</td>
-                <td className="py-3.5 px-4 text-right">
-                  <button
-                    onClick={() => handleToggleStatus(u)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${
-                      u.isActive !== false
-                        ? 'border border-stone-200 hover:bg-rose-50 text-rose-600'
-                        : 'border border-emerald-300 hover:bg-emerald-50 text-emerald-700'
-                    }`}
-                  >
-                    {u.isActive !== false ? 'Deactivate' : 'Reactivate'}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+
+                <button
+                  onClick={() => handleToggleStatus(u)}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer ${
+                    u.isActive !== false
+                      ? 'border border-stone-200 hover:bg-rose-50 text-rose-600'
+                      : 'border border-emerald-300 hover:bg-emerald-50 text-emerald-700'
+                  }`}
+                >
+                  {u.isActive !== false ? 'Deactivate' : 'Reactivate'}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

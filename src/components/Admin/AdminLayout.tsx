@@ -482,8 +482,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
         </div>
       </header>
 
-      {/* Main Layout Container */}
-      <div className="flex-1 flex overflow-hidden relative">
+      {/* Main Layout Container: Vertical on mobile, horizontal with sidebar on desktop */}
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
         {/* Desktop Sidebar (Left) */}
         <aside className="w-64 bg-white border-r border-stone-200 p-4 space-y-1 shrink-0 hidden md:block overflow-y-auto">
           {/* Current User Role Notice Card */}
@@ -630,93 +630,106 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
           </div>
         )}
 
-        {/* Mobile Quick Navigation Bar (Horizontal Scroll with Clean Responsive Tabs) */}
-        <div className="md:hidden w-full bg-white border-b border-stone-200 px-3 py-2 flex items-center gap-1.5 overflow-x-auto shrink-0 shadow-xs">
-          {visibleNavItems.map(item => {
-            const Icon = item.icon;
-            const isActive = activeNav === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setActiveNav(item.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-[#0F172A] text-white shadow-sm'
-                    : 'bg-stone-100 text-slate-700 hover:bg-stone-200'
-                }`}
-              >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#C9A45C]' : 'text-slate-500'}`} />
-                <span>{item.label.split(' ')[0]}</span>
-              </button>
-            );
-          })}
+        {/* Content Column (Mobile Stack + Desktop Full Area) */}
+        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+          {/* Mobile Quick Navigation Bar */}
+          <div className="md:hidden w-full bg-white border-b border-stone-200 px-2 py-1.5 flex items-center gap-1.5 overflow-x-auto shrink-0 shadow-xs">
+            {visibleNavItems.map(item => {
+              const Icon = item.icon;
+              const isActive = activeNav === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setActiveNav(item.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-[#0F172A] text-white shadow-sm ring-1 ring-[#C9A45C]/40'
+                      : 'bg-stone-100 text-slate-700 hover:bg-stone-200'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#C9A45C]' : 'text-slate-500'}`} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Active section breadcrumb on mobile for instant clarity */}
+          <div className="md:hidden bg-[#FDFBF7] px-3.5 py-1.5 border-b border-stone-200 flex items-center justify-between text-[11px] text-slate-500 shrink-0">
+            <span className="font-semibold text-slate-800">
+              Active: <span className="text-[#A77A32]">{visibleNavItems.find(i => i.id === activeNav)?.label}</span>
+            </span>
+            <span className="text-[10px] text-slate-400">
+              Role: <span className="font-mono text-slate-600">{user?.role}</span>
+            </span>
+          </div>
+
+          {/* Main Content Area - Responsive for all viewports (320px -> 1920px) */}
+          <main className="flex-1 p-3 sm:p-6 lg:p-8 overflow-y-auto max-w-7xl w-full mx-auto">
+            {activeNav === 'dashboard' && (
+              <AdminDashboard onNavigateToLeads={() => setActiveNav('leads')} />
+            )}
+            {activeNav === 'leads' && <AdminLeads />}
+            {activeNav === 'content' && <AdminContentCms />}
+            {activeNav === 'forms' && <AdminFormBuilder />}
+            {activeNav === 'emails' && <AdminEmailJobs />}
+            {activeNav === 'media' && <AdminMedia />}
+            {activeNav === 'audit' && <AdminAuditLogs />}
+            {activeNav === 'settings' && <AdminSettings />}
+            {activeNav === 'users' && <AdminUsers />}
+            {activeNav === 'system' && (
+              <div className="space-y-6">
+                <div className="pb-4 border-b border-stone-200">
+                  <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#0F172A]">
+                    System Backup & Factory Reset
+                  </h2>
+                  <p className="text-xs text-slate-500 font-light mt-0.5">
+                    Export transactional state for migration or restore pristine seed data.
+                  </p>
+                </div>
+
+                {systemMsg && (
+                  <div className="p-3.5 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-semibold">
+                    {systemMsg}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="p-6 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-3">
+                    <h3 className="font-serif text-lg font-bold text-[#0F172A]">JSON Database Backup</h3>
+                    <p className="text-xs text-slate-600 leading-relaxed font-light">
+                      Download complete snapshot of site settings, living catalog, and confidential lead records.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleDownloadBackup}
+                      className="px-5 py-2.5 rounded-xl bg-[#0F172A] hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-sm"
+                    >
+                      <Download className="w-4 h-4 text-[#C9A45C]" />
+                      <span>Download JSON Backup</span>
+                    </button>
+                  </div>
+
+                  <div className="p-6 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-3">
+                    <h3 className="font-serif text-lg font-bold text-rose-700">Restore Factory Baseline</h3>
+                    <p className="text-xs text-slate-600 leading-relaxed font-light">
+                      Resets all CMS records and demo leads back to initial factory baseline. Use for demo reviews.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleResetDemo}
+                      className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-sm"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      <span>Reset to Seed State</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </main>
         </div>
-
-        {/* Main Content Area - Responsive for all viewports (320px -> 1920px) */}
-        <main className="flex-1 p-3 sm:p-6 lg:p-8 overflow-y-auto max-w-7xl w-full mx-auto">
-          {activeNav === 'dashboard' && (
-            <AdminDashboard onNavigateToLeads={() => setActiveNav('leads')} />
-          )}
-          {activeNav === 'leads' && <AdminLeads />}
-          {activeNav === 'content' && <AdminContentCms />}
-          {activeNav === 'forms' && <AdminFormBuilder />}
-          {activeNav === 'emails' && <AdminEmailJobs />}
-          {activeNav === 'media' && <AdminMedia />}
-          {activeNav === 'audit' && <AdminAuditLogs />}
-          {activeNav === 'settings' && <AdminSettings />}
-          {activeNav === 'users' && <AdminUsers />}
-          {activeNav === 'system' && (
-            <div className="space-y-6">
-              <div className="pb-4 border-b border-stone-200">
-                <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#0F172A]">
-                  System Backup & Factory Reset
-                </h2>
-                <p className="text-xs text-slate-500 font-light mt-0.5">
-                  Export transactional state for migration or restore pristine seed data.
-                </p>
-              </div>
-
-              {systemMsg && (
-                <div className="p-3.5 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-semibold">
-                  {systemMsg}
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-6 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-3">
-                  <h3 className="font-serif text-lg font-bold text-[#0F172A]">JSON Database Backup</h3>
-                  <p className="text-xs text-slate-600 leading-relaxed font-light">
-                    Download complete snapshot of site settings, living catalog, and confidential lead records.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleDownloadBackup}
-                    className="px-5 py-2.5 rounded-xl bg-[#0F172A] hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-sm"
-                  >
-                    <Download className="w-4 h-4 text-[#C9A45C]" />
-                    <span>Download JSON Backup</span>
-                  </button>
-                </div>
-
-                <div className="p-6 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-3">
-                  <h3 className="font-serif text-lg font-bold text-rose-700">Restore Factory Baseline</h3>
-                  <p className="text-xs text-slate-600 leading-relaxed font-light">
-                    Resets all CMS records and demo leads back to initial factory baseline. Use for demo reviews.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleResetDemo}
-                    className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-sm"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                    <span>Reset to Seed State</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </main>
       </div>
 
       {/* Change Password Modal with Eye Show/Hide Toggle */}

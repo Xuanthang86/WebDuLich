@@ -25,9 +25,9 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ faqs, onOpenQuestionnair
   };
 
   return (
-    <section id="faq" className="py-24 bg-[#F7F3EA] text-[#0F172A] border-b border-stone-200">
+    <section id="faq" className="py-12 sm:py-16 md:py-20 bg-[#F7F3EA] text-[#0F172A] border-b border-stone-200">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-12">
+        <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
           <div className="text-xs sm:text-sm font-semibold tracking-widest text-[#A77A32] uppercase mb-2">
             Clear Answers
           </div>

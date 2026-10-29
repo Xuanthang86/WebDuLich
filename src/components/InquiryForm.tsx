@@ -179,10 +179,10 @@ export const InquiryForm: React.FC<InquiryFormProps> = ({
   }
 
   return (
-    <section id="questionnaire" className="py-24 bg-[#0F172A] text-white relative">
+    <section id="questionnaire" className="py-12 sm:py-16 md:py-20 bg-[#0F172A] text-white relative">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center max-w-2xl mx-auto mb-12">
+        <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
           <div className="text-xs sm:text-sm font-semibold tracking-widest text-[#C9A45C] uppercase mb-2">
             Personalized Concierge Intake
           </div>
@@ -196,7 +196,7 @@ export const InquiryForm: React.FC<InquiryFormProps> = ({
         </div>
 
         {/* Progress Tracker */}
-        <div className="grid grid-cols-4 gap-2 mb-10 max-w-xl mx-auto">
+        <div className="grid grid-cols-4 gap-2 mb-6 sm:mb-8 max-w-xl mx-auto">
           {[
             { num: 1, label: 'Profile' },
             { num: 2, label: 'Stay' },

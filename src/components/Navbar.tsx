@@ -39,15 +39,15 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo & Brand Identity */}
-          <a href="#" className="flex items-center gap-3.5 group text-left">
-            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#C9A45C] to-[#A77A32] flex items-center justify-center text-[#0F172A] shadow-md shadow-[#C9A45C]/20 group-hover:scale-105 transition-transform duration-200">
-              <Compass className="w-6 h-6 stroke-[2.2]" />
+          <a href="#" className="flex items-center gap-2.5 sm:gap-3.5 group text-left min-w-0 mr-2">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-[#C9A45C] to-[#A77A32] flex items-center justify-center text-[#0F172A] shadow-md shadow-[#C9A45C]/20 group-hover:scale-105 transition-transform duration-200 shrink-0">
+              <Compass className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
             </div>
-            <div>
-              <span className="font-brand-display text-lg sm:text-xl font-bold tracking-[0.18em] text-white block uppercase">
+            <div className="min-w-0 overflow-hidden">
+              <span className="font-brand-display text-base sm:text-xl font-bold tracking-[0.14em] sm:tracking-[0.18em] text-white block uppercase truncate">
                 {settings.brandName || "Wanderer's Journeys"}
               </span>
-              <span className="text-[11px] sm:text-xs tracking-wider text-[#C9A45C] font-light block italic">
+              <span className="text-[10px] sm:text-xs tracking-normal sm:tracking-wider text-[#C9A45C] font-light block italic truncate max-w-[170px] xs:max-w-[230px] sm:max-w-none">
                 {settings.slogan || 'Where curiosity leads, possibilities unfold'}
               </span>
             </div>
