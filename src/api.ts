@@ -119,6 +119,14 @@ export async function changePassword(currentPassword: string, newPassword: strin
   return data;
 }
 
+export async function updateUserProfile(fullName: string): Promise<User> {
+  const data = await request<User>('/api/auth/profile', {
+    method: 'PUT',
+    body: JSON.stringify({ fullName }),
+  });
+  return data;
+}
+
 // Admin API
 export async function fetchAdminAnalytics(): Promise<any> {
   return request<any>('/api/admin/analytics');

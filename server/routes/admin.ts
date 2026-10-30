@@ -67,7 +67,7 @@ router.get('/analytics', (_req: Request, res: Response): void => {
 // ==========================================
 // 2. SITE SETTINGS & CONFIG
 // ==========================================
-router.get('/settings', (_req: Request, res: Response): void => {
+router.get('/settings', requireRole(['ADMIN', 'MANAGER']), (_req: Request, res: Response): void => {
   res.json({ success: true, data: db.getState().siteSettings });
 });
 
@@ -96,7 +96,7 @@ router.put('/settings', requireRole(['ADMIN']), (req: Request, res: Response): v
 // ==========================================
 // 3. CONTENT CMS - HERO & SECTIONS
 // ==========================================
-router.get('/hero', (_req: Request, res: Response): void => {
+router.get('/hero', requireRole(['ADMIN', 'MANAGER']), (_req: Request, res: Response): void => {
   res.json({ success: true, data: db.getState().heroContent });
 });
 
@@ -117,7 +117,7 @@ router.put('/hero', requireRole(['ADMIN', 'MANAGER']), (req: Request, res: Respo
   res.json({ success: true, data: current });
 });
 
-router.get('/core-service', (_req: Request, res: Response): void => {
+router.get('/core-service', requireRole(['ADMIN', 'MANAGER']), (_req: Request, res: Response): void => {
   res.json({ success: true, data: db.getState().coreService });
 });
 
@@ -139,7 +139,7 @@ router.put('/core-service', requireRole(['ADMIN', 'MANAGER']), (req: Request, re
 });
 
 // Additional Services
-router.get('/additional-services', (_req: Request, res: Response): void => {
+router.get('/additional-services', requireRole(['ADMIN', 'MANAGER']), (_req: Request, res: Response): void => {
   res.json({ success: true, data: db.getState().additionalServices });
 });
 
@@ -178,7 +178,7 @@ router.put('/additional-services/:id', requireRole(['ADMIN', 'MANAGER']), (req: 
   res.json({ success: true, data: item });
 });
 
-router.delete('/additional-services/:id', requireRole(['ADMIN']), (req: Request, res: Response): void => {
+router.delete('/additional-services/:id', requireRole(['ADMIN', 'MANAGER']), (req: Request, res: Response): void => {
   const { id } = req.params;
   db.getState().additionalServices = db.getState().additionalServices.filter(s => s.id !== id);
   db.save();
@@ -188,7 +188,7 @@ router.delete('/additional-services/:id', requireRole(['ADMIN']), (req: Request,
 // ==========================================
 // 4. PACKAGES CRUD
 // ==========================================
-router.get('/packages', (_req: Request, res: Response): void => {
+router.get('/packages', requireRole(['ADMIN', 'MANAGER']), (_req: Request, res: Response): void => {
   res.json({ success: true, data: db.getState().packages });
 });
 
@@ -267,7 +267,7 @@ router.delete('/packages/:id', requireRole(['ADMIN', 'MANAGER']), (req: Request,
 // ==========================================
 // 5. ACCOMMODATIONS CRUD
 // ==========================================
-router.get('/accommodations', (_req: Request, res: Response): void => {
+router.get('/accommodations', requireRole(['ADMIN', 'MANAGER']), (_req: Request, res: Response): void => {
   res.json({ success: true, data: db.getState().accommodations });
 });
 
@@ -318,7 +318,7 @@ router.delete('/accommodations/:id', requireRole(['ADMIN', 'MANAGER']), (req: Re
 // ==========================================
 // 6. FAQS CRUD
 // ==========================================
-router.get('/faqs', (_req: Request, res: Response): void => {
+router.get('/faqs', requireRole(['ADMIN', 'MANAGER']), (_req: Request, res: Response): void => {
   res.json({ success: true, data: db.getState().faqs });
 });
 
@@ -357,7 +357,7 @@ router.delete('/faqs/:id', requireRole(['ADMIN', 'MANAGER']), (req: Request, res
 // ==========================================
 // 7. DYNAMIC FORM BUILDER
 // ==========================================
-router.get('/form-fields', (_req: Request, res: Response): void => {
+router.get('/form-fields', requireRole(['ADMIN', 'MANAGER']), (_req: Request, res: Response): void => {
   res.json({ success: true, data: db.getFormFields() });
 });
 
@@ -401,7 +401,7 @@ router.post('/form-fields/reorder', requireRole(['ADMIN', 'MANAGER']), (req: Req
 // ==========================================
 // 8. LEADS & INQUIRY MANAGEMENT
 // ==========================================
-router.get('/leads', (req: Request, res: Response): void => {
+router.get('/leads', requireRole(['ADMIN', 'LEAD_MANAGER']), (req: Request, res: Response): void => {
   const { status, city, packageCode, search, priority } = req.query;
   let leads = db.getLeads();
 
@@ -437,7 +437,7 @@ router.get('/leads', (req: Request, res: Response): void => {
   });
 });
 
-router.get('/leads/:id', (req: Request, res: Response): void => {
+router.get('/leads/:id', requireRole(['ADMIN', 'LEAD_MANAGER']), (req: Request, res: Response): void => {
   const { id } = req.params;
   const lead = db.getLeadById(id);
   if (!lead) {
@@ -458,7 +458,7 @@ router.get('/leads/:id', (req: Request, res: Response): void => {
   });
 });
 
-router.put('/leads/:id/status', (req: Request, res: Response): void => {
+router.put('/leads/:id/status', requireRole(['ADMIN', 'LEAD_MANAGER']), (req: Request, res: Response): void => {
   const { id } = req.params;
   const { status, note, priority } = req.body;
 
@@ -491,7 +491,7 @@ router.put('/leads/:id/status', (req: Request, res: Response): void => {
   res.json({ success: true, data: lead });
 });
 
-router.post('/leads/:id/notes', (req: Request, res: Response): void => {
+router.post('/leads/:id/notes', requireRole(['ADMIN', 'LEAD_MANAGER']), (req: Request, res: Response): void => {
   const { id } = req.params;
   const { content } = req.body;
 
@@ -514,7 +514,7 @@ router.post('/leads/:id/notes', (req: Request, res: Response): void => {
   res.json({ success: true, data: note });
 });
 
-router.put('/leads/:id/assign', (req: Request, res: Response): void => {
+router.put('/leads/:id/assign', requireRole(['ADMIN', 'LEAD_MANAGER']), (req: Request, res: Response): void => {
   const { id } = req.params;
   const { userId } = req.body;
 
@@ -543,7 +543,7 @@ router.put('/leads/:id/assign', (req: Request, res: Response): void => {
 // ==========================================
 // 9. EXPORTS (CSV & Excel)
 // ==========================================
-router.get('/export/csv', (req: Request, res: Response): void => {
+router.get('/export/csv', requireRole(['ADMIN', 'LEAD_MANAGER']), (req: Request, res: Response): void => {
   const leads = db.getLeads();
   const csvData = ExportService.generateLeadsCsv(leads);
 
@@ -561,7 +561,7 @@ router.get('/export/csv', (req: Request, res: Response): void => {
   res.send(csvData);
 });
 
-router.get('/export/excel', (req: Request, res: Response): void => {
+router.get('/export/excel', requireRole(['ADMIN', 'LEAD_MANAGER']), (req: Request, res: Response): void => {
   const leads = db.getLeads();
   const xmlData = ExportService.generateLeadsExcelXml(leads);
 
@@ -582,11 +582,11 @@ router.get('/export/excel', (req: Request, res: Response): void => {
 // ==========================================
 // 10. EMAIL JOBS OUTBOX
 // ==========================================
-router.get('/email-jobs', (_req: Request, res: Response): void => {
+router.get('/email-jobs', requireRole(['ADMIN']), (_req: Request, res: Response): void => {
   res.json({ success: true, data: db.getState().emailJobs });
 });
 
-router.post('/email-jobs/:id/retry', async (req: Request, res: Response): Promise<void> => {
+router.post('/email-jobs/:id/retry', requireRole(['ADMIN']), async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
   const success = await EmailService.retryJob(id);
   res.json({ success, message: success ? 'Email retry sent.' : 'Email retry failed.' });
@@ -595,14 +595,14 @@ router.post('/email-jobs/:id/retry', async (req: Request, res: Response): Promis
 // ==========================================
 // 11. AUDIT LOGS
 // ==========================================
-router.get('/audit-logs', (_req: Request, res: Response): void => {
+router.get('/audit-logs', requireRole(['ADMIN']), (_req: Request, res: Response): void => {
   res.json({ success: true, data: db.getState().auditLogs.slice(0, 100) });
 });
 
 // ==========================================
 // 12. MEDIA ASSETS
 // ==========================================
-router.get('/media', (_req: Request, res: Response): void => {
+router.get('/media', requireRole(['ADMIN', 'MANAGER']), (_req: Request, res: Response): void => {
   res.json({ success: true, data: db.getState().mediaAssets });
 });
 

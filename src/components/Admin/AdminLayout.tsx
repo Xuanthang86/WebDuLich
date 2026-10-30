@@ -24,6 +24,8 @@ import {
   Shield,
   Lock,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { AdminDashboard } from './AdminDashboard';
@@ -35,7 +37,7 @@ import { AdminAuditLogs } from './AdminAuditLogs';
 import { AdminSettings } from './AdminSettings';
 import { AdminUsers } from './AdminUsers';
 import { AdminMedia } from './AdminMedia';
-import { changePassword, resetDemoData, getAuthToken } from '../../api';
+import { changePassword, updateUserProfile, resetDemoData, getAuthToken } from '../../api';
 
 interface AdminLayoutProps {
   onBackToWebsite: () => void;
@@ -54,71 +56,49 @@ type NavSection =
   | 'system';
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => {
-  const { user, login, logout, fastLoginAs, loading } = useAuth();
+  const { user, login, logout, loading, updateUserInContext } = useAuth();
   const [activeNav, setActiveNav] = useState<NavSection>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Login form state
-  const [emailInput, setEmailInput] = useState('admin@wanderersjourneys.com');
-  const [passwordInput, setPasswordInput] = useState('Admin2026!WJ');
+  // Login form state - clean, secure initial values
+  const [emailInput, setEmailInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isSubmittingLogin, setIsSubmittingLogin] = useState(false);
 
-  // Change Password Modal
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  // Account Profile & Settings Modal
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileFullName, setProfileFullName] = useState('');
+  const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+
+  // Collapsible Change Password Section
+  const [isPasswordAccordionOpen, setIsPasswordAccordionOpen] = useState(false);
   const [currPass, setCurrPass] = useState('');
   const [newPass, setNewPass] = useState('');
+  const [confirmPass, setConfirmPass] = useState('');
   const [showCurrPass, setShowCurrPass] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [passMsg, setPassMsg] = useState<string | null>(null);
   const [passError, setPassError] = useState<string | null>(null);
   const [isChangingPass, setIsChangingPass] = useState(false);
 
+  // Synchronize profile name with user state when opened
+  React.useEffect(() => {
+    if (user?.fullName) {
+      setProfileFullName(user.fullName);
+    }
+  }, [user]);
+
   // System Tool status
   const [systemMsg, setSystemMsg] = useState<string | null>(null);
-
-  // Role accounts directory for transparent switching
-  const roleAccounts = [
-    {
-      role: 'ADMIN' as const,
-      title: 'Super Administrator',
-      name: 'Alexander Vance',
-      email: 'admin@wanderersjourneys.com',
-      password: 'Admin2026!WJ',
-      badgeClass: 'bg-purple-100 text-purple-900 border-purple-300',
-      description: 'Full system control, staff provisioning, system reset & all CMS modules.',
-    },
-    {
-      role: 'MANAGER' as const,
-      title: 'Content & Operations Manager',
-      name: 'Mai Nguyen',
-      email: 'manager@wanderersjourneys.com',
-      password: 'Manager2026!WJ',
-      badgeClass: 'bg-blue-100 text-blue-900 border-blue-300',
-      description: 'CMS Catalog (Packages, Residences, FAQs), Form Builder & Lead management.',
-    },
-    {
-      role: 'LEAD_MANAGER' as const,
-      title: 'Concierge Lead Specialist',
-      name: 'David Sterling',
-      email: 'concierge@wanderersjourneys.com',
-      password: 'Lead2026!WJ',
-      badgeClass: 'bg-amber-100 text-amber-900 border-amber-300',
-      description: 'Guest proposal intake, status progression, internal notes & exports only.',
-    },
-  ];
-
-  const handleSelectRoleAccount = (account: (typeof roleAccounts)[0]) => {
-    setEmailInput(account.email);
-    setPasswordInput(account.password);
-    setLoginError(null);
-  };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!emailInput.trim() || !passwordInput) {
-      setLoginError('Please enter both email and password.');
+      setLoginError('Vui lòng nhập đầy đủ email và mật khẩu.');
       return;
     }
     setLoginError(null);
@@ -126,19 +106,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
     try {
       await login(emailInput.trim(), passwordInput);
     } catch (err: any) {
-      setLoginError(err.message || 'Invalid email or password.');
-    } finally {
-      setIsSubmittingLogin(false);
-    }
-  };
-
-  const handleFastLogin = async (role: 'ADMIN' | 'MANAGER' | 'LEAD_MANAGER') => {
-    setLoginError(null);
-    setIsSubmittingLogin(true);
-    try {
-      await fastLoginAs(role);
-    } catch (err: any) {
-      setLoginError(err.message || 'Login failed for this role account.');
+      setLoginError(err.message || 'Email hoặc mật khẩu không chính xác.');
     } finally {
       setIsSubmittingLogin(false);
     }
@@ -154,27 +122,55 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
     }
   };
 
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profileFullName.trim()) {
+      setProfileMsg({ type: 'error', text: 'Họ và tên không được để trống.' });
+      return;
+    }
+    setIsUpdatingProfile(true);
+    setProfileMsg(null);
+    try {
+      const updated = await updateUserProfile(profileFullName.trim());
+      updateUserInContext({ fullName: updated.fullName });
+      setProfileMsg({ type: 'success', text: 'Thông tin tài khoản đã được cập nhật thành công.' });
+      setTimeout(() => setProfileMsg(null), 3000);
+    } catch (err: any) {
+      setProfileMsg({ type: 'error', text: err.message || 'Cập nhật thông tin thất bại.' });
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPassMsg(null);
     setPassError(null);
-    if (!currPass || !newPass) {
-      setPassError('Please fill in both fields.');
+    if (!currPass || !newPass || !confirmPass) {
+      setPassError('Vui lòng điền đầy đủ cả 3 ô mật khẩu.');
       return;
     }
     if (newPass.length < 8) {
-      setPassError('New password must be at least 8 characters long.');
+      setPassError('Mật khẩu mới phải có tối thiểu 8 ký tự.');
+      return;
+    }
+    if (newPass !== confirmPass) {
+      setPassError('Xác nhận mật khẩu mới không khớp. Vui lòng kiểm tra lại.');
       return;
     }
     setIsChangingPass(true);
     try {
       await changePassword(currPass, newPass);
-      setPassMsg('Password changed successfully. Other active sessions were revoked.');
+      setPassMsg('Đã đổi mật khẩu thành công. Các phiên đăng nhập trên thiết bị khác đã được thu hồi.');
       setCurrPass('');
       setNewPass('');
-      setTimeout(() => setShowPasswordModal(false), 2000);
+      setConfirmPass('');
+      setTimeout(() => {
+        setIsPasswordAccordionOpen(false);
+        setPassMsg(null);
+      }, 2500);
     } catch (err: any) {
-      setPassError(err.message || 'Failed to update password. Verify current password.');
+      setPassError(err.message || 'Không thể đổi mật khẩu. Vui lòng kiểm tra lại mật khẩu hiện tại.');
     } finally {
       setIsChangingPass(false);
     }
@@ -192,9 +188,27 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
     }
   };
 
-  const handleDownloadBackup = () => {
-    const token = getAuthToken();
-    window.open(`/api/admin/system/backup?token=${token || ''}`, '_blank');
+  const handleDownloadBackup = async () => {
+    try {
+      const token = getAuthToken();
+      const res = await fetch('/api/admin/system/backup', {
+        headers: {
+          Authorization: `Bearer ${token || ''}`,
+        },
+      });
+      if (!res.ok) throw new Error('Không thể tải bản sao lưu. Vui lòng kiểm tra quyền quản trị.');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `wanderers_backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err: any) {
+      alert(err.message || 'Lỗi tải bản sao lưu');
+    }
   };
 
   // Determine allowed navigation items for the current user's role
@@ -258,56 +272,17 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
 
         <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-xl">
           <div className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl">
-            {/* Role Accounts Selector - Clarifies 3 Distinct Permissions */}
+            {/* Authorized Staff Login Information */}
             <div className="mb-6 p-4 rounded-2xl bg-slate-800/80 border border-slate-700/80">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#C9A45C]">
-                  Role-Based Access Control (Select Account):
+              <div className="flex items-center gap-2 mb-1.5">
+                <Shield className="w-4 h-4 text-[#C9A45C]" />
+                <span className="text-xs font-bold text-[#C9A45C] uppercase tracking-wider">
+                  Staff Authentication Portal
                 </span>
-                <span className="text-[10px] text-slate-400">3 Distinct Roles</span>
               </div>
-
-              <div className="space-y-2 mt-2">
-                {roleAccounts.map(acc => {
-                  const isSelected = emailInput === acc.email;
-                  return (
-                    <div
-                      key={acc.role}
-                      onClick={() => handleSelectRoleAccount(acc)}
-                      className={`p-3 rounded-xl border text-left cursor-pointer transition-all flex items-start justify-between gap-3 ${
-                        isSelected
-                          ? 'bg-[#C9A45C]/15 border-[#C9A45C] ring-1 ring-[#C9A45C]'
-                          : 'bg-slate-800/90 border-slate-700 hover:border-slate-500 hover:bg-slate-750'
-                      }`}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className="font-bold text-xs text-white truncate">{acc.name}</span>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${acc.badgeClass}`}>
-                            {acc.title}
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-slate-400 font-mono truncate">{acc.email}</div>
-                        <div className="text-[10px] text-slate-300 font-light mt-1 leading-tight">
-                          {acc.description}
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={e => {
-                          e.stopPropagation();
-                          handleFastLogin(acc.role);
-                        }}
-                        disabled={isSubmittingLogin}
-                        className="px-2.5 py-1.5 rounded-lg bg-[#C9A45C] hover:bg-[#d8b368] text-[#0F172A] text-[11px] font-bold shrink-0 self-center transition-colors cursor-pointer shadow-sm disabled:opacity-50"
-                      >
-                        {isSubmittingLogin && isSelected ? 'Signing in...' : 'Sign In'}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+              <p className="text-xs text-slate-300 font-light leading-relaxed">
+                Please enter your registered staff credentials. The system automatically assigns permissions based on your authorized role (Administrator, Content Manager, or Concierge Lead Specialist).
+              </p>
             </div>
 
             {loginError && (
@@ -448,36 +423,19 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        {/* Action Controls in Header (Return & Logout moved to Navigation Menu as requested) */}
+        <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
-            onClick={() => setShowPasswordModal(true)}
-            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-            title="Change Account Password"
+            onClick={() => {
+              setProfileFullName(user?.fullName || '');
+              setShowProfileModal(true);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 hover:border-[#C9A45C] bg-slate-800/80 hover:bg-slate-750 text-xs text-slate-200 transition-colors cursor-pointer"
+            title="Xem và chỉnh sửa thông tin tài khoản"
           >
-            <KeyRound className="w-3.5 h-3.5 text-[#C9A45C]" />
-            <span>Password</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onBackToWebsite}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-slate-700 hover:border-[#C9A45C] bg-slate-800 hover:bg-slate-750 text-xs text-slate-200 transition-all cursor-pointer"
-            title="Return to Public Website"
-          >
-            <ArrowLeft className="w-3.5 h-3.5 text-[#C9A45C]" />
-            <span className="hidden sm:inline">Visitor Site</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-rose-950/80 hover:bg-rose-900 border border-rose-800 text-xs text-rose-200 transition-colors cursor-pointer font-medium"
-            title="Sign out of Management Portal"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Logout</span>
+            <UserCheck className="w-3.5 h-3.5 text-[#C9A45C]" />
+            <span className="hidden sm:inline">Thông tin tài khoản</span>
           </button>
         </div>
       </header>
@@ -530,6 +488,39 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
                 </div>
               );
             })}
+          </div>
+
+          {/* Desktop Sidebar Bottom Controls */}
+          <div className="pt-4 mt-6 border-t border-stone-200 space-y-2">
+            <button
+              type="button"
+              onClick={onBackToWebsite}
+              className="w-full py-2 px-3 rounded-xl border border-stone-200 hover:border-[#C9A45C] text-xs font-semibold text-slate-700 hover:text-[#0F172A] hover:bg-stone-50 flex items-center gap-2 cursor-pointer transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-[#C9A45C]" />
+              <span>Quay về trang chủ</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setProfileFullName(user?.fullName || '');
+                setShowProfileModal(true);
+              }}
+              className="w-full py-2 px-3 rounded-xl border border-stone-200 hover:border-[#C9A45C] text-xs font-semibold text-slate-700 hover:text-[#0F172A] hover:bg-stone-50 flex items-center gap-2 cursor-pointer transition-colors"
+            >
+              <UserCheck className="w-3.5 h-3.5 text-[#A77A32]" />
+              <span>Thông tin tài khoản</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Đăng xuất</span>
+            </button>
           </div>
         </aside>
 
@@ -604,26 +595,39 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
               </div>
 
               {/* Bottom Quick Controls in Mobile Drawer */}
-              <div className="p-4 border-t border-stone-200 bg-[#FDFBF7] space-y-2">
+              <div className="p-4 border-t border-stone-200 bg-[#FDFBF7] space-y-2.5">
                 <button
                   type="button"
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    setShowPasswordModal(true);
+                    onBackToWebsite();
                   }}
-                  className="w-full py-2.5 rounded-xl border border-stone-300 text-xs font-semibold text-slate-700 flex items-center justify-center gap-2"
+                  className="w-full py-2.5 rounded-xl border-2 border-slate-300 hover:border-[#C9A45C] bg-white text-xs font-bold text-slate-800 flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                 >
-                  <KeyRound className="w-4 h-4 text-[#A77A32]" />
-                  <span>Change Password</span>
+                  <ArrowLeft className="w-4 h-4 text-[#C9A45C]" />
+                  <span>Quay về trang chủ</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setProfileFullName(user?.fullName || '');
+                    setShowProfileModal(true);
+                  }}
+                  className="w-full py-2.5 rounded-xl border border-stone-300 bg-white text-xs font-bold text-slate-800 flex items-center justify-center gap-2 cursor-pointer hover:bg-stone-50"
+                >
+                  <UserCheck className="w-4 h-4 text-[#A77A32]" />
+                  <span>Thông tin tài khoản</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center justify-center gap-2"
+                  className="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span>Logout</span>
+                  <span>Đăng xuất</span>
                 </button>
               </div>
             </div>
@@ -632,36 +636,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
 
         {/* Content Column (Mobile Stack + Desktop Full Area) */}
         <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-          {/* Mobile Quick Navigation Bar */}
-          <div className="md:hidden w-full bg-white border-b border-stone-200 px-2 py-1.5 flex items-center gap-1.5 overflow-x-auto shrink-0 shadow-xs">
-            {visibleNavItems.map(item => {
-              const Icon = item.icon;
-              const isActive = activeNav === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setActiveNav(item.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-[#0F172A] text-white shadow-sm ring-1 ring-[#C9A45C]/40'
-                      : 'bg-stone-100 text-slate-700 hover:bg-stone-200'
-                  }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#C9A45C]' : 'text-slate-500'}`} />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
           {/* Active section breadcrumb on mobile for instant clarity */}
-          <div className="md:hidden bg-[#FDFBF7] px-3.5 py-1.5 border-b border-stone-200 flex items-center justify-between text-[11px] text-slate-500 shrink-0">
+          <div className="md:hidden bg-[#FDFBF7] px-3.5 py-2 border-b border-stone-200 flex items-center justify-between text-[11px] text-slate-600 shrink-0">
             <span className="font-semibold text-slate-800">
-              Active: <span className="text-[#A77A32]">{visibleNavItems.find(i => i.id === activeNav)?.label}</span>
+              Mục đang mở: <span className="text-[#A77A32]">{visibleNavItems.find(i => i.id === activeNav)?.label}</span>
             </span>
-            <span className="text-[10px] text-slate-400">
-              Role: <span className="font-mono text-slate-600">{user?.role}</span>
+            <span className="text-[10px] text-slate-500">
+              Quyền: <span className="font-mono text-slate-700 font-bold">{user?.role}</span>
             </span>
           </div>
 
@@ -732,97 +713,242 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToWebsite }) => 
         </div>
       </div>
 
-      {/* Change Password Modal with Eye Show/Hide Toggle */}
-      {showPasswordModal && (
+      {/* Account Profile & Password Modal */}
+      {showProfileModal && (
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
         >
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-stone-200">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-serif text-xl font-bold text-[#0F172A]">Change Password</h3>
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-stone-200 max-h-[90vh] overflow-y-auto space-y-5">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-stone-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#C9A45C] to-[#A77A32] flex items-center justify-center text-[#0F172A] shadow-xs">
+                  <UserCheck className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-lg sm:text-xl font-bold text-[#0F172A]">
+                    Thông tin tài khoản
+                  </h3>
+                  <p className="text-xs text-slate-500 font-light">
+                    Quản lý thông tin định danh và bảo mật tài khoản quản trị
+                  </p>
+                </div>
+              </div>
               <button
                 type="button"
-                onClick={() => setShowPasswordModal(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600"
+                onClick={() => {
+                  setShowProfileModal(false);
+                  setIsPasswordAccordionOpen(false);
+                  setProfileMsg(null);
+                  setPassMsg(null);
+                  setPassError(null);
+                }}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-stone-100"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-xs text-slate-500 mb-4 font-light">
-              Updating your credentials will revoke all other active sessions across devices.
-            </p>
 
-            {passMsg && (
-              <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-800">
-                {passMsg}
+            {/* Profile Alert Message */}
+            {profileMsg && (
+              <div
+                className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                  profileMsg.type === 'success'
+                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                    : 'bg-rose-50 text-rose-800 border border-rose-200'
+                }`}
+              >
+                {profileMsg.type === 'success' ? <CheckCircle className="w-4 h-4 shrink-0 text-emerald-600" /> : <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />}
+                <span>{profileMsg.text}</span>
               </div>
             )}
-            {passError && (
-              <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-medium text-red-700">
-                {passError}
-              </div>
-            )}
 
-            <form onSubmit={handleChangePassword} className="space-y-4 text-xs">
+            {/* 1. Account Profile View & Edit */}
+            <form onSubmit={handleUpdateProfile} className="space-y-4 text-xs">
               <div>
-                <label className="font-semibold block mb-1 text-slate-700">Current Password</label>
-                <div className="relative">
+                <label className="font-bold block mb-1 text-slate-700">Họ và tên hiển thị</label>
+                <input
+                  type="text"
+                  required
+                  value={profileFullName}
+                  onChange={e => setProfileFullName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-white font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#C9A45C]"
+                  placeholder="Nhập họ và tên..."
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1 text-slate-500">Email tài khoản</label>
                   <input
-                    type={showCurrPass ? 'text' : 'password'}
-                    required
-                    value={currPass}
-                    onChange={e => setCurrPass(e.target.value)}
-                    className="w-full pl-3 pr-10 py-2.5 rounded-lg border border-stone-300 bg-white"
+                    type="email"
+                    disabled
+                    value={user?.email || ''}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 bg-stone-100 text-slate-600 font-mono cursor-not-allowed text-[11px]"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowCurrPass(!showCurrPass)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
-                  >
-                    {showCurrPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1 text-slate-500">Mã định danh (ID)</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={user?.id || ''}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 bg-stone-100 text-slate-600 font-mono cursor-not-allowed text-[11px]"
+                  />
                 </div>
               </div>
 
-              <div>
-                <label className="font-semibold block mb-1 text-slate-700">New Password (Min 8 chars)</label>
-                <div className="relative">
-                  <input
-                    type={showNewPass ? 'text' : 'password'}
-                    required
-                    value={newPass}
-                    onChange={e => setNewPass(e.target.value)}
-                    className="w-full pl-3 pr-10 py-2.5 rounded-lg border border-stone-300 bg-white"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPass(!showNewPass)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
-                  >
-                    {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-[#FDFBF7] border border-stone-200">
+                <div>
+                  <span className="text-[11px] font-bold text-slate-500 block">Cấp bậc & Phân quyền:</span>
+                  <span className="font-bold text-slate-800 text-xs">{user?.role}</span>
                 </div>
+                {getRoleBadge()}
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowPasswordModal(false)}
-                  className="px-4 py-2 rounded-lg border border-stone-300 text-xs cursor-pointer text-slate-700"
-                >
-                  Cancel
-                </button>
+              <div className="flex justify-end pt-1">
                 <button
                   type="submit"
-                  disabled={isChangingPass}
-                  className="px-5 py-2 rounded-lg bg-[#0F172A] text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
+                  disabled={isUpdatingProfile}
+                  className="px-5 py-2.5 rounded-xl bg-[#0F172A] hover:bg-slate-800 text-white font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
                 >
-                  {isChangingPass ? 'Updating...' : 'Update & Revoke Other Sessions'}
+                  {isUpdatingProfile ? 'Đang lưu...' : 'Lưu thay đổi thông tin'}
                 </button>
               </div>
             </form>
+
+            {/* 2. Collapsible Accordion for Change Password */}
+            <div className="border border-stone-200 rounded-2xl overflow-hidden bg-white">
+              <button
+                type="button"
+                onClick={() => setIsPasswordAccordionOpen(!isPasswordAccordionOpen)}
+                className="w-full px-4 py-3.5 flex items-center justify-between text-left bg-stone-50 hover:bg-stone-100 transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <KeyRound className="w-4 h-4 text-[#A77A32]" />
+                  <span className="text-xs font-bold text-[#0F172A]">
+                    Đổi mật khẩu tài khoản (Change Password)
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <span className="text-[11px] font-medium hidden sm:inline">
+                    {isPasswordAccordionOpen ? 'Thu gọn' : 'Mở rộng'}
+                  </span>
+                  {isPasswordAccordionOpen ? (
+                    <ChevronUp className="w-4 h-4 text-slate-600" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-slate-600" />
+                  )}
+                </div>
+              </button>
+
+              {isPasswordAccordionOpen && (
+                <div className="p-4 sm:p-5 border-t border-stone-200 space-y-4 animate-in fade-in duration-150">
+                  <p className="text-[11px] text-slate-500 font-light">
+                    Để đảm bảo an toàn, sau khi đổi mật khẩu thành công, tất cả phiên làm việc khác trên các thiết bị sẽ tự động đăng xuất.
+                  </p>
+
+                  {passMsg && (
+                    <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-800 flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>{passMsg}</span>
+                    </div>
+                  )}
+                  {passError && (
+                    <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-medium text-red-700 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                      <span>{passError}</span>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleChangePassword} className="space-y-3.5 text-xs">
+                    <div>
+                      <label className="font-semibold block mb-1 text-slate-700">Mật khẩu hiện tại</label>
+                      <div className="relative">
+                        <input
+                          type={showCurrPass ? 'text' : 'password'}
+                          required
+                          value={currPass}
+                          onChange={e => setCurrPass(e.target.value)}
+                          placeholder="Nhập mật khẩu hiện tại..."
+                          className="w-full pl-3 pr-10 py-2.5 rounded-xl border border-stone-300 bg-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowCurrPass(!showCurrPass)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer p-1"
+                        >
+                          {showCurrPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="font-semibold block mb-1 text-slate-700">Mật khẩu mới (Tối thiểu 8 ký tự)</label>
+                      <div className="relative">
+                        <input
+                          type={showNewPass ? 'text' : 'password'}
+                          required
+                          minLength={8}
+                          value={newPass}
+                          onChange={e => setNewPass(e.target.value)}
+                          placeholder="Nhập mật khẩu mới..."
+                          className="w-full pl-3 pr-10 py-2.5 rounded-xl border border-stone-300 bg-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPass(!showNewPass)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer p-1"
+                        >
+                          {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="font-semibold block mb-1 text-slate-700">Xác nhận mật khẩu mới</label>
+                      <div className="relative">
+                        <input
+                          type={showConfirmPass ? 'text' : 'password'}
+                          required
+                          minLength={8}
+                          value={confirmPass}
+                          onChange={e => setConfirmPass(e.target.value)}
+                          placeholder="Nhập lại mật khẩu mới để xác nhận..."
+                          className="w-full pl-3 pr-10 py-2.5 rounded-xl border border-stone-300 bg-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPass(!showConfirmPass)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer p-1"
+                        >
+                          {showConfirmPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2 border-t border-stone-100">
+                      <button
+                        type="button"
+                        onClick={() => setIsPasswordAccordionOpen(false)}
+                        className="px-4 py-2 rounded-xl border border-stone-300 text-xs font-semibold text-slate-600 hover:bg-stone-50 cursor-pointer"
+                      >
+                        Đóng
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isChangingPass}
+                        className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#C9A45C] to-[#A77A32] text-[#0F172A] text-xs font-bold hover:from-[#d8b368] hover:to-[#b8893d] cursor-pointer shadow-sm disabled:opacity-50"
+                      >
+                        {isChangingPass ? 'Đang cập nhật...' : 'Cập nhật mật khẩu mới'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

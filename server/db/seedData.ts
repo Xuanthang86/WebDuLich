@@ -1,10 +1,30 @@
 import { DatabaseState } from './schema';
 import crypto from 'crypto';
 
-// Secure helper to hash passwords with salt
-export function hashPassword(password: string): string {
-  const salt = 'wj_secure_salt_2026_vn';
-  return crypto.createHmac('sha256', salt).update(password).digest('hex');
+// Secure helper to hash passwords using per-user random salted scrypt
+export function hashPassword(password: string, customSalt?: string): string {
+  const salt = customSalt || crypto.randomBytes(16).toString('hex');
+  const derivedKey = crypto.scryptSync(password, salt, 64);
+  return `scrypt:${salt}:${derivedKey.toString('hex')}`;
+}
+
+export function verifyPassword(password: string, storedHash: string): boolean {
+  if (!storedHash) return false;
+  if (storedHash.startsWith('scrypt:')) {
+    const parts = storedHash.split(':');
+    if (parts.length !== 3) return false;
+    const [, salt, key] = parts;
+    const derived = crypto.scryptSync(password, salt, 64).toString('hex');
+    try {
+      return crypto.timingSafeEqual(Buffer.from(derived, 'hex'), Buffer.from(key, 'hex'));
+    } catch {
+      return false;
+    }
+  }
+  // Backward compatibility with legacy HMAC-SHA256 for smooth migration
+  const legacySalt = 'wj_secure_salt_2026_vn';
+  const legacyHash = crypto.createHmac('sha256', legacySalt).update(password).digest('hex');
+  return legacyHash === storedHash;
 }
 
 export const INITIAL_DATABASE_STATE: DatabaseState = {

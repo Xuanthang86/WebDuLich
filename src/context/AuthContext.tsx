@@ -7,7 +7,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, pass: string) => Promise<void>;
   logout: () => Promise<void>;
-  fastLoginAs: (role: 'ADMIN' | 'MANAGER' | 'LEAD_MANAGER') => Promise<void>;
+  updateUserInContext: (updated: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -52,18 +52,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const fastLoginAs = async (role: 'ADMIN' | 'MANAGER' | 'LEAD_MANAGER') => {
-    if (role === 'ADMIN') {
-      await login('admin@wanderersjourneys.com', 'Admin2026!WJ');
-    } else if (role === 'MANAGER') {
-      await login('manager@wanderersjourneys.com', 'Manager2026!WJ');
-    } else {
-      await login('concierge@wanderersjourneys.com', 'Lead2026!WJ');
-    }
+  const updateUserInContext = (updated: Partial<User>) => {
+    setUser(prev => (prev ? { ...prev, ...updated } : null));
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, fastLoginAs }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUserInContext }}>
       {children}
     </AuthContext.Provider>
   );

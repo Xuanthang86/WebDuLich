@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
 import { db } from '../db/store';
-import { hashPassword } from '../db/seedData';
+import { hashPassword, verifyPassword } from '../db/seedData';
 import { authenticate, requireRole } from '../middleware/auth';
 import { CONFIG } from '../config';
 
@@ -37,8 +37,8 @@ router.post('/login', (req: Request, res: Response): void => {
     return;
   }
 
-  const hashedPassword = hashPassword(password);
-  if (user.passwordHash !== hashedPassword) {
+  const isMatch = verifyPassword(password, user.passwordHash);
+  if (!isMatch) {
     db.addAuditLog({
       userId: user.id,
       userEmail: user.email,
@@ -53,6 +53,12 @@ router.post('/login', (req: Request, res: Response): void => {
       error: { code: 'INVALID_CREDENTIALS', message: 'Invalid email or password.' },
     });
     return;
+  }
+
+  // Seamlessly upgrade legacy hash to salted scrypt
+  if (!user.passwordHash.startsWith('scrypt:')) {
+    user.passwordHash = hashPassword(password);
+    db.save();
   }
 
   // Create session
@@ -110,6 +116,42 @@ router.get('/me', authenticate, (req: Request, res: Response): void => {
   });
 });
 
+// Update Profile (authenticated)
+router.put('/profile', authenticate, (req: Request, res: Response): void => {
+  const { fullName } = req.body;
+  if (!fullName || typeof fullName !== 'string' || !fullName.trim()) {
+    res.status(400).json({ success: false, error: { message: 'Full name is required.' } });
+    return;
+  }
+  const updated = db.updateUser(req.user!.id, {
+    fullName: fullName.trim(),
+    updatedAt: new Date().toISOString(),
+  });
+  if (!updated) {
+    res.status(404).json({ success: false, error: { message: 'User not found.' } });
+    return;
+  }
+  db.addAuditLog({
+    userId: req.user!.id,
+    userEmail: req.user!.email,
+    action: 'PROFILE_UPDATED',
+    entityType: 'USER',
+    entityId: req.user!.id,
+    details: `User updated profile name to "${fullName.trim()}".`,
+    ipAddress: req.ip || (req.headers['x-forwarded-for'] as string),
+  });
+  res.json({
+    success: true,
+    message: 'Profile updated successfully.',
+    data: {
+      id: updated.id,
+      email: updated.email,
+      fullName: updated.fullName,
+      role: updated.role,
+    },
+  });
+});
+
 // Logout (resilient: always succeeds even if session already expired/revoked)
 router.post('/logout', (req: Request, res: Response): void => {
   const authHeader = req.headers.authorization;
@@ -145,8 +187,8 @@ router.post('/change-password', authenticate, (req: Request, res: Response): voi
     return;
   }
 
-  const currentHashed = hashPassword(currentPassword);
-  if (req.user!.passwordHash !== currentHashed) {
+  const isMatch = verifyPassword(currentPassword, req.user!.passwordHash);
+  if (!isMatch) {
     res.status(400).json({
       success: false,
       error: { code: 'INCORRECT_CURRENT_PASSWORD', message: 'Current password does not match.' },

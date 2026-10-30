@@ -68,16 +68,18 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ faqs, onOpenQuestionnair
               >
                 <button
                   onClick={() => toggle(faq.id)}
-                  className="w-full px-6 py-5 text-left flex items-center justify-between gap-4 cursor-pointer hover:bg-stone-50/50 transition-colors"
+                  className="w-full px-6 py-5 text-left flex items-start justify-between gap-4 cursor-pointer hover:bg-stone-50/50 transition-colors"
                   aria-expanded={isOpen}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-stone-100 text-[#A77A32] shrink-0">
-                      {faq.category}
-                    </span>
-                    <span className="font-serif font-bold text-base sm:text-lg text-[#0F172A]">
+                  <div className="flex-1 pr-2">
+                    <div className="mb-1.5">
+                      <span className="inline-block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-stone-100 text-[#A77A32] border border-stone-200">
+                        {faq.category}
+                      </span>
+                    </div>
+                    <div className="font-serif font-bold text-base sm:text-lg text-[#0F172A] leading-snug">
                       {faq.question}
-                    </span>
+                    </div>
                   </div>
                   <ChevronDown
                     className={`w-5 h-5 text-slate-400 shrink-0 transition-transform duration-200 ${

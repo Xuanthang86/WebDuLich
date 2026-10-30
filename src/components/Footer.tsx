@@ -15,10 +15,43 @@ export const Footer: React.FC<FooterProps> = ({
   onOpenTerms,
   onOpenAdmin,
 }) => {
+  const handlePackageClick = (titleKeywords: string) => {
+    const section = document.getElementById('packages');
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => {
+        const headings = document.querySelectorAll('#packages h3');
+        for (const h of headings) {
+          if (h.textContent && h.textContent.toLowerCase().includes(titleKeywords.toLowerCase())) {
+            h.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            break;
+          }
+        }
+      }, 300);
+    }
+  };
+
+  const handleCityClick = (city: string) => {
+    window.dispatchEvent(new CustomEvent('wj-select-city', { detail: city }));
+    const section = document.getElementById('accommodations');
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const packageLinks = [
+    { label: 'Private Discovery Tour (7 - 14 Days)', search: 'Discovery' },
+    { label: '30-Day Living Trial', search: 'Trial' },
+    { label: 'Snowbird Special (30 - 90 Days)', search: 'Snowbird' },
+    { label: 'Six-Month Exploratory Stay', search: 'Exploratory' },
+    { label: 'Full Retirement Living (12 Months)', search: 'Retirement' },
+    { label: 'Bespoke Regional Excursions', search: 'Living' },
+  ];
+
   return (
-    <footer className="bg-[#0B1120] text-white border-t border-slate-800 pt-16 pb-12">
+    <footer className="bg-[#0B1120] text-white border-t border-slate-800 pt-8 pb-6 sm:pt-16 sm:pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 md:gap-10 mb-8 sm:mb-12">
           {/* Brand Info */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
@@ -76,43 +109,82 @@ export const Footer: React.FC<FooterProps> = ({
             </div>
           </div>
 
-          {/* Coastal Destinations */}
+          {/* Coastal Destinations (Clickable links to accommodations hub) */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-widest text-[#C9A45C] mb-4">
+            <h4 className="text-xs font-bold uppercase tracking-widest text-[#C9A45C] mb-3 sm:mb-4">
               Coastal Living Hubs
             </h4>
-            <ul className="space-y-2 text-xs text-slate-300">
+            <ul className="space-y-3 text-xs text-slate-300">
               <li>
-                <strong className="text-white block font-medium">Da Nang Coastal Hub</strong>
-                <span className="text-slate-400">My Khe Beach & Son Tra Peninsula Residences</span>
+                <button
+                  type="button"
+                  onClick={() => handleCityClick('Da Nang')}
+                  className="text-left w-full group cursor-pointer"
+                >
+                  <strong className="text-white block font-medium group-hover:text-[#C9A45C] transition-colors flex items-center gap-1">
+                    <span>Da Nang Coastal Hub</span>
+                    <span className="text-[#C9A45C] text-[10px] group-hover:translate-x-1 transition-transform">→</span>
+                  </strong>
+                  <span className="text-slate-400 text-[11px] group-hover:text-slate-300 transition-colors">
+                    My Khe Beach & Son Tra Peninsula Residences
+                  </span>
+                </button>
               </li>
               <li>
-                <strong className="text-white block font-medium">Nha Trang Tropical Bay</strong>
-                <span className="text-slate-400">Tran Phu Waterfront & Marina Promenade</span>
+                <button
+                  type="button"
+                  onClick={() => handleCityClick('Nha Trang')}
+                  className="text-left w-full group cursor-pointer"
+                >
+                  <strong className="text-white block font-medium group-hover:text-[#C9A45C] transition-colors flex items-center gap-1">
+                    <span>Nha Trang Tropical Bay</span>
+                    <span className="text-[#C9A45C] text-[10px] group-hover:translate-x-1 transition-transform">→</span>
+                  </strong>
+                  <span className="text-slate-400 text-[11px] group-hover:text-slate-300 transition-colors">
+                    Tran Phu Waterfront & Marina Promenade
+                  </span>
+                </button>
               </li>
               <li>
-                <strong className="text-white block font-medium">Ho Chi Minh City</strong>
-                <span className="text-slate-400">Thao Dien Expat Quarter & River Residences</span>
+                <button
+                  type="button"
+                  onClick={() => handleCityClick('Ho Chi Minh City')}
+                  className="text-left w-full group cursor-pointer"
+                >
+                  <strong className="text-white block font-medium group-hover:text-[#C9A45C] transition-colors flex items-center gap-1">
+                    <span>Ho Chi Minh City</span>
+                    <span className="text-[#C9A45C] text-[10px] group-hover:translate-x-1 transition-transform">→</span>
+                  </strong>
+                  <span className="text-slate-400 text-[11px] group-hover:text-slate-300 transition-colors">
+                    Thao Dien Expat Quarter & River Residences
+                  </span>
+                </button>
               </li>
             </ul>
           </div>
 
-          {/* Living Packages */}
+          {/* Living Packages (Clickable links to packages section) */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-widest text-[#C9A45C] mb-4">
               Living Options
             </h4>
-            <ul className="space-y-2 text-xs text-slate-300">
-              <li>• Private Discovery Tour (7 - 14 Days)</li>
-              <li>• 30-Day Living Trial</li>
-              <li>• Snowbird Special (30 - 90 Days)</li>
-              <li>• Six-Month Exploratory Stay</li>
-              <li>• Full Retirement Living (12 Months)</li>
-              <li>• Bespoke Regional Excursions</li>
+            <ul className="space-y-2.5 text-xs text-slate-300">
+              {packageLinks.map(pkg => (
+                <li key={pkg.label}>
+                  <button
+                    type="button"
+                    onClick={() => handlePackageClick(pkg.search)}
+                    className="text-left text-slate-300 hover:text-[#C9A45C] hover:underline transition-colors cursor-pointer flex items-center gap-1.5 group"
+                  >
+                    <span className="text-[#C9A45C] group-hover:translate-x-0.5 transition-transform">•</span>
+                    <span>{pkg.label}</span>
+                  </button>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Contact & Concierge Information */}
+          {/* Contact & Concierge Information (Admin portal link removed as requested) */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-widest text-[#C9A45C] mb-4">
               Saigon Executive Desk
@@ -129,36 +201,31 @@ export const Footer: React.FC<FooterProps> = ({
               <Mail className="w-4 h-4 text-[#C9A45C] shrink-0" />
               <span>{settings.contactEmail || 'info@wanderersjourneys.com'}</span>
             </div>
-
-            <div className="pt-2">
-              <button
-                onClick={onOpenAdmin}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 hover:text-white border border-slate-700 transition-colors cursor-pointer"
-              >
-                <Shield className="w-3.5 h-3.5 text-[#C9A45C]" />
-                <span>Administrator & Staff CMS Portal</span>
-              </button>
-            </div>
           </div>
         </div>
 
-        {/* Regulatory Disclaimer */}
-        <div className="pt-8 border-t border-slate-800 text-xs text-slate-400 leading-relaxed font-light space-y-4">
-          <p>
+        {/* Regulatory Disclaimer & Centered Footer Legal */}
+        <div className="pt-6 sm:pt-8 border-t border-slate-800 text-xs text-slate-400 leading-relaxed font-light space-y-3 sm:space-y-4">
+          <p className="text-center sm:text-left text-[11px] sm:text-xs">
             {settings.footerNote ||
               'Wanderer’s Journeys provides premium hospitality, lifestyle curation, and residential advisory for international seniors and explorers in Vietnam. Independent legal, visa, and financial services are facilitated through accredited licensed partners.'}
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-800/60 text-[11px]">
-            <span>{settings.copyright || '© 2026 Wanderer’s Journeys Hospitality Ltd. All rights reserved.'}</span>
-            <div className="flex items-center gap-6">
+          <div className="pt-4 sm:pt-6 border-t border-slate-800/60 flex flex-col items-center justify-center text-center space-y-2">
+            <div className="text-[11px] sm:text-xs text-slate-300 font-normal">
+              {settings.copyright || '© 2026 Wanderer’s Journeys Hospitality Ltd. All rights reserved.'}
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-[11px] text-slate-400">
               <button
+                type="button"
                 onClick={onOpenPrivacy}
                 className="hover:text-[#C9A45C] transition-colors cursor-pointer underline"
               >
                 Privacy Notice & GDPR Statement
               </button>
+              <span className="text-slate-600 hidden sm:inline">•</span>
               <button
+                type="button"
                 onClick={onOpenTerms}
                 className="hover:text-[#C9A45C] transition-colors cursor-pointer underline"
               >

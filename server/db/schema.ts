@@ -258,7 +258,7 @@ export interface LeadStatusHistory {
   changedAt: string;
 }
 
-export type EmailJobStatus = 'QUEUED' | 'SENT' | 'FAILED';
+export type EmailJobStatus = 'QUEUED' | 'SENT' | 'FAILED' | 'SIMULATED';
 
 export interface EmailJob {
   id: string;

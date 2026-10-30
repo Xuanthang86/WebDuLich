@@ -174,9 +174,9 @@ export const AdminContentCms: React.FC = () => {
         {[
           { id: 'hero', label: 'Hero Section', icon: Sparkles },
           { id: 'core', label: 'Core Inclusions', icon: Home },
-          { id: 'packages', label: 'Living Packages (5)', icon: Package },
-          { id: 'accommodations', label: 'Residences Showcase', icon: Building },
-          { id: 'faqs', label: 'FAQ Directory', icon: HelpCircle },
+          { id: 'packages', label: `Living Packages Catalog (${packages.length})`, icon: Package },
+          { id: 'accommodations', label: `Residences Showcase (${accommodations.length})`, icon: Building },
+          { id: 'faqs', label: `Frequently Asked Questions (${faqs.length})`, icon: HelpCircle },
         ].map(tab => {
           const Icon = tab.icon;
           return (
@@ -614,6 +614,16 @@ export const AdminContentCms: React.FC = () => {
                     className="w-full p-2.5 rounded-lg border border-stone-300 bg-white"
                   />
                 </div>
+                <div>
+                  <label className="font-semibold block mb-1">Display Priority in City (1 = Flagship)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={editingAcc.displayOrder || 1}
+                    onChange={e => setEditingAcc({ ...editingAcc, displayOrder: parseInt(e.target.value, 10) || 1 })}
+                    className="w-full p-2.5 rounded-lg border border-stone-300 bg-white"
+                  />
+                </div>
                 <div className="sm:col-span-3">
                   <label className="font-semibold block mb-1">Description</label>
                   <textarea
@@ -739,33 +749,78 @@ export const AdminContentCms: React.FC = () => {
             </form>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {accommodations.map(acc => (
-              <div key={acc.id} className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm flex flex-col justify-between">
-                <img src={acc.images[0]?.url} alt={acc.title} className="h-40 w-full object-cover" />
-                <div className="p-4 flex-1">
-                  <div className="text-[11px] font-bold text-[#A77A32] uppercase">{acc.city} • {acc.propertyType}</div>
-                  <h4 className="font-serif font-bold text-base text-[#0F172A] mt-1">{acc.title}</h4>
-                  <div className="text-xs text-slate-500 mt-1">{acc.bedrooms} Bed • {acc.bathrooms} Bath • {acc.areaSqm} sqm</div>
-                  <div className="text-sm font-bold text-[#0F172A] mt-2">${acc.priceMonthUsd} / mo</div>
+          <div className="space-y-8">
+            {(['Da Nang', 'Nha Trang', 'Ho Chi Minh City'] as const).map(city => {
+              const cityAccs = accommodations
+                .filter(a => a.city === city)
+                .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+
+              if (cityAccs.length === 0) return null;
+
+              return (
+                <div key={city} className="space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-stone-200">
+                    <div className="flex items-center gap-2">
+                      <span className="font-serif font-bold text-lg text-[#0F172A]">{city}</span>
+                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-stone-100 font-semibold text-stone-700">
+                        {cityAccs.length} {cityAccs.length === 1 ? 'Location' : 'Locations'}
+                      </span>
+                    </div>
+                    <span className="text-xs text-[#A77A32] font-semibold">
+                      Position 1 is the primary destination highlight
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {cityAccs.map((acc, index) => {
+                      const isPositionOne = (acc.displayOrder === 1) || (index === 0 && !acc.displayOrder);
+                      return (
+                        <div
+                          key={acc.id}
+                          className={`bg-white rounded-2xl border overflow-hidden shadow-sm flex flex-col justify-between relative ${
+                            isPositionOne ? 'border-2 border-[#C9A45C] ring-1 ring-[#C9A45C]/30' : 'border-stone-200'
+                          }`}
+                        >
+                          <div className="relative">
+                            <img src={acc.images[0]?.url} alt={acc.title} className="h-40 w-full object-cover" />
+                            <div className="absolute top-2 left-2 px-2.5 py-1 rounded-md text-[10px] font-bold shadow-sm backdrop-blur-md flex items-center gap-1 bg-[#0F172A]/90 text-white">
+                              <span>Position {acc.displayOrder || index + 1}</span>
+                              {isPositionOne && <span className="text-[#C9A45C]">★ Primary</span>}
+                            </div>
+                          </div>
+
+                          <div className="p-4 flex-1">
+                            <div className="text-[11px] font-bold text-[#A77A32] uppercase">{acc.city} • {acc.propertyType}</div>
+                            <h4 className="font-serif font-bold text-base text-[#0F172A] mt-1">{acc.title}</h4>
+                            <div className="text-xs text-slate-500 mt-1">{acc.district}</div>
+                            <div className="text-xs text-slate-500 mt-1">{acc.bedrooms} Bed • {acc.bathrooms} Bath • {acc.areaSqm} sqm</div>
+                            <div className="text-sm font-bold text-[#0F172A] mt-2">${acc.priceMonthUsd} / mo</div>
+                          </div>
+
+                          <div className="p-4 border-t border-stone-100 flex items-center justify-between">
+                            <button
+                              type="button"
+                              onClick={() => setEditingAcc(acc)}
+                              className="text-xs font-bold text-blue-700 hover:underline"
+                            >
+                              Edit & Priority
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeleteTarget({ type: 'accommodation', id: acc.id, title: acc.title })}
+                              className="text-xs font-bold text-red-600 hover:underline flex items-center gap-1 cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Delete</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="p-4 border-t border-stone-100 flex items-center justify-between">
-                  <button
-                    onClick={() => setEditingAcc(acc)}
-                    className="text-xs font-bold text-blue-700 hover:underline"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => setDeleteTarget({ type: 'accommodation', id: acc.id, title: acc.title })}
-                    className="text-xs font-bold text-red-600 hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Delete</span>
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -773,9 +828,12 @@ export const AdminContentCms: React.FC = () => {
       {/* TAB 5: FAQS CRUD */}
       {activeTab === 'faqs' && (
         <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h3 className="font-serif text-xl font-bold text-[#0F172A]">Frequently Asked Questions ({faqs.length})</h3>
+          <div className="flex items-center justify-between gap-4 pb-2 border-b border-stone-200">
+            <h3 className="font-serif text-lg sm:text-xl font-bold text-[#0F172A] truncate">
+              Frequently Asked Questions ({faqs.length})
+            </h3>
             <button
+              type="button"
               onClick={() =>
                 setEditingFaq({
                   category: 'General',
@@ -784,10 +842,10 @@ export const AdminContentCms: React.FC = () => {
                   isPublished: true,
                 })
               }
-              className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer hover:bg-slate-800"
+              className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-slate-800 whitespace-nowrap shrink-0 shadow-sm"
             >
-              <Plus className="w-4 h-4" />
-              <span>Add FAQ</span>
+              <Plus className="w-4 h-4 text-[#C9A45C]" />
+              <span className="whitespace-nowrap">Add FAQ</span>
             </button>
           </div>
 

@@ -68,22 +68,22 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Action CTAs */}
           <div className="hidden md:flex items-center gap-3.5">
-            {/* Staff / Admin Access */}
-            <button
-              onClick={onOpenAdmin}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 border border-slate-700/60 transition-all cursor-pointer"
-              title="Staff & Management Portal"
-            >
-              <Shield className="w-3.5 h-3.5 text-[#C9A45C]" />
-              <span>{user ? `CMS (${user.role})` : 'Staff Portal'}</span>
-            </button>
-
             {/* Direct Inquiry CTA */}
             <button
               onClick={onOpenQuestionnaire}
               className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#C9A45C] to-[#A77A32] text-[#0F172A] text-sm font-semibold tracking-wide hover:from-[#d8b368] hover:to-[#b8893d] transition-all shadow-md shadow-[#C9A45C]/25 hover:shadow-lg hover:shadow-[#C9A45C]/35 cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0"
             >
               Request a Proposal
+            </button>
+
+            {/* Login Access */}
+            <button
+              onClick={onOpenAdmin}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-slate-200 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 border-2 border-slate-600 hover:border-[#C9A45C] transition-all cursor-pointer shadow-sm"
+              title="Access Management Portal"
+            >
+              <Shield className="w-4 h-4 text-[#C9A45C]" />
+              <span>{user ? `Login (${user.role})` : 'Login'}</span>
             </button>
           </div>
 
@@ -131,10 +131,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 setMobileMenuOpen(false);
                 onOpenAdmin();
               }}
-              className="w-full py-2.5 rounded-xl border border-slate-700 text-slate-300 text-sm font-medium flex items-center justify-center gap-2 hover:bg-slate-800"
+              className="w-full py-3 rounded-xl border-2 border-slate-600 hover:border-[#C9A45C] bg-slate-800 text-white text-base font-semibold flex items-center justify-center gap-2 hover:bg-slate-750 transition-colors shadow-sm"
             >
               <Shield className="w-4 h-4 text-[#C9A45C]" />
-              <span>{user ? `Go to CMS (${user.fullName})` : 'Staff & Admin Login'}</span>
+              <span>{user ? `Login (${user.role})` : 'Login'}</span>
             </button>
           </div>
 

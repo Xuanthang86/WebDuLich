@@ -3,120 +3,38 @@
     {
       "id": "usr_admin_01",
       "email": "admin@wanderersjourneys.com",
-      "passwordHash": "877b56a1204a339a961380f79a492ebb04cb2a4ee6047ca0bb646a32b16aee0c",
+      "passwordHash": "scrypt:1daf06969e8297db22720af1f77e8bf2:ed1a5af13dde902b28d3242cd068a39e2e816f504e1bf0e6a8f9c410cf643ae176e916d9099923524f8fcb08e2e0450e01d5f44fe0114bcfc47736b262d5e7a7",
       "fullName": "Alexander Vance",
       "role": "ADMIN",
       "isActive": true,
-      "lastLoginAt": "2026-10-29T02:06:55.758Z",
+      "lastLoginAt": "2026-10-30T17:51:27.501Z",
       "createdAt": "2026-01-01T00:00:00Z",
-      "updatedAt": "2026-10-29T02:06:55.758Z"
+      "updatedAt": "2026-10-30T17:51:27.501Z"
     },
     {
       "id": "usr_mgr_01",
       "email": "manager@wanderersjourneys.com",
-      "passwordHash": "d36daa9b3929a48cf74dc7ddf0d42631a2deed674c3bce845e4d79f8de3f91b7",
+      "passwordHash": "scrypt:6cce30ef62933f7282bc7193b9bb6355:0c9045e4d7b2e1f09c4104b79283e19708751b42ead3f202b97443a1a903d3b5521514c0c3c7224fa944298c4f87742905a8936581c9e4f78741e7bb3ef12512",
       "fullName": "Mai Nguyen",
       "role": "MANAGER",
       "isActive": true,
-      "lastLoginAt": "2026-10-29T02:06:55.799Z",
+      "lastLoginAt": "2026-10-30T17:51:27.596Z",
       "createdAt": "2026-01-10T00:00:00Z",
-      "updatedAt": "2026-10-29T02:06:55.804Z"
+      "updatedAt": "2026-10-30T17:51:27.596Z"
     },
     {
       "id": "usr_lead_01",
       "email": "concierge@wanderersjourneys.com",
-      "passwordHash": "bcacaf60cddc86e39bef37324c72e7949fe4caa60561b35601a130e88a17ac6c",
+      "passwordHash": "scrypt:2bd169b9c40fb91b4d54796b199b7d85:a7dc3c24e4fdae41a1980b5527aa3ed576c688c14c3272764d78b326ae8b9d305c39691b0800971f0f99f235e72d0491e1bd4aac62c256ddd4f3061c33d3a761",
       "fullName": "David Sterling",
       "role": "LEAD_MANAGER",
       "isActive": true,
-      "lastLoginAt": "2026-10-28T14:43:16.163Z",
+      "lastLoginAt": "2026-10-30T17:51:27.709Z",
       "createdAt": "2026-02-01T00:00:00Z",
-      "updatedAt": "2026-10-28T14:43:16.163Z"
+      "updatedAt": "2026-10-30T17:51:27.709Z"
     }
   ],
-  "sessions": [
-    {
-      "id": "ses_1793193597133_5a2c31c7",
-      "token": "f45340f270ca9e0c8b3b985a670eb226f1c18c3345deac26b2ba69fdd958a0a9",
-      "userId": "usr_admin_01",
-      "expiresAt": "2026-10-29T13:19:57.133Z",
-      "userAgent": "curl/7.88.1",
-      "ipAddress": "127.0.0.1",
-      "createdAt": "2026-10-28T13:19:57.133Z"
-    },
-    {
-      "id": "ses_1793193603245_2506eebc",
-      "token": "830fe0ec464ce26d0d9543ca3569152bb510f412eb7cde8cea5824561f9cd982",
-      "userId": "usr_lead_01",
-      "expiresAt": "2026-10-29T13:20:03.245Z",
-      "userAgent": "curl/7.88.1",
-      "ipAddress": "127.0.0.1",
-      "createdAt": "2026-10-28T13:20:03.245Z"
-    },
-    {
-      "id": "ses_1793193964467_fca917fb",
-      "token": "c1dbd757f69e7e30f4fab39df930d5d334b677a941c33abaf72e80ebf860047a",
-      "userId": "usr_lead_01",
-      "expiresAt": "2026-10-29T13:26:04.467Z",
-      "userAgent": "curl/7.88.1",
-      "ipAddress": "127.0.0.1",
-      "createdAt": "2026-10-28T13:26:04.467Z"
-    },
-    {
-      "id": "ses_1793194003587_7d22ba6d",
-      "token": "808768b95a5a6fb29aa5e724e0801974ba2d3c76ce65284bb3336fb70564b0ec",
-      "userId": "usr_admin_01",
-      "expiresAt": "2026-10-29T13:26:43.587Z",
-      "userAgent": "curl/7.88.1",
-      "ipAddress": "127.0.0.1",
-      "createdAt": "2026-10-28T13:26:43.587Z"
-    },
-    {
-      "id": "ses_1793196992863_ec53999b",
-      "token": "72f88f3f6e57fe61d828f62ebfadac40d1411ba7f2e4ad6845affb88f140948a",
-      "userId": "usr_admin_01",
-      "expiresAt": "2026-10-29T14:16:32.863Z",
-      "userAgent": "node",
-      "ipAddress": "127.0.0.1",
-      "createdAt": "2026-10-28T14:16:32.863Z"
-    },
-    {
-      "id": "ses_1793196992873_43475da2",
-      "token": "8a8b84f867c20ceb4c26b24e55c33166d6bc894a9da49fdd3c63117b914f0f79",
-      "userId": "usr_lead_01",
-      "expiresAt": "2026-10-29T14:16:32.873Z",
-      "userAgent": "node",
-      "ipAddress": "127.0.0.1",
-      "createdAt": "2026-10-28T14:16:32.873Z"
-    },
-    {
-      "id": "ses_1793198596140_3c3d30cb",
-      "token": "2a804d6852cc7f7f0c22a46d31758053ddfe5cad35544d874f1e85b275271fc4",
-      "userId": "usr_admin_01",
-      "expiresAt": "2026-10-29T14:43:16.140Z",
-      "userAgent": "node",
-      "ipAddress": "127.0.0.1",
-      "createdAt": "2026-10-28T14:43:16.140Z"
-    },
-    {
-      "id": "ses_1793198596163_eef346eb",
-      "token": "7024a0674b3deda1ae427e924c60265272b2df51f6ef913d5358c4c2c31160af",
-      "userId": "usr_lead_01",
-      "expiresAt": "2026-10-29T14:43:16.163Z",
-      "userAgent": "node",
-      "ipAddress": "127.0.0.1",
-      "createdAt": "2026-10-28T14:43:16.163Z"
-    },
-    {
-      "id": "ses_1793239615757_b0edd4a0",
-      "token": "8d6bebd78a1b8b9823eaa61912fbaac69b52ad317e6b653637a9e275af4fd8b4",
-      "userId": "usr_admin_01",
-      "expiresAt": "2026-10-30T02:06:55.757Z",
-      "userAgent": "node",
-      "ipAddress": "127.0.0.1",
-      "createdAt": "2026-10-29T02:06:55.757Z"
-    }
-  ],
+  "sessions": [],
   "passwordResetTokens": [],
   "siteSettings": {
     "id": "settings_default",
@@ -1300,6 +1218,16 @@
       "changedByName": "David Sterling",
       "note": "Initial telephone welcome call completed. Sent brochure.",
       "changedAt": "2026-10-28T14:43:16.174Z"
+    },
+    {
+      "id": "lsh_1793382687721",
+      "leadId": "lead_1793382687721_wei38",
+      "oldStatus": "NEW",
+      "newStatus": "NEW",
+      "changedById": "SYSTEM",
+      "changedByName": "System Intake",
+      "note": "Inquiry received via web questionnaire.",
+      "changedAt": "2026-10-30T17:51:27.721Z"
     }
   ],
   "emailJobs": [
@@ -1353,6 +1281,118 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "aud_1793382687721_cyl7k",
+      "userId": "SYSTEM",
+      "userEmail": "system@wanderersjourneys.com",
+      "action": "LEAD_CREATED",
+      "entityType": "LEAD",
+      "entityId": "lead_1793382687721_wei38",
+      "details": "Inquiry submitted by Test Expat Verification (test.expat@wanderersverify.com) for 30_DAY_TRIAL.",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-30T17:51:27.721Z"
+    },
+    {
+      "id": "aud_1793382687714_a5ctk",
+      "userId": "usr_lead_01",
+      "userEmail": "concierge@wanderersjourneys.com",
+      "action": "ACCESS_DENIED_RBAC",
+      "entityType": "ENDPOINT",
+      "details": "Role LEAD_MANAGER attempted to access restricted endpoint: GET /api/admin/accommodations",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-30T17:51:27.714Z"
+    },
+    {
+      "id": "aud_1793382687710_az3bv",
+      "userId": "usr_lead_01",
+      "userEmail": "concierge@wanderersjourneys.com",
+      "action": "LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "details": "User logged in successfully with role LEAD_MANAGER.",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-30T17:51:27.710Z"
+    },
+    {
+      "id": "aud_1793382687604_lueq8",
+      "userId": "usr_mgr_01",
+      "userEmail": "manager@wanderersjourneys.com",
+      "action": "ACCESS_DENIED_RBAC",
+      "entityType": "ENDPOINT",
+      "details": "Role MANAGER attempted to access restricted endpoint: GET /api/admin/audit-logs",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-30T17:51:27.604Z"
+    },
+    {
+      "id": "aud_1793382687597_f0n6x",
+      "userId": "usr_mgr_01",
+      "userEmail": "manager@wanderersjourneys.com",
+      "action": "LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "details": "User logged in successfully with role MANAGER.",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-30T17:51:27.597Z"
+    },
+    {
+      "id": "aud_1793382687502_dvgs5",
+      "userId": "usr_admin_01",
+      "userEmail": "admin@wanderersjourneys.com",
+      "action": "LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "details": "User logged in successfully with role ADMIN.",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-30T17:51:27.502Z"
+    },
+    {
+      "id": "aud_1793382654857_odnul",
+      "userId": "usr_lead_01",
+      "userEmail": "concierge@wanderersjourneys.com",
+      "action": "LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "details": "User logged in successfully with role LEAD_MANAGER.",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-30T17:50:54.857Z"
+    },
+    {
+      "id": "aud_1793382654842_c4sa6",
+      "userId": "usr_mgr_01",
+      "userEmail": "manager@wanderersjourneys.com",
+      "action": "LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "details": "User logged in successfully with role MANAGER.",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-30T17:50:54.842Z"
+    },
+    {
+      "id": "aud_1793382654826_ih5d0",
+      "userId": "usr_admin_01",
+      "userEmail": "admin@wanderersjourneys.com",
+      "action": "LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "details": "User logged in successfully with role ADMIN.",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-30T17:50:54.826Z"
+    },
+    {
+      "id": "aud_1793381043334_tbo5d",
+      "userId": "usr_admin_01",
+      "userEmail": "admin@wanderersjourneys.com",
+      "action": "PROFILE_UPDATED",
+      "entityType": "USER",
+      "entityId": "usr_admin_01",
+      "details": "User updated profile name to \"Alexander Vance\".",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-30T17:24:03.334Z"
+    },
+    {
+      "id": "aud_1793381039087_64o90",
+      "userId": "usr_admin_01",
+      "userEmail": "admin@wanderersjourneys.com",
+      "action": "LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "details": "User logged in successfully with role ADMIN.",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-30T17:23:59.087Z"
+    },
     {
       "id": "aud_1793239615820_603on",
       "userId": "usr_admin_01",
