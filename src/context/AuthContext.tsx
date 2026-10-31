@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
-import { getCurrentUser, login as apiLogin, logout as apiLogout, getAuthToken, setAuthToken, clearAuthToken } from '../api';
+import { getCurrentUser, login as apiLogin, logout as apiLogout, clearAuthToken, setAuthToken } from '../api';
 
 interface AuthContextType {
   user: User | null;
@@ -17,10 +17,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Check active session via HttpOnly cookie
+    // Check active session via HttpOnly cookie and restore in-memory token
     getCurrentUser()
       .then(res => {
         setUser(res.user);
+        if (res.token) {
+          setAuthToken(res.token);
+        }
       })
       .catch(() => {
         setUser(null);
@@ -33,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, pass: string) => {
     const res = await apiLogin(email, pass);
-    if (res?.token) {
+    if (res.token) {
       setAuthToken(res.token);
     }
     setUser(res.user);

@@ -106,13 +106,13 @@ npx wrangler login
 
 ### Bước 2: Tạo D1 Database và R2 Bucket
 ```bash
-# Tạo database D1
+# 1. Tạo database Cloudflare D1
 npx wrangler d1 create wanderers-journeys-d1
 
-# Tạo bucket lưu trữ media R2
+# 2. Tạo bucket Cloudflare R2 để lưu trữ hình ảnh & tệp đính kèm
 npx wrangler r2 bucket create wanderers-media
 ```
-*Lưu ý:* Sau khi lệnh tạo D1 hoàn tất, copy `database_id` nhận được và điền vào dòng 22 của tệp `wrangler.toml`:
+*Lưu ý:* Sau khi lệnh tạo D1 thành công, copy chuỗi `database_id` nhận được và dán vào dòng 22 của tệp `wrangler.toml`:
 ```toml
 [[d1_databases]]
 binding = "DB"
@@ -120,33 +120,56 @@ database_name = "wanderers-journeys-d1"
 database_id = "dán-database-id-vào-đây"
 ```
 
-### Bước 3: Nạp cấu trúc và dữ liệu vào D1
+### Bước 3: Nạp cấu trúc bảng và dữ liệu danh mục ban đầu vào D1
 ```bash
-# 1. Khởi tạo schema 19 bảng
+# 1. Thực thi Schema 20 bảng độc lập (users, sessions, settings, hero, why_vietnam, why_choose_us,
+#    core_services, core_inclusions, additional_services, packages, destination_hubs, accommodations,
+#    faqs, form_fields, leads, lead_notes, lead_status_history, audit_logs, email_jobs, media_assets)
 npx wrangler d1 execute wanderers-journeys-d1 --file=./database/d1_schema.sql --remote
 
-# 2. Nạp dữ liệu danh mục & căn hộ mẫu
+# 2. Nạp dữ liệu danh mục chuẩn & 9 Core Inclusions (an toàn, không chứa tài khoản demo hay session):
 npx wrangler d1 execute wanderers-journeys-d1 --file=./database/d1_seed.sql --remote
-
-# 3. Tạo tài khoản Super Administrator của bạn:
-npx tsx scripts/bootstrap_admin.ts --remote --email="admin@wanderersjourneys.com" --name="Xuan Thang" --password="<MậtKhẩuBảoMậtCủaBạn>"
 ```
 
-### Bước 4: Thiết lập Secrets (Bảo mật tuyệt đối, không lưu trong code)
+### Bước 4: Thiết lập Secrets (Bảo mật tuyệt đối, không lưu trong Git)
 ```bash
-# Thiết lập chuỗi mã hóa phiên
+# 1. Khóa bí mật ký phiên
 npx wrangler secret put JWT_SECRET
 
-# Thiết lập API Key gửi email (nếu dùng Resend)
+# 2. Khóa bí mật cho phép khởi tạo Super Administrator một lần duy nhất
+npx wrangler secret put SETUP_SECRET
+
+# 3. Khóa API gửi email thực tế qua Resend (Tùy chọn)
 npx wrangler secret put RESEND_API_KEY
 ```
 
-### Bước 5: Build và Deploy lên Cloudflare Pages
+### Bước 5: Khởi tạo tài khoản Super Administrator (Bootstrap)
+Bạn có thể chọn một trong 2 cách an toàn tuyệt đối:
+
+**Cách 1: Chạy công cụ CLI chính thức:**
 ```bash
-# Build frontend
+npx tsx scripts/bootstrap_admin.ts --remote --email="bienxuanthang.vtabd@gmail.com" --name="Xuan Thang" --password="<MậtKhẩuRiêngCủaBạn>"
+```
+
+**Cách 2: Gọi endpoint an toàn với SETUP_SECRET đã cấu hình:**
+```bash
+curl -X POST https://xuanthang.io.vn/api/auth/bootstrap \
+  -H "Content-Type: application/json" \
+  -d '{
+    "setupSecret": "<SETUP_SECRET_BẠN_ĐÃ_CẤU_HÌNH>",
+    "email": "bienxuanthang.vtabd@gmail.com",
+    "fullName": "Xuan Thang",
+    "password": "<MậtKhẩuBảoMậtCủaBạn>"
+  }'
+```
+*Lưu ý cơ chế bảo vệ:* Endpoint chỉ cho phép thực thi khi hệ thống chưa có tài khoản ADMIN nào. Nếu đã tồn tại ADMIN, endpoint sẽ lập tức trả về lỗi HTTP 403 Forbidden vĩnh viễn.
+
+### Bước 6: Build và Deploy lên Cloudflare Pages
+```bash
+# 1. Kiểm thử và build frontend (Vite tự động sao chép public/_routes.json vào dist/)
 npm run build
 
-# Deploy toàn bộ Frontend và Pages Functions
+# 2. Triển khai lên Cloudflare Pages
 npx wrangler pages deploy dist --project-name=wanderers-journeys
 ```
 

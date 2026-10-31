@@ -16,31 +16,41 @@ import {
   AuditLog,
 } from './types';
 
-const TOKEN_KEY = 'wj_auth_token';
-
-export function getAuthToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
-}
-
-export function setAuthToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token);
-}
+// Security Enforcement: Auth relies primarily on HttpOnly, SameSite, Secure cookies.
+// Tokens are NEVER persisted in localStorage, sessionStorage, or URL query parameters.
+// An active in-memory session token is maintained within the JavaScript closure
+// to guarantee authorization in cross-site iframe previews and strict browser environments.
+let inMemoryToken: string | null = null;
 
 export function clearAuthToken(): void {
-  localStorage.removeItem(TOKEN_KEY);
+  inMemoryToken = null;
+  try {
+    localStorage.removeItem('wj_auth_token');
+    sessionStorage.removeItem('wj_auth_token');
+  } catch {
+    // ignore
+  }
+}
+
+export function getAuthToken(): string | null {
+  return inMemoryToken;
+}
+
+export function setAuthToken(token: string | null): void {
+  inMemoryToken = token;
 }
 
 const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const token = getAuthToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
   };
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  // Attach in-memory token if present and not explicitly provided
+  if (inMemoryToken && !headers['Authorization']) {
+    headers['Authorization'] = `Bearer ${inMemoryToken}`;
   }
 
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
@@ -103,8 +113,12 @@ export async function login(email: string, password: string): Promise<{ user: Us
   return data;
 }
 
-export async function getCurrentUser(): Promise<{ user: User }> {
-  return request<{ user: User }>('/api/auth/me');
+export async function getCurrentUser(): Promise<{ user: User; token?: string }> {
+  const data = await request<{ user: User; token?: string }>('/api/auth/me');
+  if (data?.token) {
+    setAuthToken(data.token);
+  }
+  return data;
 }
 
 export async function logout(): Promise<void> {

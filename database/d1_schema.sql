@@ -57,6 +57,14 @@ CREATE TABLE IF NOT EXISTS site_settings (
     footer_note TEXT,
     copyright TEXT,
     budget_comparison_message TEXT,
+    why_vietnam_header TEXT DEFAULT '{}',
+    financial_projection TEXT DEFAULT '{}',
+    packages_header TEXT DEFAULT '{}',
+    accommodations_header TEXT DEFAULT '{}',
+    why_choose_us_header TEXT DEFAULT '{}',
+    additional_services_header TEXT DEFAULT '{}',
+    faqs_header TEXT DEFAULT '{}',
+    inquiry_header TEXT DEFAULT '{}',
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -71,6 +79,7 @@ CREATE TABLE IF NOT EXISTS hero_content (
     badge_text TEXT,
     background_image_url TEXT,
     stats TEXT NOT NULL DEFAULT '[]',
+    value_badges TEXT NOT NULL DEFAULT '[]',
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -101,8 +110,14 @@ CREATE TABLE IF NOT EXISTS why_choose_us (
 -- 8. CORE SERVICES & INCLUSIONS
 CREATE TABLE IF NOT EXISTS core_services (
     id TEXT PRIMARY KEY DEFAULT 'core_default',
+    section_badge TEXT DEFAULT 'The Wanderer’s Standard',
+    section_title TEXT DEFAULT 'Turnkey Living Inclusions & Benefits',
+    section_subtitle TEXT,
+    baseline_badge TEXT DEFAULT 'All-Inclusive Living Baseline',
     title TEXT NOT NULL,
     monthly_starting_price REAL NOT NULL DEFAULT 2250.00,
+    price_period_label TEXT DEFAULT '/ month',
+    price_subtext TEXT DEFAULT 'All-inclusive turnkey lease',
     description TEXT NOT NULL,
     utility_allowance_note TEXT NOT NULL,
     resort_amenities TEXT NOT NULL DEFAULT '[]',
@@ -117,6 +132,20 @@ CREATE TABLE IF NOT EXISTS core_services (
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- 8b. CORE INCLUSIONS (The 9 Turnkey Inclusions Cards)
+CREATE TABLE IF NOT EXISTS core_inclusions (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    icon TEXT NOT NULL DEFAULT 'Sparkles',
+    bullet_points TEXT NOT NULL DEFAULT '[]',
+    display_order INTEGER NOT NULL DEFAULT 1,
+    is_published INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_core_inclusions_order ON core_inclusions(display_order);
 
 -- 9. ADDITIONAL SERVICES
 CREATE TABLE IF NOT EXISTS additional_services (

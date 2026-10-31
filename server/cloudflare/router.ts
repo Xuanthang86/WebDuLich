@@ -11,6 +11,8 @@ export interface Env {
   DB?: any; // Cloudflare D1Database binding
   MEDIA_BUCKET?: any; // Cloudflare R2Bucket binding
   JWT_SECRET?: string;
+  SETUP_SECRET?: string;
+  ADMIN_BOOTSTRAP_SECRET?: string;
   CORS_ORIGIN?: string;
   NOTIFICATION_EMAIL?: string;
   RESEND_API_KEY?: string;
@@ -107,16 +109,22 @@ export async function verifyWebCryptoPassword(password: string, storedHash: stri
   }
 }
 
-// Standard CORS response helper
+// Standard CORS response helper with credentials support for HttpOnly cookies
 function corsHeaders(env: Env, req: Request): HeadersInit {
   const allowed = env.CORS_ORIGIN || 'https://xuanthang.io.vn,https://www.xuanthang.io.vn';
-  const origin = req.headers.get('Origin') || '*';
-  const isAllowed = allowed === '*' || allowed.split(',').map(s => s.trim()).includes(origin);
+  const origin = req.headers.get('Origin') || 'https://xuanthang.io.vn';
+  const isAllowed =
+    allowed === '*' ||
+    allowed.split(',').map(s => s.trim()).includes(origin) ||
+    origin.endsWith('.xuanthang.io.vn') ||
+    origin.includes('localhost') ||
+    origin.includes('127.0.0.1');
 
   return {
     'Access-Control-Allow-Origin': isAllowed ? origin : 'https://xuanthang.io.vn',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-auth-token',
+    'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Max-Age': '86400',
   };
 }
@@ -131,31 +139,28 @@ function jsonResponse(data: any, status = 200, headers: HeadersInit = {}): Respo
   });
 }
 
-// Session authentication from D1
+// Session authentication from D1 (Cookie first, Bearer header fallback - query tokens permanently removed)
 async function getAuthUser(req: Request, env: Env): Promise<{ user: any; token: string } | null> {
   let token: string | null = null;
-  const authHeader = req.headers.get('Authorization');
-  if (authHeader && /^Bearer\s+/i.test(authHeader)) {
-    token = authHeader.replace(/^Bearer\s+/i, '').trim();
-  } else if (req.headers.get('x-auth-token')) {
-    token = req.headers.get('x-auth-token')?.trim() || null;
-  } else {
-    try {
-      const url = new URL(req.url);
-      const qToken = url.searchParams.get('token');
-      if (qToken) token = qToken.trim();
-    } catch {
-      // ignore
+
+  // 1. Check HttpOnly session cookie (Standard Browser Flow)
+  const cookieHeader = req.headers.get('Cookie');
+  if (cookieHeader) {
+    const match = cookieHeader.match(/(?:^|;\s*)wj_session=([^;]+)/);
+    if (match) token = match[1];
+  }
+
+  // 2. Check Authorization Bearer header (CLI / Mobile fallback)
+  if (!token) {
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader && /^Bearer\s+/i.test(authHeader)) {
+      token = authHeader.replace(/^Bearer\s+/i, '').trim();
+    } else if (req.headers.get('x-auth-token')) {
+      token = req.headers.get('x-auth-token')?.trim() || null;
     }
   }
 
-  if (!token) {
-    const cookieHeader = req.headers.get('Cookie');
-    if (cookieHeader) {
-      const match = cookieHeader.match(/(?:^|;\s*)wj_session=([^;]+)/);
-      if (match) token = match[1];
-    }
-  }
+  // Note: URL query parameters (e.g. ?token=...) are deliberately REJECTED to prevent token leakage in server logs and browser histories.
 
   if (!token || !env.DB) return null;
 
@@ -321,8 +326,10 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
       const whyVietnam = (await env.DB.prepare('SELECT * FROM why_vietnam WHERE is_published = 1 ORDER BY display_order ASC').all()).results || [];
       const whyChooseUs = (await env.DB.prepare('SELECT * FROM why_choose_us WHERE is_published = 1 ORDER BY display_order ASC').all()).results || [];
       const coreService = (await env.DB.prepare('SELECT * FROM core_services WHERE is_published = 1 LIMIT 1').first()) || {};
+      const coreInclusions = (await env.DB.prepare('SELECT * FROM core_inclusions WHERE is_published = 1 ORDER BY display_order ASC').all()).results || [];
       const additionalServices = (await env.DB.prepare('SELECT * FROM additional_services WHERE is_published = 1 ORDER BY display_order ASC').all()).results || [];
       const packages = (await env.DB.prepare('SELECT * FROM packages WHERE is_published = 1 ORDER BY display_order ASC').all()).results || [];
+      const destinationHubs = (await env.DB.prepare('SELECT * FROM destination_hubs WHERE is_published = 1 ORDER BY display_order ASC').all()).results || [];
       const accommodations = (await env.DB.prepare('SELECT * FROM accommodations WHERE is_published = 1 ORDER BY display_order ASC').all()).results || [];
       const faqs = (await env.DB.prepare('SELECT * FROM faqs WHERE is_published = 1 ORDER BY display_order ASC').all()).results || [];
 
@@ -331,27 +338,85 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
           success: true,
           data: {
             settings: {
-              brandName: settings.brand_name,
-              slogan: settings.slogan,
-              defaultSeoTitle: settings.default_seo_title,
-              defaultSeoDescription: settings.default_seo_description,
-              contactEmail: settings.contact_email,
-              contactPhone: settings.contact_phone,
-              address: settings.address,
-              socialLinks: parseJson(settings.social_links, {}),
-              footerNote: settings.footer_note,
-              copyright: settings.copyright,
-              budgetComparisonMessage: settings.budget_comparison_message,
+              brandName: settings.brand_name || "Wanderer's Journeys",
+              slogan: settings.slogan || 'Where curiosity leads, possibilities unfold',
+              defaultSeoTitle: settings.default_seo_title || "Wanderer's Journeys | Live Freely, Retire Happily in Vietnam",
+              defaultSeoDescription: settings.default_seo_description || 'Turnkey luxury retirement living, seasonal escapes, and exploratory stays in Da Nang, Nha Trang, and Ho Chi Minh City.',
+              contactEmail: settings.contact_email || 'info@wanderersjourneys.com',
+              notificationEmail: settings.notification_email || 'info@wanderersjourneys.com',
+              contactPhone: settings.contact_phone || '+84 (0) 28 3822 5588',
+              address: settings.address || 'Level 18, Saigon Centre Tower 2, 67 Le Loi, District 1, Ho Chi Minh City, Vietnam',
+              socialLinks: parseJson(settings.social_links, {
+                facebook: 'https://facebook.com/wanderersjourneys',
+                instagram: 'https://instagram.com/wanderersjourneys',
+                tiktok: 'https://tiktok.com/@wanderersjourneys',
+              }),
+              footerNote: settings.footer_note || 'Wanderer’s Journeys provides premium hospitality, lifestyle curation, and residential advisory for international seniors and explorers in Vietnam.',
+              copyright: settings.copyright || '© 2026 Wanderer’s Journeys Hospitality Ltd. All rights reserved.',
+              budgetComparisonMessage: settings.budget_comparison_message || 'Experience premier coastal resort living, daily wellness, and dedicated concierge care in Vietnam for $40,000/year with a standard of living rivaling $90,000+ in North America or Western Europe.',
+              whyVietnamHeader: parseJson(settings.why_vietnam_header, {
+                badge: 'Why Vietnam',
+                title: 'A Life of Grace, Vibrance & Abundance',
+                subtitle: 'World-class coastal destinations offering an elevated standard of living at a fraction of Western costs.',
+              }),
+              financialProjection: parseJson(settings.financial_projection, {
+                westernAnnualAverage: 90000,
+                vietnamAnnualAverage: 40000,
+                projectedAnnualSavings: 50000,
+                projected10YearSavings: 500000,
+                summaryBadge: 'Remarkable Financial Longevity',
+                footnote: 'Comparative data based on cost-of-living indices for retired seniors across North America / Western Europe vs. coastal Vietnam.',
+              }),
+              packagesHeader: parseJson(settings.packages_header, {
+                badge: 'Curated Living Packages',
+                title: 'From 30-Day Living Trials to Full Tropical Retirement',
+                subtitle: 'Select the exploratory duration that aligns with your timeline. Every package includes private residence, dedicated personal navigator, and community privileges.',
+              }),
+              accommodationsHeader: parseJson(settings.accommodations_header, {
+                badge: 'Westerner Retirement Communities',
+                title: 'Handpicked Flagship Residences',
+                subtitle: 'Gated master-planned communities featuring oceanfront vistas, lush manicured gardens, resort pools, and 24/7 bilingual security.',
+              }),
+              whyChooseUsHeader: parseJson(settings.why_choose_us_header, {
+                badge: 'The Wanderer’s Difference',
+                title: 'Why Global Retirees Choose Us',
+                subtitle: 'We eliminate the friction of moving abroad with turnkey living, licensed healthcare partnerships, and genuine fellowship.',
+              }),
+              additionalServicesHeader: parseJson(settings.additional_services_header, {
+                badge: 'Tailored Concierge Services',
+                title: 'Specialized Lifestyle & Medical Add-Ons',
+                subtitle: 'Enhance your daily comfort with vetted private nurses, executive chefs, personal chauffeurs, and guided regional excursions.',
+              }),
+              faqsHeader: parseJson(settings.faqs_header, {
+                badge: 'Frequently Asked Questions',
+                title: 'Clear Answers for Peace of Mind',
+                subtitle: 'Everything you need to know about healthcare quality, visa legalities, residence leases, and expat life in Vietnam.',
+              }),
+              inquiryHeader: parseJson(settings.inquiry_header, {
+                badge: 'Tailored Proposal',
+                title: 'Design Your Vietnam Chapter',
+                subtitle: 'Tell us about your preferred coastal destination, duration, and lifestyle desires. Our Senior Concierge Director will prepare a personalized itinerary and cost projection within 24 hours.',
+              }),
             },
             hero: {
-              headline: hero.headline,
-              tagline: hero.tagline,
-              subtext: hero.subtext,
-              primaryCtaText: hero.primary_cta_text,
-              secondaryCtaText: hero.secondary_cta_text,
-              badgeText: hero.badge_text,
-              backgroundImageUrl: hero.background_image_url,
-              stats: parseJson(hero.stats, []),
+              headline: hero.headline || 'Live Freely, Retire Happily in Vietnam',
+              tagline: hero.tagline || 'Where curiosity leads, possibilities unfold',
+              subtext: hero.subtext || 'Discover Westerner Retirement Communities (WRCs) across Vietnam’s most stunning coastal cities and vibrant havens. Fully serviced residences, dedicated English-speaking concierge, healthcare navigation, and vibrant expat fellowship.',
+              primaryCtaText: hero.primary_cta_text || 'Request a Bespoke Proposal',
+              secondaryCtaText: hero.secondary_cta_text || 'Explore Living Packages',
+              badgeText: hero.badge_text || 'Curated Long-Term Living & Retirement Communities',
+              backgroundImageUrl: hero.background_image_url || 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=2000&q=80',
+              stats: parseJson(hero.stats, [
+                { label: 'Starting Monthly Package', value: '$2,250' },
+                { label: 'Expat Resident Rating', value: '4.9 / 5.0' },
+                { label: 'Concierge & Health Support', value: '24 / 7' },
+                { label: 'Prime Coastal Cities', value: '3 Hubs' },
+              ]),
+              valueBadges: parseJson(hero.value_badges, [
+                { id: 'vb_1', text: 'JCI Accredited Hospital Affiliation' },
+                { id: 'vb_2', text: '100% English-Fluent Concierge Navigators' },
+                { id: 'vb_3', text: 'Zero Foreign Real Estate Ownership Risk' },
+              ]),
             },
             whyVietnam: whyVietnam.map((w: any) => ({
               id: w.id,
@@ -359,6 +424,7 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
               subtitle: w.subtitle,
               description: w.description,
               highlights: parseJson(w.highlights, []),
+              highlight: w.subtitle || (Array.isArray(parseJson(w.highlights)) ? parseJson(w.highlights)[0] : ''),
               icon: w.icon,
             })),
             whyChooseUs: whyChooseUs.map((c: any) => ({
@@ -368,18 +434,33 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
               icon: c.icon,
             })),
             coreService: {
-              id: coreService.id,
-              title: coreService.title,
-              monthlyStartingPrice: coreService.monthly_starting_price,
-              description: coreService.description,
-              utilityAllowanceNote: coreService.utility_allowance_note,
+              id: coreService.id || 'core_service_main',
+              sectionBadge: coreService.section_badge || 'The Wanderer’s Standard',
+              sectionTitle: coreService.section_title || 'Turnkey Living Inclusions & Benefits',
+              sectionSubtitle: coreService.section_subtitle || 'Every long-term stay is designed as a frictionless, fully serviced sanctuary so you can immerse yourself in passions, relaxation, and local discoveries.',
+              baselineBadge: coreService.baseline_badge || 'All-Inclusive Living Baseline',
+              title: coreService.title || 'Two-Bedroom Executive Serviced Living',
+              monthlyStartingPrice: coreService.monthly_starting_price || 2250,
+              pricePeriodLabel: coreService.price_period_label || '/ month',
+              priceSubtext: coreService.price_subtext || 'All-inclusive turnkey lease',
+              description: coreService.description || '',
+              utilityAllowanceNote: coreService.utility_allowance_note || 'Includes monthly allowance up to $150 USD covering electricity, water, and cooling usage.',
               resortAmenities: parseJson(coreService.resort_amenities, []),
-              personalAssistant: coreService.personal_assistant,
-              cleaningSchedule: coreService.cleaning_schedule,
-              internetSpeed: coreService.internet_speed,
-              visaSupportNote: coreService.visa_support_note,
-              healthInsuranceSupportNote: coreService.health_insurance_support_note,
-              bankingSupportNote: coreService.banking_support_note,
+              personalAssistant: coreService.personal_assistant || '',
+              cleaningSchedule: coreService.cleaning_schedule || 'Professional housekeeping 3 times weekly with linen and towel refresh.',
+              internetSpeed: coreService.internet_speed || 'High-speed dedicated 100 Mbps fiber-optic Wi-Fi with dual-band mesh coverage.',
+              visaSupportNote: coreService.visa_support_note || 'Complimentary advisory, renewal tracking, and processing assistance via accredited visa partners.',
+              healthInsuranceSupportNote: coreService.health_insurance_support_note || 'Direct orientation with international expatriate healthcare brokers and hospital registration.',
+              bankingSupportNote: coreService.banking_support_note || 'Assistance setting up international debit cards, secure remittance channels, and local utility accounts.',
+              inclusions: coreInclusions.map((inc: any) => ({
+                id: inc.id,
+                title: inc.title,
+                description: inc.description,
+                icon: inc.icon,
+                bulletPoints: parseJson(inc.bullet_points, []),
+                displayOrder: inc.display_order,
+                isPublished: Boolean(inc.is_published),
+              })),
             },
             additionalServices: additionalServices.map((a: any) => ({
               id: a.id,
@@ -401,6 +482,18 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
               description: p.description,
               idealFor: parseJson(p.ideal_for, []),
               inclusions: parseJson(p.inclusions, []),
+            })),
+            destinationHubs: destinationHubs.map((h: any) => ({
+              id: h.id,
+              name: h.name,
+              city: h.name,
+              hubName: h.hub_name,
+              tagline: h.tagline,
+              description: h.description,
+              badgeClass: h.badge_class,
+              heroImage: h.hero_image,
+              displayOrder: h.display_order,
+              isPublished: Boolean(h.is_published),
             })),
             accommodations: accommodations.map((acc: any) => ({
               id: acc.id,
@@ -432,6 +525,29 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
         200,
         cors
       );
+    }
+
+    // ----------------------------------------------------
+    // 2b. DESTINATION HUBS: /api/public/destination-hubs
+    // ----------------------------------------------------
+    if (path === '/api/public/destination-hubs' && method === 'GET') {
+      if (!env.DB) return jsonResponse({ success: false, error: { message: 'DB unbound' } }, 500, cors);
+      const rows = (await env.DB.prepare('SELECT * FROM destination_hubs WHERE is_published = 1 ORDER BY display_order ASC').all()).results || [];
+      return jsonResponse({
+        success: true,
+        data: rows.map((h: any) => ({
+          id: h.id,
+          name: h.name,
+          city: h.name,
+          hubName: h.hub_name,
+          tagline: h.tagline,
+          description: h.description,
+          badgeClass: h.badge_class,
+          heroImage: h.hero_image,
+          displayOrder: h.display_order,
+          isPublished: Boolean(h.is_published),
+        })),
+      }, 200, cors);
     }
 
     // ----------------------------------------------------
@@ -534,6 +650,92 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
     }
 
     // ----------------------------------------------------
+    // 4b. AUTH: BOOTSTRAP INITIAL SUPER ADMIN (/api/auth/bootstrap)
+    // ----------------------------------------------------
+    if (path === '/api/auth/bootstrap' && method === 'POST') {
+      if (!env.DB) {
+        return jsonResponse({ success: false, error: { message: 'Database binding (DB) missing in environment.' } }, 500, cors);
+      }
+
+      const existingAdmin = await env.DB.prepare('SELECT id FROM users WHERE role = "ADMIN" LIMIT 1').first();
+      if (existingAdmin) {
+        return jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'ADMIN_ALREADY_EXISTS',
+              message: 'Security Violation: A Super Administrator account has already been provisioned on this database. One-time bootstrap is disabled.',
+            },
+          },
+          403,
+          cors
+        );
+      }
+
+      const body = (await request.json().catch(() => ({}))) as any;
+      const { setupSecret, email, fullName, password } = body;
+
+      const expectedSecret = env.SETUP_SECRET || env.ADMIN_BOOTSTRAP_SECRET;
+      if (expectedSecret && setupSecret !== expectedSecret) {
+        return jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'INVALID_SETUP_SECRET',
+              message: 'Invalid administrative setup secret.',
+            },
+          },
+          401,
+          cors
+        );
+      }
+
+      if (!email || !password || typeof password !== 'string' || password.length < 8) {
+        return jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'INVALID_INPUT',
+              message: 'Valid email and password (minimum 8 characters) are required.',
+            },
+          },
+          400,
+          cors
+        );
+      }
+
+      const id = `usr_admin_${Date.now()}`;
+      const cleanEmail = email.trim().toLowerCase();
+      const passwordHash = await hashWebCryptoPBKDF2(password);
+      const now = new Date().toISOString();
+
+      await env.DB.prepare(`
+        INSERT INTO users (id, email, password_hash, full_name, role, is_active, created_at, updated_at)
+        VALUES (?, ?, ?, ?, 'ADMIN', 1, ?, ?)
+      `).bind(id, cleanEmail, passwordHash, fullName?.trim() || 'System Administrator', now, now).run();
+
+      await env.DB.prepare(`
+        INSERT INTO audit_logs (id, user_id, user_email, action, entity_type, details, ip_address, created_at)
+        VALUES (?, ?, ?, 'ADMIN_BOOTSTRAP', 'AUTH', 'Initial system super administrator account provisioned via secure bootstrap.', ?, ?)
+      `).bind(`aud_${Date.now()}`, id, cleanEmail, request.headers.get('cf-connecting-ip') || 'edge', now).run();
+
+      return jsonResponse(
+        {
+          success: true,
+          message: 'Super Administrator initialized successfully.',
+          data: {
+            id,
+            email: cleanEmail,
+            fullName: fullName || 'System Administrator',
+            role: 'ADMIN',
+          },
+        },
+        201,
+        cors
+      );
+    }
+
+    // ----------------------------------------------------
     // 5. AUTH: LOGIN (/api/auth/login)
     // ----------------------------------------------------
     if (path === '/api/auth/login' && method === 'POST') {
@@ -605,7 +807,7 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
       const responseHeaders = new Headers(cors);
       responseHeaders.set(
         'Set-Cookie',
-        `wj_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400; Secure`
+        `wj_session=${token}; Path=/; HttpOnly; SameSite=None; Secure; Partitioned; Max-Age=86400`
       );
 
       return jsonResponse({
@@ -633,7 +835,7 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
     // ----------------------------------------------------
     if (path === '/api/auth/me' && method === 'GET') {
       if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized or session expired.' } }, 401, cors);
-      return jsonResponse({ success: true, data: { user: authSession.user } }, 200, cors);
+      return jsonResponse({ success: true, data: { user: authSession.user, token: authSession.token } }, 200, cors);
     }
 
     if (path === '/api/auth/logout' && method === 'POST') {
@@ -641,7 +843,7 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
         await env.DB.prepare('DELETE FROM sessions WHERE token = ?').bind(authSession.token).run();
       }
       const responseHeaders = new Headers(cors);
-      responseHeaders.set('Set-Cookie', 'wj_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Secure');
+      responseHeaders.set('Set-Cookie', 'wj_session=; Path=/; HttpOnly; SameSite=None; Max-Age=0; Secure; Partitioned');
       return jsonResponse({ success: true, message: 'Logged out successfully.' }, 200, responseHeaders);
     }
 
@@ -931,6 +1133,9 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
     // ----------------------------------------------------
     // 10. ADMIN: SITE SETTINGS & HERO
     // ----------------------------------------------------
+    // ----------------------------------------------------
+    // 10. ADMIN: SITE SETTINGS & HERO
+    // ----------------------------------------------------
     if (path === '/api/admin/settings') {
       if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
       if (method === 'GET') {
@@ -938,8 +1143,31 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
         return jsonResponse({
           success: true,
           data: {
-            ...settings,
-            socialLinks: parseJson(settings?.social_links, {}),
+            brandName: settings?.brand_name || "Wanderer's Journeys",
+            slogan: settings?.slogan || 'Where curiosity leads, possibilities unfold',
+            defaultSeoTitle: settings?.default_seo_title || "Wanderer's Journeys | Live Freely, Retire Happily in Vietnam",
+            defaultSeoDescription: settings?.default_seo_description || 'Turnkey luxury retirement living, seasonal escapes, and exploratory stays in Da Nang, Nha Trang, and Ho Chi Minh City.',
+            contactEmail: settings?.contact_email || 'info@wanderersjourneys.com',
+            notificationEmail: settings?.notification_email || 'info@wanderersjourneys.com',
+            contactPhone: settings?.contact_phone || '+84 (0) 28 3822 5588',
+            address: settings?.address || 'Level 18, Saigon Centre Tower 2, 67 Le Loi, District 1, Ho Chi Minh City, Vietnam',
+            socialLinks: parseJson(settings?.social_links, {
+              facebook: 'https://facebook.com/wanderersjourneys',
+              instagram: 'https://instagram.com/wanderersjourneys',
+              tiktok: 'https://tiktok.com/@wanderersjourneys',
+            }),
+            footerNote: settings?.footer_note || '',
+            copyright: settings?.copyright || '© 2026 Wanderer’s Journeys Hospitality Ltd. All rights reserved.',
+            budgetComparisonMessage: settings?.budget_comparison_message || '',
+            whyVietnamHeader: parseJson(settings?.why_vietnam_header, {}),
+            financialProjection: parseJson(settings?.financial_projection, {}),
+            packagesHeader: parseJson(settings?.packages_header, {}),
+            accommodationsHeader: parseJson(settings?.accommodations_header, {}),
+            whyChooseUsHeader: parseJson(settings?.why_choose_us_header, {}),
+            additionalServicesHeader: parseJson(settings?.additional_services_header, {}),
+            faqsHeader: parseJson(settings?.faqs_header, {}),
+            inquiryHeader: parseJson(settings?.inquiry_header, {}),
+            updatedAt: settings?.updated_at,
           },
         }, 200, cors);
       }
@@ -960,13 +1188,29 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
             footer_note = COALESCE(?, footer_note),
             copyright = COALESCE(?, copyright),
             budget_comparison_message = COALESCE(?, budget_comparison_message),
+            why_vietnam_header = COALESCE(?, why_vietnam_header),
+            financial_projection = COALESCE(?, financial_projection),
+            packages_header = COALESCE(?, packages_header),
+            accommodations_header = COALESCE(?, accommodations_header),
+            why_choose_us_header = COALESCE(?, why_choose_us_header),
+            additional_services_header = COALESCE(?, additional_services_header),
+            faqs_header = COALESCE(?, faqs_header),
+            inquiry_header = COALESCE(?, inquiry_header),
             updated_at = datetime('now')
           WHERE id = 'settings_default'
         `).bind(
           b.brandName || null, b.slogan || null, b.defaultSeoTitle || null, b.defaultSeoDescription || null,
           b.contactEmail || null, b.notificationEmail || null, b.contactPhone || null, b.address || null,
           b.socialLinks ? JSON.stringify(b.socialLinks) : null, b.footerNote || null, b.copyright || null,
-          b.budgetComparisonMessage || null
+          b.budgetComparisonMessage || null,
+          b.whyVietnamHeader ? JSON.stringify(b.whyVietnamHeader) : null,
+          b.financialProjection ? JSON.stringify(b.financialProjection) : null,
+          b.packagesHeader ? JSON.stringify(b.packagesHeader) : null,
+          b.accommodationsHeader ? JSON.stringify(b.accommodationsHeader) : null,
+          b.whyChooseUsHeader ? JSON.stringify(b.whyChooseUsHeader) : null,
+          b.additionalServicesHeader ? JSON.stringify(b.additionalServicesHeader) : null,
+          b.faqsHeader ? JSON.stringify(b.faqsHeader) : null,
+          b.inquiryHeader ? JSON.stringify(b.inquiryHeader) : null
         ).run();
 
         const updated = await env.DB.prepare('SELECT * FROM site_settings LIMIT 1').first();
@@ -980,7 +1224,18 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
         const hero = await env.DB.prepare('SELECT * FROM hero_content LIMIT 1').first();
         return jsonResponse({
           success: true,
-          data: { ...hero, stats: parseJson(hero?.stats, []) },
+          data: {
+            ...hero,
+            headline: hero?.headline,
+            tagline: hero?.tagline,
+            subtext: hero?.subtext,
+            primaryCtaText: hero?.primary_cta_text,
+            secondaryCtaText: hero?.secondary_cta_text,
+            badgeText: hero?.badge_text,
+            backgroundImageUrl: hero?.background_image_url,
+            stats: parseJson(hero?.stats, []),
+            valueBadges: parseJson(hero?.value_badges, []),
+          },
         }, 200, cors);
       }
       if (method === 'PUT') {
@@ -995,12 +1250,14 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
             badge_text = COALESCE(?, badge_text),
             background_image_url = COALESCE(?, background_image_url),
             stats = COALESCE(?, stats),
+            value_badges = COALESCE(?, value_badges),
             updated_at = datetime('now')
           WHERE id = 'hero_default'
         `).bind(
           b.headline || null, b.tagline || null, b.subtext || null,
           b.primaryCtaText || null, b.secondaryCtaText || null, b.badgeText || null,
-          b.backgroundImageUrl || null, b.stats ? JSON.stringify(b.stats) : null
+          b.backgroundImageUrl || null, b.stats ? JSON.stringify(b.stats) : null,
+          b.valueBadges ? JSON.stringify(b.valueBadges) : null
         ).run();
 
         const updated = await env.DB.prepare('SELECT * FROM hero_content LIMIT 1').first();
@@ -1017,7 +1274,15 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
           success: true,
           data: {
             ...core,
+            sectionBadge: core?.section_badge,
+            sectionTitle: core?.section_title,
+            sectionSubtitle: core?.section_subtitle,
+            baselineBadge: core?.baseline_badge,
+            title: core?.title,
             monthlyStartingPrice: core?.monthly_starting_price,
+            pricePeriodLabel: core?.price_period_label,
+            priceSubtext: core?.price_subtext,
+            description: core?.description,
             utilityAllowanceNote: core?.utility_allowance_note,
             resortAmenities: parseJson(core?.resort_amenities, []),
             personalAssistant: core?.personal_assistant,
@@ -1033,8 +1298,14 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
         const b = (await request.json().catch(() => ({}))) as any;
         await env.DB.prepare(`
           UPDATE core_services SET
+            section_badge = COALESCE(?, section_badge),
+            section_title = COALESCE(?, section_title),
+            section_subtitle = COALESCE(?, section_subtitle),
+            baseline_badge = COALESCE(?, baseline_badge),
             title = COALESCE(?, title),
             monthly_starting_price = COALESCE(?, monthly_starting_price),
+            price_period_label = COALESCE(?, price_period_label),
+            price_subtext = COALESCE(?, price_subtext),
             description = COALESCE(?, description),
             utility_allowance_note = COALESCE(?, utility_allowance_note),
             resort_amenities = COALESCE(?, resort_amenities),
@@ -1047,8 +1318,9 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
             updated_at = datetime('now')
           WHERE id = 'core_default'
         `).bind(
-          b.title || null, b.monthlyStartingPrice || null, b.description || null,
-          b.utilityAllowanceNote || null, b.resortAmenities ? JSON.stringify(b.resortAmenities) : null,
+          b.sectionBadge || null, b.sectionTitle || null, b.sectionSubtitle || null, b.baselineBadge || null,
+          b.title || null, b.monthlyStartingPrice || null, b.pricePeriodLabel || null, b.priceSubtext || null,
+          b.description || null, b.utilityAllowanceNote || null, b.resortAmenities ? JSON.stringify(b.resortAmenities) : null,
           b.personalAssistant || null, b.cleaningSchedule || null, b.internetSpeed || null,
           b.visaSupportNote || null, b.healthInsuranceSupportNote || null, b.bankingSupportNote || null
         ).run();
@@ -1056,6 +1328,72 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
         const updated = await env.DB.prepare('SELECT * FROM core_services LIMIT 1').first();
         return jsonResponse({ success: true, data: updated }, 200, cors);
       }
+    }
+
+    // Core Service Inclusions (The 9 Turnkey Inclusions CRUD)
+    if (path === '/api/admin/core-service/inclusions') {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      if (method === 'GET') {
+        const rows = (await env.DB.prepare('SELECT * FROM core_inclusions ORDER BY display_order ASC').all()).results || [];
+        return jsonResponse({
+          success: true,
+          data: rows.map((inc: any) => ({
+            id: inc.id,
+            title: inc.title,
+            description: inc.description,
+            icon: inc.icon,
+            bulletPoints: parseJson(inc.bullet_points, []),
+            displayOrder: inc.display_order,
+            isPublished: Boolean(inc.is_published),
+            createdAt: inc.created_at,
+            updatedAt: inc.updated_at,
+          })),
+        }, 200, cors);
+      }
+      if (method === 'POST') {
+        const b = (await request.json().catch(() => ({}))) as any;
+        const now = new Date().toISOString();
+        let id = b.id;
+        if (id) {
+          const existing = await env.DB.prepare('SELECT id FROM core_inclusions WHERE id = ?').bind(id).first();
+          if (existing) {
+            await env.DB.prepare(`
+              UPDATE core_inclusions SET
+                title = COALESCE(?, title),
+                description = COALESCE(?, description),
+                icon = COALESCE(?, icon),
+                bullet_points = COALESCE(?, bullet_points),
+                display_order = COALESCE(?, display_order),
+                is_published = COALESCE(?, is_published),
+                updated_at = ?
+              WHERE id = ?
+            `).bind(
+              b.title || null, b.description || null, b.icon || null,
+              b.bulletPoints ? JSON.stringify(b.bulletPoints) : null,
+              b.displayOrder !== undefined ? b.displayOrder : null,
+              b.isPublished !== undefined ? (b.isPublished ? 1 : 0) : null,
+              now, id
+            ).run();
+            return jsonResponse({ success: true, data: { id, ...b } }, 200, cors);
+          }
+        }
+        id = id || `inc_${Date.now()}`;
+        await env.DB.prepare(`
+          INSERT INTO core_inclusions (id, title, description, icon, bullet_points, display_order, is_published, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          id, b.title || 'Core Service Inclusion', b.description || '', b.icon || 'Sparkles',
+          JSON.stringify(b.bulletPoints || []), b.displayOrder || 1, b.isPublished !== false ? 1 : 0, now, now
+        ).run();
+        return jsonResponse({ success: true, data: { id, ...b } }, 201, cors);
+      }
+    }
+
+    if (path.startsWith('/api/admin/core-service/inclusions/') && method === 'DELETE') {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      const incId = path.split('/')[5];
+      await env.DB.prepare('DELETE FROM core_inclusions WHERE id = ?').bind(incId).run();
+      return jsonResponse({ success: true, message: 'Core inclusion deleted.' }, 200, cors);
     }
 
     // Why Vietnam CRUD
@@ -1716,7 +2054,7 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
     }
 
     // ----------------------------------------------------
-    // 15. ADMIN: MEDIA MANAGEMENT (R2)
+    // 15. ADMIN: MEDIA MANAGEMENT (R2 & Metadata D1)
     // ----------------------------------------------------
     if (path === '/api/admin/media' && method === 'GET') {
       if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
@@ -1737,47 +2075,159 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
       }, 200, cors);
     }
 
-    if (path === '/api/admin/media/upload' && method === 'POST') {
+    if ((path === '/api/admin/media/upload' || path === '/api/admin/media') && method === 'POST') {
       if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
-      if (!env.MEDIA_BUCKET) {
-        return jsonResponse({ success: false, error: { message: 'Cloudflare R2 bucket (MEDIA_BUCKET) not bound.' } }, 500, cors);
+
+      const contentType = request.headers.get('Content-Type') || '';
+
+      // A. Multipart file upload to Cloudflare R2
+      if (contentType.includes('multipart/form-data')) {
+        if (!env.MEDIA_BUCKET) {
+          return jsonResponse({ success: false, error: { message: 'Cloudflare R2 bucket (MEDIA_BUCKET) not bound.' } }, 500, cors);
+        }
+
+        const formData = await request.formData();
+        const file = formData.get('file') as File;
+        if (!file) return jsonResponse({ success: false, error: { message: 'No file provided' } }, 400, cors);
+
+        // Security Validation 1: Size limitation (10MB max)
+        const MAX_SIZE_BYTES = 10 * 1024 * 1024;
+        if (file.size > MAX_SIZE_BYTES) {
+          return jsonResponse({
+            success: false,
+            error: { code: 'FILE_TOO_LARGE', message: 'File size exceeds maximum permitted limit of 10 MB.' },
+          }, 400, cors);
+        }
+
+        // Security Validation 2: MIME Type whitelist
+        const allowedMimeTypes = [
+          'image/jpeg',
+          'image/png',
+          'image/webp',
+          'image/gif',
+          'image/svg+xml',
+          'application/pdf',
+        ];
+        const mimeType = (file.type || '').toLowerCase();
+        if (!allowedMimeTypes.includes(mimeType)) {
+          return jsonResponse({
+            success: false,
+            error: {
+              code: 'INVALID_MIME_TYPE',
+              message: `MIME type "${mimeType}" is not permitted. Allowed types: JPEG, PNG, WebP, GIF, SVG, PDF.`,
+            },
+          }, 400, cors);
+        }
+
+        // Security Validation 3: Extension whitelist & sanitization
+        const rawExt = file.name.split('.').pop()?.toLowerCase() || 'bin';
+        const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg', 'pdf'];
+        if (!allowedExtensions.includes(rawExt)) {
+          return jsonResponse({
+            success: false,
+            error: { code: 'INVALID_EXTENSION', message: `Extension .${rawExt} is not permitted.` },
+          }, 400, cors);
+        }
+
+        const cleanOriginalName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const randomToken = bytesToHex(crypto.getRandomValues(new Uint8Array(8)));
+        const key = `uploads/${Date.now()}_${randomToken}.${rawExt}`;
+
+        await env.MEDIA_BUCKET.put(key, file.stream(), {
+          httpMetadata: {
+            contentType: mimeType,
+          },
+        });
+
+        const publicUrl = `/media/${key}`;
+        const assetId = `med_${Date.now()}_${randomToken.substring(0, 4)}`;
+
+        await env.DB.prepare(`
+          INSERT INTO media_assets (id, filename, original_name, mime_type, size_bytes, url, alt_text, category, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, 'general', datetime('now'))
+        `).bind(assetId, key, cleanOriginalName, mimeType, file.size, publicUrl, cleanOriginalName).run();
+
+        await env.DB.prepare(`
+          INSERT INTO audit_logs (id, user_id, user_email, action, entity_type, details, ip_address, created_at)
+          VALUES (?, ?, ?, 'MEDIA_UPLOADED', 'MEDIA', ?, ?, datetime('now'))
+        `).bind(
+          `aud_${Date.now()}`,
+          authSession.user.id,
+          authSession.user.email,
+          `Uploaded asset ${cleanOriginalName} (${file.size} bytes) to Cloudflare R2`,
+          request.headers.get('cf-connecting-ip') || 'edge'
+        ).run();
+
+        return jsonResponse({
+          success: true,
+          data: {
+            id: assetId,
+            url: publicUrl,
+            filename: key,
+            originalName: cleanOriginalName,
+            mimeType,
+            sizeBytes: file.size,
+          },
+        }, 200, cors);
       }
 
-      const formData = await request.formData();
-      const file = formData.get('file') as File;
-      if (!file) return jsonResponse({ success: false, error: { message: 'No file provided' } }, 400, cors);
+      // B. JSON payload for linking external or existing media asset
+      const jsonBody = (await request.json().catch(() => ({}))) as any;
+      const { filename, url: mediaUrl, altText, category } = jsonBody;
 
-      const fileExt = file.name.split('.').pop() || 'jpg';
-      const key = `uploads/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+      if (!filename || !mediaUrl) {
+        return jsonResponse({ success: false, error: { message: 'Filename and URL are required.' } }, 400, cors);
+      }
 
-      await env.MEDIA_BUCKET.put(key, file.stream(), {
-        httpMetadata: { contentType: file.type || 'application/octet-stream' },
-      });
-
-      const publicUrl = `/media/${key}`;
-      const assetId = `med_${Date.now()}`;
-
+      const assetId = `med_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
       await env.DB.prepare(`
         INSERT INTO media_assets (id, filename, original_name, mime_type, size_bytes, url, alt_text, category, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'general', datetime('now'))
-      `).bind(assetId, key, file.name, file.type, file.size, publicUrl, file.name).run();
+        VALUES (?, ?, ?, 'image/jpeg', 0, ?, ?, ?, datetime('now'))
+      `).bind(
+        assetId,
+        filename.trim(),
+        filename.trim(),
+        mediaUrl.trim(),
+        altText?.trim() || filename.trim(),
+        category || 'general'
+      ).run();
 
-      return jsonResponse({ success: true, data: { id: assetId, url: publicUrl, filename: key } }, 200, cors);
+      return jsonResponse({
+        success: true,
+        data: {
+          id: assetId,
+          filename: filename.trim(),
+          url: mediaUrl.trim(),
+          altText: altText || filename,
+        },
+      }, 200, cors);
     }
 
     if (path.startsWith('/api/admin/media/') && method === 'DELETE') {
       if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
       const mediaId = path.split('/')[4];
       const asset = await env.DB.prepare('SELECT filename FROM media_assets WHERE id = ?').bind(mediaId).first();
-      if (asset && env.MEDIA_BUCKET) {
+      if (asset && env.MEDIA_BUCKET && asset.filename.startsWith('uploads/')) {
         try {
           await env.MEDIA_BUCKET.delete(asset.filename);
         } catch (e) {
-          console.warn('R2 delete note:', e);
+          console.warn('R2 delete warning:', e);
         }
       }
       await env.DB.prepare('DELETE FROM media_assets WHERE id = ?').bind(mediaId).run();
-      return jsonResponse({ success: true, message: 'Media removed.' }, 200, cors);
+
+      await env.DB.prepare(`
+        INSERT INTO audit_logs (id, user_id, user_email, action, entity_type, details, ip_address, created_at)
+        VALUES (?, ?, ?, 'MEDIA_DELETED', 'MEDIA', ?, ?, datetime('now'))
+      `).bind(
+        `aud_${Date.now()}`,
+        authSession.user.id,
+        authSession.user.email,
+        `Deleted media asset with ID ${mediaId}`,
+        request.headers.get('cf-connecting-ip') || 'edge'
+      ).run();
+
+      return jsonResponse({ success: true, message: 'Media asset deleted successfully.' }, 200, cors);
     }
 
     // Default 404 for unrecognized API endpoints

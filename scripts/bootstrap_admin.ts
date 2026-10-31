@@ -29,9 +29,10 @@ function parseArgs(): { email?: string; name?: string; password?: string; remote
 }
 
 function hashPasswordPBKDF2(password: string): string {
-  const salt = crypto.randomBytes(16).toString('hex');
+  const salt = crypto.randomBytes(16);
+  const saltHex = salt.toString('hex');
   const key = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha256').toString('hex');
-  return `pbkdf2:${salt}:${key}`;
+  return `pbkdf2:${saltHex}:${key}`;
 }
 
 async function main() {
@@ -96,14 +97,21 @@ Examples:
     }
   } else {
     console.log(`[Provisioning Local Dev] Updating local database store for: ${cleanEmail}...`);
-    const dbPath = path.resolve(process.cwd(), 'data/db.json');
-    if (!fs.existsSync(dbPath)) {
-      console.error(`Error: ${dbPath} not found.`);
-      process.exit(1);
+    const dbDir = path.resolve(process.cwd(), 'data');
+    const dbPath = path.join(dbDir, 'db.json');
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
     }
 
-    const state = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
-    const existingIndex = state.users.findIndex((u: any) => u.email.toLowerCase() === cleanEmail);
+    let state: any;
+    if (fs.existsSync(dbPath)) {
+      state = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
+    } else {
+      const seedModule = await import('../server/db/seedData');
+      state = JSON.parse(JSON.stringify(seedModule.INITIAL_DATABASE_STATE));
+    }
+
+    const existingIndex = (state.users || []).findIndex((u: any) => u.email.toLowerCase() === cleanEmail);
 
     if (existingIndex >= 0) {
       state.users[existingIndex].passwordHash = passwordHash;

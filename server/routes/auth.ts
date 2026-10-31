@@ -7,6 +7,71 @@ import { CONFIG } from '../config';
 
 const router = Router();
 
+// One-time Admin Bootstrap Endpoint
+router.post('/bootstrap', (req: Request, res: Response): void => {
+  const { setupSecret, email, fullName, password } = req.body;
+  const existingAdmin = db.getState().users.find(u => u.role === 'ADMIN');
+  if (existingAdmin) {
+    res.status(403).json({
+      success: false,
+      error: { code: 'ADMIN_ALREADY_EXISTS', message: 'An Administrator has already been provisioned for this system.' },
+    });
+    return;
+  }
+
+  const expectedSecret = process.env.SETUP_SECRET || process.env.ADMIN_BOOTSTRAP_SECRET;
+  if (expectedSecret && setupSecret !== expectedSecret) {
+    res.status(401).json({
+      success: false,
+      error: { code: 'INVALID_SETUP_SECRET', message: 'Invalid or missing administrative setup secret.' },
+    });
+    return;
+  }
+
+  if (!email || !password || typeof password !== 'string' || password.length < 8) {
+    res.status(400).json({
+      success: false,
+      error: { code: 'INVALID_INPUT', message: 'Valid email and password (minimum 8 characters) are required.' },
+    });
+    return;
+  }
+
+  const newUser = {
+    id: `usr_admin_${Date.now()}`,
+    email: email.trim().toLowerCase(),
+    passwordHash: hashPassword(password),
+    fullName: fullName || 'System Administrator',
+    role: 'ADMIN' as const,
+    isActive: true,
+    lastLoginAt: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  db.getState().users.push(newUser);
+  db.save();
+
+  db.addAuditLog({
+    userId: newUser.id,
+    userEmail: newUser.email,
+    action: 'ADMIN_BOOTSTRAP',
+    entityType: 'AUTH',
+    details: 'Initial system super administrator account provisioned via secure bootstrap.',
+    ipAddress: req.ip,
+  });
+
+  res.status(201).json({
+    success: true,
+    data: {
+      id: newUser.id,
+      email: newUser.email,
+      fullName: newUser.fullName,
+      role: newUser.role,
+      message: 'System administrator account provisioned successfully.',
+    },
+  });
+});
+
 // Login
 router.post('/login', (req: Request, res: Response): void => {
   const { email, password } = req.body;
@@ -86,10 +151,14 @@ router.post('/login', (req: Request, res: Response): void => {
     ipAddress: req.ip || (req.headers['x-forwarded-for'] as string),
   });
 
-  const isProd = process.env.NODE_ENV === 'production';
+  const isHttps = Boolean(req.secure || req.headers['x-forwarded-proto'] === 'https' || process.env.NODE_ENV === 'production');
+  const cookieFlags = isHttps
+    ? 'SameSite=None; Secure; Partitioned'
+    : 'SameSite=Lax';
+
   res.setHeader(
     'Set-Cookie',
-    `wj_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${CONFIG.SESSION_DURATION_HOURS * 3600}${isProd ? '; Secure' : ''}`
+    `wj_session=${token}; Path=/; HttpOnly; ${cookieFlags}; Max-Age=${CONFIG.SESSION_DURATION_HOURS * 3600}`
   );
 
   res.json({
@@ -118,6 +187,7 @@ router.get('/me', authenticate, (req: Request, res: Response): void => {
         fullName: req.user!.fullName,
         role: req.user!.role,
       },
+      token: req.sessionToken,
     },
   });
 });
@@ -187,7 +257,12 @@ router.post('/logout', (req: Request, res: Response): void => {
     }
   }
 
-  res.setHeader('Set-Cookie', 'wj_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+  const isHttps = Boolean(req.secure || req.headers['x-forwarded-proto'] === 'https' || process.env.NODE_ENV === 'production');
+  const cookieFlags = isHttps
+    ? 'SameSite=None; Secure; Partitioned'
+    : 'SameSite=Lax';
+
+  res.setHeader('Set-Cookie', `wj_session=; Path=/; HttpOnly; ${cookieFlags}; Max-Age=0`);
   res.json({ success: true, message: 'Logged out successfully.' });
 });
 

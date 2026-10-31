@@ -8,10 +8,11 @@ export function hashPassword(password: string, customSalt?: string): string {
   return `scrypt:${salt}:${derivedKey.toString('hex')}`;
 }
 
-export function hashPasswordPBKDF2(password: string, customSalt?: string): string {
-  const salt = customSalt || crypto.randomBytes(16).toString('hex');
+export function hashPasswordPBKDF2(password: string, customSaltHex?: string): string {
+  const salt = customSaltHex ? Buffer.from(customSaltHex, 'hex') : crypto.randomBytes(16);
+  const saltHex = salt.toString('hex');
   const key = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha256').toString('hex');
-  return `pbkdf2:${salt}:${key}`;
+  return `pbkdf2:${saltHex}:${key}`;
 }
 
 export function verifyPassword(password: string, storedHash: string): boolean {
@@ -19,7 +20,8 @@ export function verifyPassword(password: string, storedHash: string): boolean {
   if (storedHash.startsWith('pbkdf2:')) {
     const parts = storedHash.split(':');
     if (parts.length !== 3) return false;
-    const [, salt, key] = parts;
+    const [, saltHex, key] = parts;
+    const salt = Buffer.from(saltHex, 'hex');
     const derived = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha256').toString('hex');
     try {
       return crypto.timingSafeEqual(Buffer.from(derived, 'hex'), Buffer.from(key, 'hex'));
@@ -47,59 +49,16 @@ export function verifyPassword(password: string, storedHash: string): boolean {
 export const INITIAL_DATABASE_STATE: DatabaseState = {
   users: [
     {
-      id: 'usr_admin_xuanthang',
-      email: 'bienxuanthang01.qb@gmail.com',
-      passwordHash: hashPassword('Admin2026!WJ'),
-      fullName: 'Xuan Thang (Super Admin)',
-      role: 'ADMIN',
-      isActive: true,
-      lastLoginAt: null,
-      createdAt: '2026-10-30T00:00:00Z',
-      updatedAt: '2026-10-30T00:00:00Z',
-    },
-    {
-      id: 'usr_admin_xuanthang_alias',
-      email: 'xuanthang.admin@wanderersjourneys.com',
-      passwordHash: hashPassword('Admin2026!WJ'),
-      fullName: 'Xuan Thang (Administrator)',
-      role: 'ADMIN',
-      isActive: true,
-      lastLoginAt: null,
-      createdAt: '2026-10-30T00:00:00Z',
-      updatedAt: '2026-10-30T00:00:00Z',
-    },
-    {
       id: 'usr_admin_01',
       email: 'admin@wanderersjourneys.com',
-      passwordHash: hashPassword('Admin2026!WJ'),
-      fullName: 'Alexander Vance',
+      passwordHash:
+        'pbkdf2:e47f8d7bb55f6781259cdde8842821f6:2699190ce1c9dbc68d0baf2789dc6339eb3790171d71322d409944cb38508844ed4b3268bda1518b4f96095c3eabbbe2d22016dccd6ca6fc1e0450e6edaa768a',
+      fullName: 'System Administrator',
       role: 'ADMIN',
       isActive: true,
-      lastLoginAt: '2026-10-25T10:30:00Z',
+      lastLoginAt: null,
       createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: '2026-10-25T10:30:00Z',
-    },
-    {
-      id: 'usr_mgr_01',
-      email: 'manager@wanderersjourneys.com',
-      passwordHash: hashPassword('Manager2026!WJ'),
-      fullName: 'Mai Nguyen',
-      role: 'MANAGER',
-      isActive: true,
-      lastLoginAt: '2026-10-26T08:15:00Z',
-      createdAt: '2026-01-10T00:00:00Z',
-      updatedAt: '2026-10-26T08:15:00Z',
-    },
-    {
-      id: 'usr_lead_01',
-      email: 'concierge@wanderersjourneys.com',
-      passwordHash: hashPassword('Lead2026!WJ'),
-      fullName: 'David Sterling',
-      role: 'LEAD_MANAGER',
-      isActive: true,
-      lastLoginAt: '2026-10-27T06:45:00Z',
-      createdAt: '2026-02-01T00:00:00Z',
-      updatedAt: '2026-10-27T06:45:00Z',
+      updatedAt: '2026-01-01T00:00:00Z',
     },
   ],
   sessions: [],

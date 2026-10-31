@@ -4,13 +4,11 @@
 -- Description: Baseline administrator, default settings, catalog and form
 -- ====================================================================
 
--- 1. SEED USERS (Password hashes generated via HMAC-SHA256 with project salt)
-INSERT INTO users (id, email, password_hash, full_name, role, is_active)
-VALUES
-    ('usr_admin_01', 'admin@wanderersjourneys.com', 'a3ef2c4bebf6ffec954e334468f9ef5d7e5076cf74be59c258d55ffba67cf5e2', 'Alexander Vance', 'ADMIN', true),
-    ('usr_mgr_01', 'manager@wanderersjourneys.com', 'e1be09df3427909ebdf23ad26f2f98f6d5071ab91ea2803b87a89868f18471b0', 'Mai Nguyen', 'MANAGER', true),
-    ('usr_lead_01', 'concierge@wanderersjourneys.com', '8e71b269ec398a6350fbc16b8ff5e672ef175ab20dbe4223f2f8149ff929e5e7', 'David Sterling', 'LEAD_MANAGER', true)
-ON CONFLICT (email) DO NOTHING;
+-- 1. USERS & ADMINISTRATORS
+-- SECURITY ENFORCEMENT: Never commit sample passwords or administrator accounts to seed files.
+-- Initial Super Administrator MUST be bootstrapped using:
+--   npx tsx scripts/bootstrap_admin.ts --email="admin@yourdomain.com" --password="YourSecurePassword"
+-- Or via POST /api/auth/bootstrap with the configured administrative SETUP_SECRET.
 
 -- 2. SEED SITE SETTINGS
 INSERT INTO site_settings (id, brand_name, slogan, default_seo_title, default_seo_description, contact_email, notification_email, contact_phone, address, social_links, footer_note, copyright, budget_comparison_message)

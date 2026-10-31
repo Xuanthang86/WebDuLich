@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "include": [
+    "/api/*",
+    "/media/*"
+  ],
+  "exclude": [
+    "/assets/*",
+    "/robots.txt",
+    "/favicon.ico",
+    "/_routes.json"
+  ]
+}
