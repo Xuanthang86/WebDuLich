@@ -323,6 +323,43 @@ router.post('/users', authenticate, requireRole(['ADMIN']), (req: Request, res: 
   });
 });
 
+router.delete('/users/:id', authenticate, requireRole(['ADMIN']), (req: Request, res: Response): void => {
+  const { id } = req.params;
+  if (id === req.user!.id) {
+    res.status(400).json({ success: false, error: { message: 'You cannot delete your own account.' } });
+    return;
+  }
+
+  const state = db.getState();
+  const target = state.users.find((user: any) => user.id === id);
+  if (!target) {
+    res.status(404).json({ success: false, error: { message: 'Staff user not found.' } });
+    return;
+  }
+
+  if (target.role === 'ADMIN') {
+    const activeAdmins = state.users.filter((user: any) => user.role === 'ADMIN' && user.isActive).length;
+    if (activeAdmins <= 1) {
+      res.status(409).json({ success: false, error: { message: 'The last active administrator cannot be deleted.' } });
+      return;
+    }
+  }
+
+  state.sessions = state.sessions.filter((session: any) => session.userId !== id);
+  state.users = state.users.filter((user: any) => user.id !== id);
+  db.save();
+  db.addAuditLog({
+    userId: req.user!.id,
+    userEmail: req.user!.email,
+    action: 'USER_DELETED',
+    entityType: 'USER',
+    entityId: id,
+    details: `Deleted staff account ${target.email}.`,
+  });
+
+  res.json({ success: true, data: { id, deleted: true } });
+});
+
 router.put('/users/:id/status', authenticate, requireRole(['ADMIN']), (req: Request, res: Response): void => {
   const { id } = req.params;
   const { isActive } = req.body;
