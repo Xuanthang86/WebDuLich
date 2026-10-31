@@ -398,44 +398,18 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           </div>
         </main>
 
-        {/* Synchronized Footer */}
-        <footer className="bg-[#0B1120] text-white border-t border-slate-800 py-6 sm:py-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400 text-center sm:text-left">
-              <div>
-                <p>{settings?.copyright || '© 2026 Wanderer’s Journeys Hospitality Ltd. All rights reserved.'}</p>
-                <p className="text-[11px] text-slate-400 font-light mt-0.5">
-                  {settings?.contactEmail || 'concierge@wanderersjourneys.com'} • {settings?.contactPhone || '+84 (0) 28 3822 5588'}
-                </p>
-              </div>
-              <div className="flex items-center gap-4">
-                {onOpenPrivacy && (
-                  <button
-                    type="button"
-                    onClick={onOpenPrivacy}
-                    className="hover:text-[#C9A45C] transition-colors cursor-pointer"
-                  >
-                    Privacy Policy
-                  </button>
-                )}
-                {onOpenTerms && (
-                  <button
-                    type="button"
-                    onClick={onOpenTerms}
-                    className="hover:text-[#C9A45C] transition-colors cursor-pointer"
-                  >
-                    Terms of Service
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={onBackToWebsite}
-                  className="hover:text-[#C9A45C] transition-colors cursor-pointer flex items-center gap-1"
-                >
-                  <ArrowLeft className="w-3 h-3" />
-                  <span>Main Website</span>
-                </button>
-              </div>
+        {/* Login Footer */}
+        <footer className="bg-[#0B1120] text-white border-t border-slate-800 py-5 sm:py-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-2">
+            <p className="text-xs sm:text-sm text-slate-300 font-medium">
+              {settings?.copyright || '© 2026 Wanderer’s Journeys Hospitality Ltd. All rights reserved.'}
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] sm:text-[11px] text-slate-400 font-light">
+              <span>{settings?.contactEmail || 'info@wanderersjourneys.com'}</span>
+              <span aria-hidden="true">•</span>
+              <span>{settings?.contactPhone || '+84 (0) 28 3822 5588'}</span>
+              {onOpenPrivacy && <><span aria-hidden="true">•</span><button type="button" onClick={onOpenPrivacy} className="hover:text-[#C9A45C] transition-colors">Privacy Policy</button></>}
+              {onOpenTerms && <><span aria-hidden="true">•</span><button type="button" onClick={onOpenTerms} className="hover:text-[#C9A45C] transition-colors">Terms of Service</button></>}
             </div>
           </div>
         </footer>
@@ -679,19 +653,6 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 >
                   <ArrowLeft className="w-4 h-4 text-[#C9A45C]" />
                   <span>Back to Main Website</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setProfileFullName(user?.fullName || '');
-                    setShowProfileModal(true);
-                  }}
-                  className="w-full py-2.5 rounded-xl border border-stone-300 bg-white text-xs font-bold text-slate-800 flex items-center justify-center gap-2 cursor-pointer hover:bg-stone-50"
-                >
-                  <UserCheck className="w-4 h-4 text-[#A77A32]" />
-                  <span>Account Information</span>
                 </button>
 
                 <button
