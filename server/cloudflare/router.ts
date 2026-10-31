@@ -133,9 +133,18 @@ function jsonResponse(data: any, status = 200, headers: HeadersInit = {}): Respo
 
 // Session authentication from D1
 async function getAuthUser(req: Request, env: Env): Promise<{ user: any; token: string } | null> {
+  let token: string | null = null;
   const authHeader = req.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-  const token = authHeader.split(' ')[1];
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else {
+    const cookieHeader = req.headers.get('Cookie');
+    if (cookieHeader) {
+      const match = cookieHeader.match(/(?:^|;\s*)wj_session=([^;]+)/);
+      if (match) token = match[1];
+    }
+  }
+
   if (!token || !env.DB) return null;
 
   const now = new Date().toISOString();
@@ -581,6 +590,12 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
         request.headers.get('cf-connecting-ip') || 'edge'
       ).run();
 
+      const responseHeaders = new Headers(cors);
+      responseHeaders.set(
+        'Set-Cookie',
+        `wj_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400; Secure`
+      );
+
       return jsonResponse({
         success: true,
         data: {
@@ -593,7 +608,7 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
             role: user.role,
           },
         },
-      }, 200, cors);
+      }, 200, responseHeaders);
     }
 
     // ----------------------------------------------------
@@ -613,7 +628,9 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
       if (authSession) {
         await env.DB.prepare('DELETE FROM sessions WHERE token = ?').bind(authSession.token).run();
       }
-      return jsonResponse({ success: true, message: 'Logged out successfully.' }, 200, cors);
+      const responseHeaders = new Headers(cors);
+      responseHeaders.set('Set-Cookie', 'wj_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Secure');
+      return jsonResponse({ success: true, message: 'Logged out successfully.' }, 200, responseHeaders);
     }
 
     // ----------------------------------------------------
@@ -630,12 +647,20 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
       return jsonResponse({ success: true, data: { ...authSession.user, fullName } }, 200, cors);
     }
 
-    if (path === '/api/auth/change-password' && method === 'PUT') {
+    if ((path === '/api/auth/change-password' || path === '/api/auth/password') && (method === 'PUT' || method === 'POST')) {
       if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
       const { currentPassword, newPassword } = (await request.json().catch(() => ({}))) as any;
 
-      if (!currentPassword || !newPassword || newPassword.length < 8) {
-        return jsonResponse({ success: false, error: { message: 'Password must be at least 8 characters.' } }, 400, cors);
+      if (!currentPassword || !newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
+        return jsonResponse({ success: false, error: { code: 'INVALID_PASSWORD', message: 'New password must be at least 8 characters long.' } }, 400, cors);
+      }
+
+      if (!/[A-Za-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+        return jsonResponse({ success: false, error: { code: 'WEAK_PASSWORD', message: 'New password must contain at least one letter and one number.' } }, 400, cors);
+      }
+
+      if (currentPassword === newPassword) {
+        return jsonResponse({ success: false, error: { code: 'SAME_PASSWORD', message: 'New password must be different from current password.' } }, 400, cors);
       }
 
       const currentUser = await env.DB.prepare('SELECT password_hash FROM users WHERE id = ?')
@@ -643,18 +668,34 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
 
       const isMatch = await verifyWebCryptoPassword(currentPassword, currentUser.password_hash);
       if (!isMatch) {
-        return jsonResponse({ success: false, error: { message: 'Current password is incorrect.' } }, 400, cors);
+        return jsonResponse({ success: false, error: { code: 'INCORRECT_CURRENT_PASSWORD', message: 'Current password is incorrect.' } }, 401, cors);
       }
 
       const newHash = await hashWebCryptoPBKDF2(newPassword);
       await env.DB.prepare('UPDATE users SET password_hash = ?, updated_at = datetime(\'now\') WHERE id = ?')
         .bind(newHash, authSession.user.id).run();
 
-      // Revoke all other sessions for security
-      await env.DB.prepare('DELETE FROM sessions WHERE user_id = ? AND token != ?')
-        .bind(authSession.user.id, authSession.token).run();
+      // Revoke ALL sessions for this user across all devices for security
+      await env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(authSession.user.id).run();
 
-      return jsonResponse({ success: true, message: 'Password changed successfully.' }, 200, cors);
+      await env.DB.prepare(`
+        INSERT INTO audit_logs (id, user_id, user_email, action, entity_type, details, ip_address, created_at)
+        VALUES (?, ?, ?, 'PASSWORD_CHANGED', 'USER', 'User updated password and revoked all active sessions across all devices.', ?, datetime('now'))
+      `).bind(
+        `aud_${Date.now()}`,
+        authSession.user.id,
+        authSession.user.email,
+        request.headers.get('cf-connecting-ip') || 'edge'
+      ).run();
+
+      const responseHeaders = new Headers(cors);
+      responseHeaders.set('Set-Cookie', 'wj_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Secure');
+
+      return jsonResponse({
+        success: true,
+        message: 'Password changed successfully. All active sessions have been revoked. Please log in with your new password.',
+        requireRelogin: true,
+      }, 200, responseHeaders);
     }
 
     // ----------------------------------------------------
@@ -714,8 +755,33 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
       const userId = path.split('/')[4];
       const { newPassword } = (await request.json().catch(() => ({}))) as any;
 
-      if (!newPassword || newPassword.length < 8) {
-        return jsonResponse({ success: false, error: { message: 'New password must be at least 8 characters.' } }, 400, cors);
+      if (userId === authSession.user.id) {
+        return jsonResponse({
+          success: false,
+          error: {
+            code: 'SELF_RESET_PROHIBITED',
+            message: 'Please update your own password through the Account Profile Change Password section with current password verification.',
+          },
+        }, 400, cors);
+      }
+
+      if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
+        return jsonResponse({ success: false, error: { message: 'New password must be at least 8 characters long.' } }, 400, cors);
+      }
+
+      const targetUser = await env.DB.prepare('SELECT id, role, full_name as fullName, email FROM users WHERE id = ?').bind(userId).first();
+      if (!targetUser) {
+        return jsonResponse({ success: false, error: { message: 'Staff user not found.' } }, 404, cors);
+      }
+
+      if (targetUser.role === 'ADMIN') {
+        return jsonResponse({
+          success: false,
+          error: {
+            code: 'PROTECTED_ADMIN_ACCOUNT',
+            message: 'Administrator accounts cannot be reset via the staff directory. The administrator must log in and change their password with current password verification.',
+          },
+        }, 403, cors);
       }
 
       const hash = await hashWebCryptoPBKDF2(newPassword);
@@ -724,7 +790,18 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
 
       await env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(userId).run();
 
-      return jsonResponse({ success: true, message: 'Password reset successfully. User sessions revoked.' }, 200, cors);
+      await env.DB.prepare(`
+        INSERT INTO audit_logs (id, user_id, user_email, action, entity_type, details, ip_address, created_at)
+        VALUES (?, ?, ?, 'USER_PASSWORD_RESET', 'USER', ?, ?, datetime('now'))
+      `).bind(
+        `aud_${Date.now()}`,
+        authSession.user.id,
+        authSession.user.email,
+        `Admin reset password for staff member ${targetUser.fullName} (${targetUser.email}).`,
+        request.headers.get('cf-connecting-ip') || 'edge'
+      ).run();
+
+      return jsonResponse({ success: true, message: `Password reset successfully for ${targetUser.fullName}. All active sessions have been revoked.` }, 200, cors);
     }
 
     // ----------------------------------------------------
@@ -863,6 +940,230 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
 
         const updated = await env.DB.prepare('SELECT * FROM hero_content LIMIT 1').first();
         return jsonResponse({ success: true, data: updated }, 200, cors);
+      }
+    }
+
+    // Core Service
+    if (path === '/api/admin/core-service') {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      if (method === 'GET') {
+        const core = await env.DB.prepare('SELECT * FROM core_services LIMIT 1').first();
+        return jsonResponse({
+          success: true,
+          data: {
+            ...core,
+            monthlyStartingPrice: core?.monthly_starting_price,
+            utilityAllowanceNote: core?.utility_allowance_note,
+            resortAmenities: parseJson(core?.resort_amenities, []),
+            personalAssistant: core?.personal_assistant,
+            cleaningSchedule: core?.cleaning_schedule,
+            internetSpeed: core?.internet_speed,
+            visaSupportNote: core?.visa_support_note,
+            healthInsuranceSupportNote: core?.health_insurance_support_note,
+            bankingSupportNote: core?.banking_support_note,
+          },
+        }, 200, cors);
+      }
+      if (method === 'PUT') {
+        const b = (await request.json().catch(() => ({}))) as any;
+        await env.DB.prepare(`
+          UPDATE core_services SET
+            title = COALESCE(?, title),
+            monthly_starting_price = COALESCE(?, monthly_starting_price),
+            description = COALESCE(?, description),
+            utility_allowance_note = COALESCE(?, utility_allowance_note),
+            resort_amenities = COALESCE(?, resort_amenities),
+            personal_assistant = COALESCE(?, personal_assistant),
+            cleaning_schedule = COALESCE(?, cleaning_schedule),
+            internet_speed = COALESCE(?, internet_speed),
+            visa_support_note = COALESCE(?, visa_support_note),
+            health_insurance_support_note = COALESCE(?, health_insurance_support_note),
+            banking_support_note = COALESCE(?, banking_support_note),
+            updated_at = datetime('now')
+          WHERE id = 'core_default'
+        `).bind(
+          b.title || null, b.monthlyStartingPrice || null, b.description || null,
+          b.utilityAllowanceNote || null, b.resortAmenities ? JSON.stringify(b.resortAmenities) : null,
+          b.personalAssistant || null, b.cleaningSchedule || null, b.internetSpeed || null,
+          b.visaSupportNote || null, b.healthInsuranceSupportNote || null, b.bankingSupportNote || null
+        ).run();
+
+        const updated = await env.DB.prepare('SELECT * FROM core_services LIMIT 1').first();
+        return jsonResponse({ success: true, data: updated }, 200, cors);
+      }
+    }
+
+    // Why Vietnam CRUD
+    if (path === '/api/admin/why-vietnam') {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      if (method === 'GET') {
+        const rows = (await env.DB.prepare('SELECT * FROM why_vietnam ORDER BY display_order ASC').all()).results || [];
+        return jsonResponse({
+          success: true,
+          data: rows.map((w: any) => ({
+            ...w,
+            displayOrder: w.display_order,
+            isPublished: Boolean(w.is_published),
+            highlight: w.subtitle || (Array.isArray(parseJson(w.highlights)) ? parseJson(w.highlights)[0] : ''),
+          })),
+        }, 200, cors);
+      }
+      if (method === 'POST') {
+        const b = (await request.json().catch(() => ({}))) as any;
+        const id = `wv_${Date.now()}`;
+        await env.DB.prepare(`
+          INSERT INTO why_vietnam (id, title, subtitle, description, highlights, icon, display_order, is_published, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+        `).bind(
+          id, b.title || 'Untitled', b.highlight || b.subtitle || '', b.description || '',
+          JSON.stringify([b.highlight || '']), b.icon || 'ShieldCheck', b.displayOrder || 1, b.isPublished !== false ? 1 : 0
+        ).run();
+        return jsonResponse({ success: true, data: { id, ...b } }, 201, cors);
+      }
+    }
+
+    if (path.startsWith('/api/admin/why-vietnam/') && (method === 'PUT' || method === 'DELETE')) {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      const id = path.split('/')[4];
+      if (method === 'DELETE') {
+        await env.DB.prepare('DELETE FROM why_vietnam WHERE id = ?').bind(id).run();
+        return jsonResponse({ success: true, message: 'Item deleted' }, 200, cors);
+      }
+      if (method === 'PUT') {
+        const b = (await request.json().catch(() => ({}))) as any;
+        await env.DB.prepare(`
+          UPDATE why_vietnam SET
+            title = COALESCE(?, title),
+            subtitle = COALESCE(?, subtitle),
+            description = COALESCE(?, description),
+            highlights = COALESCE(?, highlights),
+            icon = COALESCE(?, icon),
+            display_order = COALESCE(?, display_order),
+            is_published = COALESCE(?, is_published),
+            updated_at = datetime('now')
+          WHERE id = ?
+        `).bind(
+          b.title || null, b.highlight || b.subtitle || null, b.description || null,
+          b.highlight ? JSON.stringify([b.highlight]) : null, b.icon || null,
+          b.displayOrder ?? null, b.isPublished !== undefined ? (b.isPublished ? 1 : 0) : null,
+          id
+        ).run();
+        return jsonResponse({ success: true, data: { id, ...b } }, 200, cors);
+      }
+    }
+
+    // Why Choose Us CRUD
+    if (path === '/api/admin/why-choose-us') {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      if (method === 'GET') {
+        const rows = (await env.DB.prepare('SELECT * FROM why_choose_us ORDER BY display_order ASC').all()).results || [];
+        return jsonResponse({
+          success: true,
+          data: rows.map((w: any) => ({
+            ...w,
+            displayOrder: w.display_order,
+            isPublished: Boolean(w.is_published),
+          })),
+        }, 200, cors);
+      }
+      if (method === 'POST') {
+        const b = (await request.json().catch(() => ({}))) as any;
+        const id = `wcu_${Date.now()}`;
+        await env.DB.prepare(`
+          INSERT INTO why_choose_us (id, title, description, icon, display_order, is_published)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).bind(
+          id, b.title || 'Untitled', b.description || '', b.icon || 'Compass',
+          b.displayOrder || 1, b.isPublished !== false ? 1 : 0
+        ).run();
+        return jsonResponse({ success: true, data: { id, ...b } }, 201, cors);
+      }
+    }
+
+    if (path.startsWith('/api/admin/why-choose-us/') && (method === 'PUT' || method === 'DELETE')) {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      const id = path.split('/')[4];
+      if (method === 'DELETE') {
+        await env.DB.prepare('DELETE FROM why_choose_us WHERE id = ?').bind(id).run();
+        return jsonResponse({ success: true, message: 'Item deleted' }, 200, cors);
+      }
+      if (method === 'PUT') {
+        const b = (await request.json().catch(() => ({}))) as any;
+        await env.DB.prepare(`
+          UPDATE why_choose_us SET
+            title = COALESCE(?, title),
+            description = COALESCE(?, description),
+            icon = COALESCE(?, icon),
+            display_order = COALESCE(?, display_order),
+            is_published = COALESCE(?, is_published)
+          WHERE id = ?
+        `).bind(
+          b.title || null, b.description || null, b.icon || null,
+          b.displayOrder ?? null, b.isPublished !== undefined ? (b.isPublished ? 1 : 0) : null,
+          id
+        ).run();
+        return jsonResponse({ success: true, data: { id, ...b } }, 200, cors);
+      }
+    }
+
+    // Additional Services CRUD
+    if (path === '/api/admin/additional-services') {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      if (method === 'GET') {
+        const rows = (await env.DB.prepare('SELECT * FROM additional_services ORDER BY display_order ASC').all()).results || [];
+        return jsonResponse({
+          success: true,
+          data: rows.map((s: any) => ({
+            ...s,
+            priceLabel: s.price_label,
+            displayOrder: s.display_order,
+            isPublished: Boolean(s.is_published),
+          })),
+        }, 200, cors);
+      }
+      if (method === 'POST') {
+        const b = (await request.json().catch(() => ({}))) as any;
+        const id = `as_${Date.now()}`;
+        await env.DB.prepare(`
+          INSERT INTO additional_services (id, title, description, price_label, category, icon, conditions, display_order, is_published, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        `).bind(
+          id, b.title || 'Untitled', b.description || '', b.priceLabel || '',
+          b.category || 'Concierge', b.icon || 'Sparkles', b.conditions || '',
+          b.displayOrder || 1, b.isPublished !== false ? 1 : 0
+        ).run();
+        return jsonResponse({ success: true, data: { id, ...b } }, 201, cors);
+      }
+    }
+
+    if (path.startsWith('/api/admin/additional-services/') && (method === 'PUT' || method === 'DELETE')) {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      const id = path.split('/')[4];
+      if (method === 'DELETE') {
+        await env.DB.prepare('DELETE FROM additional_services WHERE id = ?').bind(id).run();
+        return jsonResponse({ success: true, message: 'Service deleted' }, 200, cors);
+      }
+      if (method === 'PUT') {
+        const b = (await request.json().catch(() => ({}))) as any;
+        await env.DB.prepare(`
+          UPDATE additional_services SET
+            title = COALESCE(?, title),
+            description = COALESCE(?, description),
+            price_label = COALESCE(?, price_label),
+            category = COALESCE(?, category),
+            icon = COALESCE(?, icon),
+            conditions = COALESCE(?, conditions),
+            display_order = COALESCE(?, display_order),
+            is_published = COALESCE(?, is_published),
+            updated_at = datetime('now')
+          WHERE id = ?
+        `).bind(
+          b.title || null, b.description || null, b.priceLabel || null,
+          b.category || null, b.icon || null, b.conditions || null,
+          b.displayOrder ?? null, b.isPublished !== undefined ? (b.isPublished ? 1 : 0) : null,
+          id
+        ).run();
+        return jsonResponse({ success: true, data: { id, ...b } }, 200, cors);
       }
     }
 

@@ -86,6 +86,12 @@ router.post('/login', (req: Request, res: Response): void => {
     ipAddress: req.ip || (req.headers['x-forwarded-for'] as string),
   });
 
+  const isProd = process.env.NODE_ENV === 'production';
+  res.setHeader(
+    'Set-Cookie',
+    `wj_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${CONFIG.SESSION_DURATION_HOURS * 3600}${isProd ? '; Secure' : ''}`
+  );
+
   res.json({
     success: true,
     data: {
@@ -155,8 +161,15 @@ router.put('/profile', authenticate, (req: Request, res: Response): void => {
 // Logout (resilient: always succeeds even if session already expired/revoked)
 router.post('/logout', (req: Request, res: Response): void => {
   const authHeader = req.headers.authorization;
+  let token: string | undefined;
   if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.split(' ')[1];
+    token = authHeader.split(' ')[1];
+  } else if (req.headers.cookie) {
+    const match = req.headers.cookie.match(/(?:^|;\s*)wj_session=([^;]+)/);
+    if (match) token = match[1];
+  }
+
+  if (token) {
     const session = db.getSession(token);
     if (session) {
       const user = db.getUserById(session.userId);
@@ -173,23 +186,42 @@ router.post('/logout', (req: Request, res: Response): void => {
       }
     }
   }
+
+  res.setHeader('Set-Cookie', 'wj_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
   res.json({ success: true, message: 'Logged out successfully.' });
 });
 
 // Change Password
 router.post('/change-password', authenticate, (req: Request, res: Response): void => {
   const { currentPassword, newPassword } = req.body;
-  if (!currentPassword || !newPassword || newPassword.length < 8) {
+
+  if (!currentPassword || !newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
     res.status(400).json({
       success: false,
-      error: { code: 'INVALID_PASSWORD', message: 'New password must be at least 8 characters.' },
+      error: { code: 'INVALID_PASSWORD', message: 'New password must be at least 8 characters long.' },
+    });
+    return;
+  }
+
+  if (!/[A-Za-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+    res.status(400).json({
+      success: false,
+      error: { code: 'WEAK_PASSWORD', message: 'New password must contain at least one letter and one number.' },
+    });
+    return;
+  }
+
+  if (currentPassword === newPassword) {
+    res.status(400).json({
+      success: false,
+      error: { code: 'SAME_PASSWORD', message: 'New password must be different from current password.' },
     });
     return;
   }
 
   const isMatch = verifyPassword(currentPassword, req.user!.passwordHash);
   if (!isMatch) {
-    res.status(400).json({
+    res.status(401).json({
       success: false,
       error: { code: 'INCORRECT_CURRENT_PASSWORD', message: 'Current password does not match.' },
     });
@@ -197,35 +229,27 @@ router.post('/change-password', authenticate, (req: Request, res: Response): voi
   }
 
   const newHashed = hashPassword(newPassword);
-  db.updateUser(req.user!.id, { passwordHash: newHashed });
+  db.updateUser(req.user!.id, { passwordHash: newHashed, updatedAt: new Date().toISOString() });
 
-  // Revoke other sessions for security
+  // Strictly revoke ALL sessions across all devices for security
   db.revokeUserSessions(req.user!.id);
 
-  // Issue new session for current device
-  const token = crypto.randomBytes(32).toString('hex');
-  const expiresAt = new Date(Date.now() + CONFIG.SESSION_DURATION_HOURS * 3600 * 1000).toISOString();
-  db.createSession({
-    id: `ses_${Date.now()}`,
-    token,
-    userId: req.user!.id,
-    expiresAt,
-    createdAt: new Date().toISOString(),
-  });
+  // Clear cookie session
+  res.setHeader('Set-Cookie', 'wj_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
 
   db.addAuditLog({
     userId: req.user!.id,
     userEmail: req.user!.email,
     action: 'PASSWORD_CHANGED',
     entityType: 'USER',
-    details: 'User updated password and revoked previous sessions.',
-    ipAddress: req.ip,
+    details: 'User updated password and revoked all active sessions across all devices.',
+    ipAddress: req.ip || (req.headers['x-forwarded-for'] as string),
   });
 
   res.json({
     success: true,
-    message: 'Password changed successfully.',
-    data: { token, expiresAt },
+    message: 'Password changed successfully. All active sessions have been revoked. Please log in with your new password.',
+    requireRelogin: true,
   });
 });
 
@@ -326,8 +350,19 @@ router.post('/users/:id/reset-password', authenticate, requireRole(['ADMIN']), (
   const { id } = req.params;
   const { newPassword } = req.body;
 
-  if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 6) {
-    res.status(400).json({ success: false, error: { message: 'New password must be at least 6 characters.' } });
+  if (id === req.user!.id) {
+    res.status(400).json({
+      success: false,
+      error: {
+        code: 'SELF_RESET_PROHIBITED',
+        message: 'Please update your own password through the Account Profile Change Password section with current password verification.',
+      },
+    });
+    return;
+  }
+
+  if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
+    res.status(400).json({ success: false, error: { message: 'New password must be at least 8 characters long.' } });
     return;
   }
 
@@ -337,8 +372,20 @@ router.post('/users/:id/reset-password', authenticate, requireRole(['ADMIN']), (
     return;
   }
 
+  // Super Administrator and Administrator accounts cannot be reset via the staff directory
+  if (user.role === 'ADMIN') {
+    res.status(403).json({
+      success: false,
+      error: {
+        code: 'PROTECTED_ADMIN_ACCOUNT',
+        message: 'Administrator accounts cannot be reset via the staff directory. The administrator must log in and change their password with current password verification.',
+      },
+    });
+    return;
+  }
+
   const hashed = hashPassword(newPassword);
-  db.updateUser(id, { passwordHash: hashed });
+  db.updateUser(id, { passwordHash: hashed, updatedAt: new Date().toISOString() });
   db.revokeUserSessions(id);
 
   db.addAuditLog({
@@ -347,11 +394,11 @@ router.post('/users/:id/reset-password', authenticate, requireRole(['ADMIN']), (
     action: 'USER_PASSWORD_RESET',
     entityType: 'USER',
     entityId: id,
-    details: `Admin reset password for staff user ${user.fullName} (${user.email}).`,
+    details: `Admin reset password for staff member ${user.fullName} (${user.email}) and revoked their active sessions.`,
     ipAddress: req.ip || (req.headers['x-forwarded-for'] as string),
   });
 
-  res.json({ success: true, message: `Password reset successfully for ${user.fullName}.` });
+  res.json({ success: true, message: `Password reset successfully for ${user.fullName}. All active sessions have been revoked.` });
 });
 
 export default router;

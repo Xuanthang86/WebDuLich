@@ -186,6 +186,123 @@ router.delete('/additional-services/:id', requireRole(['ADMIN', 'MANAGER']), (re
 });
 
 // ==========================================
+// 3b. WHY VIETNAM (THE VIETNAM ADVANTAGE)
+// ==========================================
+router.get('/why-vietnam', requireRole(['ADMIN', 'MANAGER']), (_req: Request, res: Response): void => {
+  res.json({ success: true, data: db.getState().whyVietnam });
+});
+
+router.post('/why-vietnam', requireRole(['ADMIN', 'MANAGER']), (req: Request, res: Response): void => {
+  const newItem = {
+    id: `wv_${Date.now()}`,
+    ...req.body,
+    displayOrder: db.getState().whyVietnam.length + 1,
+    isPublished: req.body.isPublished ?? true,
+    updatedAt: new Date().toISOString(),
+  };
+  db.getState().whyVietnam.push(newItem);
+  db.save();
+
+  db.addAuditLog({
+    userId: req.user!.id,
+    userEmail: req.user!.email,
+    action: 'WHY_VIETNAM_CREATED',
+    entityType: 'CONTENT',
+    entityId: newItem.id,
+    details: `Created Why Vietnam pillar: ${newItem.title}`,
+  });
+
+  res.json({ success: true, data: newItem });
+});
+
+router.put('/why-vietnam/:id', requireRole(['ADMIN', 'MANAGER']), (req: Request, res: Response): void => {
+  const { id } = req.params;
+  const item = db.getState().whyVietnam.find(w => w.id === id);
+  if (!item) {
+    res.status(404).json({ success: false, error: { message: 'Item not found.' } });
+    return;
+  }
+  Object.assign(item, req.body, { updatedAt: new Date().toISOString() });
+  db.save();
+
+  db.addAuditLog({
+    userId: req.user!.id,
+    userEmail: req.user!.email,
+    action: 'WHY_VIETNAM_UPDATED',
+    entityType: 'CONTENT',
+    entityId: item.id,
+    details: `Updated Why Vietnam pillar: ${item.title}`,
+  });
+
+  res.json({ success: true, data: item });
+});
+
+router.delete('/why-vietnam/:id', requireRole(['ADMIN', 'MANAGER']), (req: Request, res: Response): void => {
+  const { id } = req.params;
+  db.getState().whyVietnam = db.getState().whyVietnam.filter(w => w.id !== id);
+  db.save();
+  res.json({ success: true, message: 'Why Vietnam item deleted.' });
+});
+
+// ==========================================
+// 3c. WHY CHOOSE US (TRUST PILLARS)
+// ==========================================
+router.get('/why-choose-us', requireRole(['ADMIN', 'MANAGER']), (_req: Request, res: Response): void => {
+  res.json({ success: true, data: db.getState().whyChooseUs });
+});
+
+router.post('/why-choose-us', requireRole(['ADMIN', 'MANAGER']), (req: Request, res: Response): void => {
+  const newItem = {
+    id: `wcu_${Date.now()}`,
+    ...req.body,
+    displayOrder: db.getState().whyChooseUs.length + 1,
+    isPublished: req.body.isPublished ?? true,
+  };
+  db.getState().whyChooseUs.push(newItem);
+  db.save();
+
+  db.addAuditLog({
+    userId: req.user!.id,
+    userEmail: req.user!.email,
+    action: 'WHY_CHOOSE_US_CREATED',
+    entityType: 'CONTENT',
+    entityId: newItem.id,
+    details: `Created Trust Pillar: ${newItem.title}`,
+  });
+
+  res.json({ success: true, data: newItem });
+});
+
+router.put('/why-choose-us/:id', requireRole(['ADMIN', 'MANAGER']), (req: Request, res: Response): void => {
+  const { id } = req.params;
+  const item = db.getState().whyChooseUs.find(w => w.id === id);
+  if (!item) {
+    res.status(404).json({ success: false, error: { message: 'Item not found.' } });
+    return;
+  }
+  Object.assign(item, req.body);
+  db.save();
+
+  db.addAuditLog({
+    userId: req.user!.id,
+    userEmail: req.user!.email,
+    action: 'WHY_CHOOSE_US_UPDATED',
+    entityType: 'CONTENT',
+    entityId: item.id,
+    details: `Updated Trust Pillar: ${item.title}`,
+  });
+
+  res.json({ success: true, data: item });
+});
+
+router.delete('/why-choose-us/:id', requireRole(['ADMIN', 'MANAGER']), (req: Request, res: Response): void => {
+  const { id } = req.params;
+  db.getState().whyChooseUs = db.getState().whyChooseUs.filter(w => w.id !== id);
+  db.save();
+  res.json({ success: true, message: 'Trust pillar deleted.' });
+});
+
+// ==========================================
 // 4. PACKAGES CRUD
 // ==========================================
 router.get('/packages', requireRole(['ADMIN', 'MANAGER']), (_req: Request, res: Response): void => {

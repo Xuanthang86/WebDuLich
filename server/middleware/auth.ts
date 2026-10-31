@@ -13,19 +13,26 @@ declare global {
 }
 
 export function authenticate(req: Request, res: Response, next: NextFunction): void {
+  let token: string | undefined;
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else if (req.headers.cookie) {
+    const match = req.headers.cookie.match(/(?:^|;\s*)wj_session=([^;]+)/);
+    if (match) token = match[1];
+  }
+
+  if (!token) {
     res.status(401).json({
       success: false,
       error: {
         code: 'UNAUTHORIZED',
-        message: 'Authentication token required.',
+        message: 'Authentication token or session cookie required.',
       },
     });
     return;
   }
 
-  const token = authHeader.split(' ')[1];
   const session = db.getSession(token);
 
   if (!session) {

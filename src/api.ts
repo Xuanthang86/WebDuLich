@@ -2,6 +2,7 @@ import {
   SiteSettings,
   HeroContent,
   WhyVietnamItem,
+  WhyChooseUsItem,
   CoreServiceItem,
   AdditionalServiceItem,
   PackageItem,
@@ -43,6 +44,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
   const response = await fetch(url, {
+    credentials: 'include',
     ...options,
     headers,
   });
@@ -207,6 +209,75 @@ export async function updateAdminCoreService(service: Partial<CoreServiceItem>):
     method: 'PUT',
     body: JSON.stringify(service),
   });
+}
+
+// Why Vietnam CRUD
+export async function fetchAdminWhyVietnam(): Promise<WhyVietnamItem[]> {
+  return request<WhyVietnamItem[]>('/api/admin/why-vietnam');
+}
+
+export async function saveAdminWhyVietnam(item: Partial<WhyVietnamItem>): Promise<WhyVietnamItem> {
+  if (item.id) {
+    return request<WhyVietnamItem>(`/api/admin/why-vietnam/${item.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(item),
+    });
+  } else {
+    return request<WhyVietnamItem>('/api/admin/why-vietnam', {
+      method: 'POST',
+      body: JSON.stringify(item),
+    });
+  }
+}
+
+export async function deleteAdminWhyVietnam(id: string): Promise<any> {
+  return request(`/api/admin/why-vietnam/${id}`, { method: 'DELETE' });
+}
+
+// Why Choose Us CRUD
+export async function fetchAdminWhyChooseUs(): Promise<WhyChooseUsItem[]> {
+  return request<WhyChooseUsItem[]>('/api/admin/why-choose-us');
+}
+
+export async function saveAdminWhyChooseUs(item: Partial<WhyChooseUsItem>): Promise<WhyChooseUsItem> {
+  if (item.id) {
+    return request<WhyChooseUsItem>(`/api/admin/why-choose-us/${item.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(item),
+    });
+  } else {
+    return request<WhyChooseUsItem>('/api/admin/why-choose-us', {
+      method: 'POST',
+      body: JSON.stringify(item),
+    });
+  }
+}
+
+export async function deleteAdminWhyChooseUs(id: string): Promise<any> {
+  return request(`/api/admin/why-choose-us/${id}`, { method: 'DELETE' });
+}
+
+// Additional Services CRUD
+export async function fetchAdminAdditionalServices(): Promise<AdditionalServiceItem[]> {
+  return request<AdditionalServiceItem[]>('/api/admin/additional-services');
+}
+
+export async function saveAdminAdditionalServices(service: Partial<AdditionalServiceItem>): Promise<AdditionalServiceItem> {
+  if (service.id) {
+    return request<AdditionalServiceItem>(`/api/admin/additional-services/${service.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(service),
+    });
+  } else {
+    return request<AdditionalServiceItem>('/api/admin/additional-services', {
+      method: 'POST',
+      body: JSON.stringify(service),
+    });
+  }
+}
+
+export async function deleteAdminAdditionalServices(id: string): Promise<any> {
+  return request(`/api/admin/additional-services/${id}`, { method: 'DELETE' });
 }
 
 export async function fetchAdminPackages(): Promise<PackageItem[]> {

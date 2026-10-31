@@ -44,6 +44,17 @@ export interface WhyVietnamItem {
   description: string;
   icon: string;
   highlight: string;
+  displayOrder?: number;
+  isPublished?: boolean;
+}
+
+export interface WhyChooseUsItem {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  displayOrder?: number;
+  isPublished?: boolean;
 }
 
 export interface CoreServiceItem {

@@ -96,12 +96,12 @@ export const AdminUsers: React.FC = () => {
   const handleResetPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resettingUser) return;
-    if (resetPasswordVal.length < 6) {
-      setResetMsg({ type: 'error', text: 'Password must be at least 6 characters long.' });
+    if (resetPasswordVal.length < 8) {
+      setResetMsg({ type: 'error', text: 'Password must be at least 8 characters long.' });
       return;
     }
     if (resetPasswordVal !== resetPasswordConfirmVal) {
-      setResetMsg({ type: 'error', text: 'Xác nhận mật khẩu không khớp. Vui lòng kiểm tra lại.' });
+      setResetMsg({ type: 'error', text: 'Password confirmation does not match. Please verify and try again.' });
       return;
     }
 
@@ -111,9 +111,9 @@ export const AdminUsers: React.FC = () => {
       await resetAdminUserPassword(resettingUser.id, resetPasswordVal);
       setResetMsg({
         type: 'success',
-        text: `Mật khẩu mới đã được cập nhật cho ${resettingUser.fullName} (${resettingUser.email}).`,
+        text: `New password assigned to ${resettingUser.fullName} (${resettingUser.email}).`,
       });
-      triggerToast(`Cập nhật mật khẩu thành công cho ${resettingUser.fullName}.`);
+      triggerToast(`Password updated successfully for ${resettingUser.fullName}.`);
       setTimeout(() => {
         setResettingUser(null);
         setResetPasswordVal('');
@@ -272,14 +272,23 @@ export const AdminUsers: React.FC = () => {
                   <td className="py-3.5 px-4 font-mono text-xs text-slate-400">{u.id}</td>
                   <td className="py-3.5 px-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => handleOpenResetModal(u)}
-                        className="px-2.5 py-1.5 rounded-lg border border-stone-200 hover:bg-stone-100 text-xs font-medium text-slate-700 flex items-center gap-1 cursor-pointer transition-colors"
-                        title="Cập nhật mật khẩu mới cho tài khoản"
-                      >
-                        <KeyRound className="w-3.5 h-3.5 text-[#C9A45C]" />
-                        <span>Cập nhật mật khẩu</span>
-                      </button>
+                      {u.role === 'ADMIN' ? (
+                        <span
+                          className="px-2.5 py-1 rounded-lg bg-stone-100 text-[11px] font-medium text-slate-500 border border-stone-200"
+                          title="Administrator accounts must update their password through Account Profile with current password verification."
+                        >
+                          Self-Managed
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleOpenResetModal(u)}
+                          className="px-2.5 py-1.5 rounded-lg border border-stone-200 hover:bg-stone-100 text-xs font-medium text-slate-700 flex items-center gap-1 cursor-pointer transition-colors"
+                          title="Assign new password for staff account"
+                        >
+                          <KeyRound className="w-3.5 h-3.5 text-[#C9A45C]" />
+                          <span>Set Password</span>
+                        </button>
+                      )}
 
                       <button
                         onClick={() => handleToggleStatus(u)}
@@ -335,13 +344,19 @@ export const AdminUsers: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleOpenResetModal(u)}
-                    className="px-2.5 py-1 rounded-lg border border-stone-200 bg-white hover:bg-stone-100 text-[11px] font-medium text-slate-700 flex items-center gap-1 cursor-pointer"
-                  >
-                    <KeyRound className="w-3 h-3 text-[#C9A45C]" />
-                    <span>Cập nhật MK</span>
-                  </button>
+                  {u.role === 'ADMIN' ? (
+                    <span className="px-2 py-1 rounded-lg bg-stone-100 text-[10px] font-medium text-slate-500 border border-stone-200">
+                      Self-Managed
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => handleOpenResetModal(u)}
+                      className="px-2.5 py-1 rounded-lg border border-stone-200 bg-white hover:bg-stone-100 text-[11px] font-medium text-slate-700 flex items-center gap-1 cursor-pointer"
+                    >
+                      <KeyRound className="w-3 h-3 text-[#C9A45C]" />
+                      <span>Set Password</span>
+                    </button>
+                  )}
 
                   <button
                     onClick={() => handleToggleStatus(u)}
@@ -368,10 +383,10 @@ export const AdminUsers: React.FC = () => {
               <div>
                 <h3 className="font-serif text-lg font-bold text-[#0F172A] flex items-center gap-2">
                   <KeyRound className="w-5 h-5 text-[#C9A45C]" />
-                  <span>Cập nhật mật khẩu mới</span>
+                  <span>Assign New Password</span>
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Thiết lập mật khẩu mới cho tài khoản <strong className="text-slate-800">{resettingUser.fullName}</strong> ({resettingUser.email}).
+                  Assign a new password for staff member <strong className="text-slate-800">{resettingUser.fullName}</strong> ({resettingUser.email}).
                 </p>
               </div>
               <button
@@ -402,23 +417,23 @@ export const AdminUsers: React.FC = () => {
             <form onSubmit={handleResetPasswordSubmit} className="space-y-3.5">
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-semibold text-slate-700">Mật khẩu mới</label>
+                  <label className="text-xs font-semibold text-slate-700">New Password</label>
                   <button
                     type="button"
                     onClick={generateSecurePassword}
                     className="text-[11px] font-semibold text-[#A77A32] hover:text-[#C9A45C] hover:underline cursor-pointer"
                   >
-                    + Tạo ngẫu nhiên
+                    + Generate Random
                   </button>
                 </div>
                 <div className="relative">
                   <input
                     type={showResetPassword ? 'text' : 'password'}
                     required
-                    minLength={6}
+                    minLength={8}
                     value={resetPasswordVal}
                     onChange={e => setResetPasswordVal(e.target.value)}
-                    placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)..."
+                    placeholder="Enter new password (min. 8 characters)..."
                     className="w-full p-2.5 pr-20 rounded-xl border border-stone-300 bg-stone-50/50 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#C9A45C]"
                   />
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-slate-400">
@@ -452,15 +467,15 @@ export const AdminUsers: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Xác nhận mật khẩu mới</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Confirm New Password</label>
                 <div className="relative">
                   <input
                     type={showResetPasswordConfirm ? 'text' : 'password'}
                     required
-                    minLength={6}
+                    minLength={8}
                     value={resetPasswordConfirmVal}
                     onChange={e => setResetPasswordConfirmVal(e.target.value)}
-                    placeholder="Nhập lại mật khẩu mới để xác nhận..."
+                    placeholder="Re-enter new password to confirm..."
                     className="w-full p-2.5 pr-10 rounded-xl border border-stone-300 bg-stone-50/50 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#C9A45C]"
                   />
                   <button
@@ -474,7 +489,7 @@ export const AdminUsers: React.FC = () => {
               </div>
 
               <p className="text-[11px] text-slate-400">
-                Các phiên đăng nhập trước đó của nhân sự này sẽ được thu hồi để đảm bảo an toàn.
+                All prior active sessions for this staff member will be immediately revoked for security.
               </p>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-stone-100">
@@ -484,7 +499,7 @@ export const AdminUsers: React.FC = () => {
                   disabled={isSubmittingReset}
                   className="px-4 py-2 rounded-xl border border-stone-300 text-xs font-semibold text-slate-600 hover:bg-stone-50 cursor-pointer"
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button
                   type="submit"
@@ -492,7 +507,7 @@ export const AdminUsers: React.FC = () => {
                   className="px-5 py-2 rounded-xl bg-[#0F172A] hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
                 >
                   <KeyRound className="w-3.5 h-3.5 text-[#C9A45C]" />
-                  <span>{isSubmittingReset ? 'Đang cập nhật...' : 'Cập nhật mật khẩu'}</span>
+                  <span>{isSubmittingReset ? 'Saving...' : 'Update Password'}</span>
                 </button>
               </div>
             </form>
