@@ -1,6 +1,28 @@
 {
   "users": [
     {
+      "id": "usr_admin_xuanthang",
+      "email": "bienxuanthang01.qb@gmail.com",
+      "passwordHash": "scrypt:1f772985d0e2a7aadb360c5b33bd507b:c45fb77f6de3db3bf2c98e8053f7028de8ebcdd30e6d22854e19d14a92fb1e7d41f2c610aaf4bb6d6f55ad60933ea4ec877fde9dac54aec27622bbc9414bba15",
+      "fullName": "Xuan Thang (Super Admin)",
+      "role": "ADMIN",
+      "isActive": true,
+      "lastLoginAt": "2026-10-31T03:26:02.302Z",
+      "createdAt": "2026-10-30T00:00:00Z",
+      "updatedAt": "2026-10-31T03:26:02.302Z"
+    },
+    {
+      "id": "usr_admin_xuanthang_alias",
+      "email": "xuanthang.admin@wanderersjourneys.com",
+      "passwordHash": "scrypt:1f772985d0e2a7aadb360c5b33bd507b:c45fb77f6de3db3bf2c98e8053f7028de8ebcdd30e6d22854e19d14a92fb1e7d41f2c610aaf4bb6d6f55ad60933ea4ec877fde9dac54aec27622bbc9414bba15",
+      "fullName": "Xuan Thang (Administrator)",
+      "role": "ADMIN",
+      "isActive": true,
+      "lastLoginAt": "2026-10-31T03:25:50.828Z",
+      "createdAt": "2026-10-30T00:00:00Z",
+      "updatedAt": "2026-10-31T03:25:50.828Z"
+    },
+    {
       "id": "usr_admin_01",
       "email": "admin@wanderersjourneys.com",
       "passwordHash": "scrypt:1daf06969e8297db22720af1f77e8bf2:ed1a5af13dde902b28d3242cd068a39e2e816f504e1bf0e6a8f9c410cf643ae176e916d9099923524f8fcb08e2e0450e01d5f44fe0114bcfc47736b262d5e7a7",
@@ -34,7 +56,32 @@
       "updatedAt": "2026-10-30T17:51:27.709Z"
     }
   ],
-  "sessions": [],
+  "sessions": [
+    {
+      "id": "ses_1793417140218_02351806",
+      "token": "572e38c325d77ffb39638b9204eea5116e6025def4cf78fc5a1974d39c19c6e7",
+      "userId": "usr_admin_xuanthang",
+      "expiresAt": "2026-11-01T03:25:40.218Z",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-31T03:25:40.219Z"
+    },
+    {
+      "id": "ses_1793417150827_783c6986",
+      "token": "b6b38c83f7c7fedd1d276a9f0e2ec00bfb479d0b576dd5cdab6679ef55396f98",
+      "userId": "usr_admin_xuanthang_alias",
+      "expiresAt": "2026-11-01T03:25:50.827Z",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-31T03:25:50.827Z"
+    },
+    {
+      "id": "ses_1793417162301_0127ea8b",
+      "token": "352860b40e27ed3379cd2aedbdbf8566820b5f9c67c63764e3af91fc5941a96f",
+      "userId": "usr_admin_xuanthang",
+      "expiresAt": "2026-11-01T03:26:02.301Z",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-31T03:26:02.301Z"
+    }
+  ],
   "passwordResetTokens": [],
   "siteSettings": {
     "id": "settings_default",
@@ -973,6 +1020,33 @@
   ],
   "leads": [
     {
+      "fullName": "William Harrison",
+      "email": "william.harrison@example.com",
+      "phone": "+1 415 555 2671",
+      "countryCode": "US",
+      "expectedStartDate": "2026-12-01",
+      "duration": "6 Months",
+      "guestCount": 2,
+      "ageGroups": "",
+      "packageCode": "CUSTOM",
+      "packageName": "Six-Month Exploratory Stay",
+      "destinationCity": "Da Nang",
+      "preferredAccommodationType": "Serviced Apartment",
+      "activities": [],
+      "transportPreference": "Standard",
+      "estimatedBudget": "Standard",
+      "additionalNotes": "",
+      "consentAccepted": true,
+      "status": "NEW",
+      "priority": "MEDIUM",
+      "source": "Website Inquiry Form",
+      "ipAddress": "127.0.0.1",
+      "id": "lead_1793417169370_68jpy",
+      "leadCode": "WJ-2026-1925",
+      "createdAt": "2026-10-31T03:26:09.370Z",
+      "updatedAt": "2026-10-31T03:26:09.370Z"
+    },
+    {
       "fullName": "Sir Richard & Lady Evelyn Croft",
       "email": "croft.family@wanderersjourneys.com",
       "phone": "+44 20 7946 0912",
@@ -1228,9 +1302,32 @@
       "changedByName": "System Intake",
       "note": "Inquiry received via web questionnaire.",
       "changedAt": "2026-10-30T17:51:27.721Z"
+    },
+    {
+      "id": "lsh_1793417169370",
+      "leadId": "lead_1793417169370_68jpy",
+      "oldStatus": "NEW",
+      "newStatus": "NEW",
+      "changedById": "SYSTEM",
+      "changedByName": "System Intake",
+      "note": "Inquiry received via web questionnaire.",
+      "changedAt": "2026-10-31T03:26:09.370Z"
     }
   ],
   "emailJobs": [
+    {
+      "id": "emj_1793417169371_pmf13",
+      "leadId": "lead_1793417169370_68jpy",
+      "recipientEmail": "info@wanderersjourneys.com",
+      "subject": "[New Proposal Request] William Harrison (US) - Six-Month Exploratory Stay",
+      "bodyPreview": "Guest: William Harrison | Duration: 6 Months | Destination: Da Nang | Code: WJ-2026-1925",
+      "status": "SIMULATED",
+      "attempts": 1,
+      "maxAttempts": 3,
+      "scheduledAt": "2026-10-31T03:26:09.371Z",
+      "sentAt": "2026-10-31T03:26:09.472Z",
+      "lastError": "SMTP / Email API credentials unconfigured in environment. Notification logged in simulated queue."
+    },
     {
       "id": "emj_1793198596121_47vvh",
       "leadId": "lead_1793198596119_07w9a",
@@ -1281,6 +1378,47 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "aud_1793417169371_aeg8g",
+      "userId": "SYSTEM",
+      "userEmail": "system@wanderersjourneys.com",
+      "action": "LEAD_CREATED",
+      "entityType": "LEAD",
+      "entityId": "lead_1793417169370_68jpy",
+      "details": "Inquiry submitted by William Harrison (william.harrison@example.com) for Six-Month Exploratory Stay.",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-31T03:26:09.371Z"
+    },
+    {
+      "id": "aud_1793417162303_o9ef9",
+      "userId": "usr_admin_xuanthang",
+      "userEmail": "bienxuanthang01.qb@gmail.com",
+      "action": "LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "details": "User logged in successfully with role ADMIN.",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-31T03:26:02.303Z"
+    },
+    {
+      "id": "aud_1793417150829_o0wzb",
+      "userId": "usr_admin_xuanthang_alias",
+      "userEmail": "xuanthang.admin@wanderersjourneys.com",
+      "action": "LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "details": "User logged in successfully with role ADMIN.",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-31T03:25:50.829Z"
+    },
+    {
+      "id": "aud_1793417140221_zs2xe",
+      "userId": "usr_admin_xuanthang",
+      "userEmail": "bienxuanthang01.qb@gmail.com",
+      "action": "LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "details": "User logged in successfully with role ADMIN.",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-31T03:25:40.221Z"
+    },
     {
       "id": "aud_1793382687721_cyl7k",
       "userId": "SYSTEM",

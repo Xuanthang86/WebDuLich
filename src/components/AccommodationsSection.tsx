@@ -160,7 +160,7 @@ export const AccommodationsSection: React.FC<AccommodationsSectionProps> = ({
               }`}
             >
               <Compass className="w-3.5 h-3.5 text-[#C9A45C]" />
-              <span>Tất cả Điểm Đến ({destinationHubs.length} Hubs)</span>
+              <span>Tất cả điểm đến ({destinationHubs.length} Hubs)</span>
             </button>
 
             {destinationHubs.map(hub => (
@@ -311,7 +311,7 @@ export const AccommodationsSection: React.FC<AccommodationsSectionProps> = ({
                   className="px-3 py-1.5 rounded-lg border border-stone-300 hover:border-[#C9A45C] text-xs font-semibold text-slate-700 hover:text-[#0F172A] hover:bg-stone-50 flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <ArrowLeft className="w-3.5 h-3.5 text-[#C9A45C]" />
-                  <span>Quay lại danh mục Điểm Đến</span>
+                  <span>Quay lại danh mục điểm đến</span>
                 </button>
                 <span className="text-xs text-slate-400">•</span>
                 <span className="text-xs font-bold text-slate-700">

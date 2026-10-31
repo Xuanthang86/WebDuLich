@@ -1,15 +1,32 @@
 import { DatabaseState } from './schema';
 import crypto from 'crypto';
 
-// Secure helper to hash passwords using per-user random salted scrypt
+// Secure helper to hash passwords using per-user random salted scrypt or PBKDF2
 export function hashPassword(password: string, customSalt?: string): string {
   const salt = customSalt || crypto.randomBytes(16).toString('hex');
   const derivedKey = crypto.scryptSync(password, salt, 64);
   return `scrypt:${salt}:${derivedKey.toString('hex')}`;
 }
 
+export function hashPasswordPBKDF2(password: string, customSalt?: string): string {
+  const salt = customSalt || crypto.randomBytes(16).toString('hex');
+  const key = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha256').toString('hex');
+  return `pbkdf2:${salt}:${key}`;
+}
+
 export function verifyPassword(password: string, storedHash: string): boolean {
   if (!storedHash) return false;
+  if (storedHash.startsWith('pbkdf2:')) {
+    const parts = storedHash.split(':');
+    if (parts.length !== 3) return false;
+    const [, salt, key] = parts;
+    const derived = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha256').toString('hex');
+    try {
+      return crypto.timingSafeEqual(Buffer.from(derived, 'hex'), Buffer.from(key, 'hex'));
+    } catch {
+      return false;
+    }
+  }
   if (storedHash.startsWith('scrypt:')) {
     const parts = storedHash.split(':');
     if (parts.length !== 3) return false;
@@ -29,6 +46,28 @@ export function verifyPassword(password: string, storedHash: string): boolean {
 
 export const INITIAL_DATABASE_STATE: DatabaseState = {
   users: [
+    {
+      id: 'usr_admin_xuanthang',
+      email: 'bienxuanthang01.qb@gmail.com',
+      passwordHash: 'scrypt:1f772985d0e2a7aadb360c5b33bd507b:c45fb77f6de3db3bf2c98e8053f7028de8ebcdd30e6d22854e19d14a92fb1e7d41f2c610aaf4bb6d6f55ad60933ea4ec877fde9dac54aec27622bbc9414bba15',
+      fullName: 'Xuan Thang (Super Admin)',
+      role: 'ADMIN',
+      isActive: true,
+      lastLoginAt: null,
+      createdAt: '2026-10-30T00:00:00Z',
+      updatedAt: '2026-10-30T00:00:00Z',
+    },
+    {
+      id: 'usr_admin_xuanthang_alias',
+      email: 'xuanthang.admin@wanderersjourneys.com',
+      passwordHash: 'scrypt:1f772985d0e2a7aadb360c5b33bd507b:c45fb77f6de3db3bf2c98e8053f7028de8ebcdd30e6d22854e19d14a92fb1e7d41f2c610aaf4bb6d6f55ad60933ea4ec877fde9dac54aec27622bbc9414bba15',
+      fullName: 'Xuan Thang (Administrator)',
+      role: 'ADMIN',
+      isActive: true,
+      lastLoginAt: null,
+      createdAt: '2026-10-30T00:00:00Z',
+      updatedAt: '2026-10-30T00:00:00Z',
+    },
     {
       id: 'usr_admin_01',
       email: 'admin@wanderersjourneys.com',

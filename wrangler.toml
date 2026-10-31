@@ -1,0 +1,32 @@
+# ====================================================================
+# Wanderer's Journeys - Cloudflare Configuration
+# Target Domain: https://xuanthang.io.vn (Frontend)
+# API Subdomain: https://api.xuanthang.io.vn (or /api/* via Pages Functions)
+# ====================================================================
+
+name = "wanderers-journeys"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "./dist"
+
+[vars]
+NODE_ENV = "production"
+CORS_ORIGIN = "https://xuanthang.io.vn,https://www.xuanthang.io.vn"
+NOTIFICATION_EMAIL = "info@wanderersjourneys.com"
+
+# 1. Cloudflare D1 Database Binding (Edge SQLite)
+# Create with: npx wrangler d1 create wanderers-journeys-d1
+[[d1_databases]]
+binding = "DB"
+database_name = "wanderers-journeys-d1"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+# 2. Cloudflare R2 Bucket Binding (Media Assets & File Uploads)
+# Create with: npx wrangler r2 bucket create wanderers-media
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "wanderers-media"
+
+# 3. Cloudflare Pages build configurations
+[site]
+bucket = "./dist"

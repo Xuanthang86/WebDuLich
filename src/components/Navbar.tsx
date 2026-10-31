@@ -44,10 +44,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Compass className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
             </div>
             <div className="min-w-0 overflow-hidden">
-              <span className="font-brand-display text-base sm:text-xl font-bold tracking-[0.14em] sm:tracking-[0.18em] text-white block uppercase truncate">
+              <span className="font-brand-display text-[13px] min-[360px]:text-sm sm:text-lg md:text-xl font-bold tracking-[0.05em] min-[360px]:tracking-[0.08em] sm:tracking-[0.14em] md:tracking-[0.18em] text-white block uppercase whitespace-nowrap">
                 {settings.brandName || "Wanderer's Journeys"}
               </span>
-              <span className="text-[10px] sm:text-xs tracking-normal sm:tracking-wider text-[#C9A45C] font-light block italic truncate max-w-[170px] xs:max-w-[230px] sm:max-w-none">
+              <span className="text-[9px] min-[360px]:text-[10px] sm:text-xs tracking-normal sm:tracking-wider text-[#C9A45C] font-light block italic truncate max-w-[155px] min-[360px]:max-w-[210px] sm:max-w-none">
                 {settings.slogan || 'Where curiosity leads, possibilities unfold'}
               </span>
             </div>

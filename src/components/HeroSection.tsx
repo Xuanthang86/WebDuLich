@@ -66,10 +66,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         </div>
 
         {/* Action CTAs */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-4 max-w-md mx-auto">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-xl mx-auto w-full px-2">
           <button
             onClick={onOpenQuestionnaire}
-            className="w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-3.5 rounded-full bg-gradient-to-r from-[#C9A45C] to-[#A77A32] text-[#0F172A] font-bold text-sm sm:text-base tracking-wide hover:from-[#d8b368] hover:to-[#b8893d] transition-all shadow-xl shadow-[#C9A45C]/30 hover:shadow-2xl hover:shadow-[#C9A45C]/45 flex items-center justify-center gap-2 cursor-pointer group"
+            className="w-full sm:w-auto px-6 py-3.5 sm:px-8 sm:py-3.5 rounded-full bg-gradient-to-r from-[#C9A45C] to-[#A77A32] text-[#0F172A] font-bold text-sm sm:text-base tracking-wide hover:from-[#d8b368] hover:to-[#b8893d] transition-all shadow-xl shadow-[#C9A45C]/30 hover:shadow-2xl hover:shadow-[#C9A45C]/45 flex items-center justify-center gap-2 cursor-pointer group whitespace-nowrap"
           >
             <span>{hero.primaryCtaText || 'Request a Bespoke Proposal'}</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -77,7 +77,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
           <button
             onClick={onExplorePackages}
-            className="w-full sm:w-auto px-6 py-3 sm:px-7 sm:py-3.5 rounded-full border-2 border-slate-400/80 hover:border-[#C9A45C] text-white hover:text-[#C9A45C] font-semibold text-sm sm:text-base transition-colors bg-slate-900/40 backdrop-blur-sm cursor-pointer"
+            className="w-full sm:w-auto px-6 py-3.5 sm:px-8 sm:py-3.5 rounded-full border-2 border-slate-400/80 hover:border-[#C9A45C] text-white hover:text-[#C9A45C] font-semibold text-sm sm:text-base transition-colors bg-slate-900/40 backdrop-blur-sm cursor-pointer whitespace-nowrap"
           >
             {hero.secondaryCtaText || 'Explore Living Packages'}
           </button>

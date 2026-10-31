@@ -71,7 +71,12 @@ export default function App() {
   return (
     <AuthProvider>
       {currentView === 'admin' ? (
-        <AdminLayout onBackToWebsite={() => setCurrentView('website')} />
+        <AdminLayout
+          onBackToWebsite={() => setCurrentView('website')}
+          settings={content?.settings}
+          onOpenPrivacy={() => setPolicyType('privacy')}
+          onOpenTerms={() => setPolicyType('terms')}
+        />
       ) : (
         <div className="min-h-screen bg-[#FDFBF7] text-[#0F172A] flex flex-col font-sans">
           {loading && !content ? (
