@@ -24,9 +24,13 @@ async function main() {
   const lines: string[] = [
     '-- ====================================================================',
     '-- Wanderer\'s Journeys - Cloudflare D1 Initial Data Seed',
-    '-- Generated automatically from data/db.json',
-    '-- Preserving all records, accounts, hashed credentials, and content',
+    '-- Generated automatically from sanitized baseline data',
+    '-- SECURITY ENFORCEMENT: Never includes active sessions or real PII',
     '-- ====================================================================',
+    '',
+    '-- 0. PURGE SESSIONS & SENSITIVE TOKENS',
+    'DELETE FROM sessions;',
+    'DELETE FROM password_reset_tokens;',
     '',
   ];
 
@@ -182,13 +186,15 @@ async function main() {
     lines.push('');
   }
 
-  // 12. Leads
+  // 12. Leads (Sanitized demo data with zero real PII)
   if (data.leads && data.leads.length > 0) {
-    lines.push('-- 12. LEADS');
+    lines.push('-- 12. LEADS (SANITIZED DEMO INQUIRIES)');
     for (const item of data.leads) {
+      const cleanEmail = item.email ? (item.email.split('@')[0] + '@example.com') : 'guest@example.com';
+      const cleanPhone = item.phone ? '+1 (555) 019-2831' : null;
       lines.push(
         `INSERT OR REPLACE INTO leads (id, lead_code, full_name, email, phone, country_code, expected_start_date, duration, guest_count, age_groups, package_code, package_name, destination_city, preferred_accommodation_type, activities, transport_preference, estimated_budget, additional_notes, consent_accepted, status, priority, assigned_to, created_at, updated_at) VALUES (` +
-        `${escapeSql(item.id)}, ${escapeSql(item.leadCode)}, ${escapeSql(item.fullName)}, ${escapeSql(item.email)}, ${escapeSql(item.phone)}, ` +
+        `${escapeSql(item.id)}, ${escapeSql(item.leadCode)}, ${escapeSql(item.fullName)}, ${escapeSql(cleanEmail)}, ${escapeSql(cleanPhone)}, ` +
         `${escapeSql(item.countryCode)}, ${escapeSql(item.expectedStartDate)}, ${escapeSql(item.duration)}, ${escapeSql(item.guestCount || 1)}, ` +
         `${escapeSql(item.ageGroups || [])}, ${escapeSql(item.packageCode)}, ${escapeSql(item.packageName)}, ${escapeSql(item.destinationCity)}, ` +
         `${escapeSql(item.preferredAccommodationType)}, ${escapeSql(item.activities || [])}, ${escapeSql(item.transportPreference)}, ` +

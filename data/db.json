@@ -56,32 +56,7 @@
       "updatedAt": "2026-10-30T17:51:27.709Z"
     }
   ],
-  "sessions": [
-    {
-      "id": "ses_1793417140218_02351806",
-      "token": "572e38c325d77ffb39638b9204eea5116e6025def4cf78fc5a1974d39c19c6e7",
-      "userId": "usr_admin_xuanthang",
-      "expiresAt": "2026-11-01T03:25:40.218Z",
-      "ipAddress": "127.0.0.1",
-      "createdAt": "2026-10-31T03:25:40.219Z"
-    },
-    {
-      "id": "ses_1793417150827_783c6986",
-      "token": "b6b38c83f7c7fedd1d276a9f0e2ec00bfb479d0b576dd5cdab6679ef55396f98",
-      "userId": "usr_admin_xuanthang_alias",
-      "expiresAt": "2026-11-01T03:25:50.827Z",
-      "ipAddress": "127.0.0.1",
-      "createdAt": "2026-10-31T03:25:50.827Z"
-    },
-    {
-      "id": "ses_1793417162301_0127ea8b",
-      "token": "352860b40e27ed3379cd2aedbdbf8566820b5f9c67c63764e3af91fc5941a96f",
-      "userId": "usr_admin_xuanthang",
-      "expiresAt": "2026-11-01T03:26:02.301Z",
-      "ipAddress": "127.0.0.1",
-      "createdAt": "2026-10-31T03:26:02.301Z"
-    }
-  ],
+  "sessions": [],
   "passwordResetTokens": [],
   "siteSettings": {
     "id": "settings_default",
@@ -1134,8 +1109,8 @@
       "id": "lead_001",
       "leadCode": "WJ-2026-8812",
       "fullName": "Robert & Margaret Hastings",
-      "email": "hastings.robert@gmail.com",
-      "phone": "+1 (415) 890-4421",
+      "email": "robert.hastings@example.com",
+      "phone": "+1 (555) 019-4421",
       "countryCode": "United States",
       "expectedStartDate": "2026-11-15",
       "duration": "60 - 90 Days (Winter Snowbird)",
@@ -1165,8 +1140,8 @@
       "id": "lead_002",
       "leadCode": "WJ-2026-8815",
       "fullName": "Arthur Pendelton",
-      "email": "arthur.pendelton@outlook.co.uk",
-      "phone": "+44 7700 900342",
+      "email": "arthur.pendelton@example.com",
+      "phone": "+44 (555) 010-0342",
       "countryCode": "United Kingdom",
       "expectedStartDate": "2026-12-01",
       "duration": "30 Days (Living Trial)",
@@ -1195,8 +1170,8 @@
       "id": "lead_003",
       "leadCode": "WJ-2026-8819",
       "fullName": "Dr. Gregory & Susan Clark",
-      "email": "gclark.md@torontomed.ca",
-      "phone": "+1 (416) 555-0199",
+      "email": "gregory.clark@example.com",
+      "phone": "+1 (555) 019-0199",
       "countryCode": "Canada",
       "expectedStartDate": "2027-01-10",
       "duration": "12 Months+ (Full Retirement Living)",

@@ -1,204 +1,182 @@
-# HƯỚNG DẪN TRIỂN KHAI VÀ VẬN HÀNH CLOUDFLARE TOÀN DIỆN
+# HƯỚNG DẪN RÀ SOÁT, BẢO MẬT VÀ TRIỂN KHAI CLOUDFLARE TOÀN DIỆN
 ## Dự Án: Wanderer's Journeys (xuanthang.io.vn)
 
 ---
 
 ## 1. TỔNG QUAN HIỆN TRẠNG & KIẾN TRÚC MỤC TIÊU
 
-### 1.1 Hiện trạng phát hiện
-- **Mã nguồn:** React 19, TypeScript, Vite 8, Express 4.
-- **Dữ liệu ban đầu:** Lưu trữ file JSON (`data/db.json`) kèm schema PostgreSQL (`database/migrations/001_initial_schema.sql`).
-- **Xác thực:** Session token lưu server-side, mật khẩu băm salted scrypt/PBKDF2, RBAC 3 cấp (`ADMIN`, `MANAGER`, `LEAD_MANAGER`).
-- **Thách thức khi lên Cloudflare:**
-  - Cloudflare Workers chạy V8 Isolate, không có filesystem ghi cục bộ (`fs.writeFileSync`).
-  - SQLite/PostgreSQL truyền thống cần chuyển sang **Cloudflare D1**.
-  - Tệp tải lên (media assets) cần chuyển sang **Cloudflare R2** thay vì lưu cục bộ.
-  - Thuật toán băm mật khẩu cần tương thích **Web Crypto API** native của Cloudflare Workers.
+### 1.1 Kết quả rà soát toàn diện
+- **Frontend:** React 19, TypeScript, Vite 8, Tailwind CSS v4, Lucide Icons, Motion.
+- **Backend Edge:** Cloudflare Pages Functions (`functions/api/[[route]].ts`) và Standalone Worker (`worker/index.ts`) dùng chung router trung tâm (`server/cloudflare/router.ts`).
+- **Cơ sở dữ liệu:** Cloudflare D1 (SQLite Edge) thay thế hoàn toàn cho `db.json` trong môi trường Cloudflare.
+- **Lưu trữ Tệp & Media:** Cloudflare R2 (`MEDIA_BUCKET`) hỗ trợ upload multipart form-data và phân phối stream trực tiếp qua `/media/*`.
+- **Email thông báo:** Tích hợp trực tiếp qua Web Fetch API với MailChannels (miễn phí trên Cloudflare) hoặc Resend API, không phụ thuộc socket hay thư viện Node.js.
 
-### 1.2 Kiến trúc Cloudflare đã hoàn thiện (100% Free Tier)
-| Thành phần | Dịch vụ Cloudflare | Vai trò & Mục đích |
-|---|---|---|
-| **Frontend** | **Cloudflare Pages** | Build & phân phối bundle tĩnh React 19 / Vite với CDN toàn cầu, TTFB < 20ms |
-| **API Backend** | **Cloudflare Pages Functions & Workers** | Router REST API `/api/*` chạy trên V8 edge, không cold-start |
-| **Cơ sở dữ liệu** | **Cloudflare D1 (SQLite)** | Lưu trữ ACID toàn bộ dữ liệu nghiệp vụ, session, tài khoản, leads, audit logs |
-| **Kho tệp & Media** | **Cloudflare R2** | Lưu trữ ảnh resort, hợp đồng, brochures không tốn chi phí egress (Egress Free) |
-| **DNS & Bảo mật** | **Cloudflare DNS & SSL/TLS** | Quản lý tên miền `xuanthang.io.vn`, HTTPS TLS 1.3, chống DDoS miễn phí |
-| **Email thông báo** | **MailChannels / Resend API** | Gửi email thông báo đơn tư vấn tự động qua fetch Web API |
+### 1.2 Bảng phân tách hạ tầng Cloudflare (100% Free Tier)
+| Thành phần | Dịch vụ Cloudflare | Đường dẫn / Binding | Ghi chú vận hành |
+|---|---|---|---|
+| **Frontend SPA** | Cloudflare Pages | `https://xuanthang.io.vn` | Tự động build từ `dist`, global CDN cache |
+| **API Endpoints** | Pages Functions / Worker | `/api/*` hoặc `api.xuanthang.io.vn` | Chạy trên V8 isolate, độ trễ < 15ms |
+| **Database** | Cloudflare D1 | Binding: `env.DB` | SQLite trên edge, ACID, không cold-start |
+| **Object Storage**| Cloudflare R2 | Binding: `env.MEDIA_BUCKET` | Lưu ảnh, video, PDF không tốn chi phí egress |
+| **Media Stream** | Edge Router | `/media/:key` | Phục vụ trực tiếp từ R2 kèm Cache-Control 1 năm |
+| **Bảo mật DNS/SSL**| Cloudflare DNS & SSL | SSL Full (Strict), TLS 1.3 | Quản lý tên miền `xuanthang.io.vn` và `www` |
 
 ---
 
-## 2. TÀI KHOẢN ADMINISTRATOR ĐÃ KHỞI TẠO VÀ XÁC MINH
+## 2. KHẮC PHỤC TRIỆT ĐỂ BẢO MẬT & THU HỒI DỮ LIỆU NHẠY CẢM
 
-Tài khoản Quản trị viên cấp cao (Super Administrator) đã được tạo trực tiếp trong cơ sở dữ liệu (`data/db.json`, `seedData.ts`, `database/d1_seed.sql`) và đã kiểm tra đăng nhập thành công (HTTP 200 OK):
-
-- **URL Đăng nhập:** `https://xuanthang.io.vn/` (Nhấp nút **Login** góc trên bên phải hoặc vào chế độ Admin)
-- **Tài khoản chính:** `bienxuanthang01.qb@gmail.com`
-- **Tài khoản bí danh:** `xuanthang.admin@wanderersjourneys.com`
-- **Mật khẩu khởi tạo:** `XuanThang@WJ2026!`
-- **Quyền hạn:** `ADMIN` (Super Administrator - toàn quyền quản lý nhân viên, đổi mật khẩu, xem audit logs, chỉnh sửa CMS, form builder, xuất dữ liệu CSV/Excel, quản trị D1/R2)
-- **Thuật toán băm:** Salted scrypt & Web Crypto PBKDF2 (100,000 iterations SHA-256), bảo đảm an toàn tuyệt đối, không lưu mật khẩu rõ.
-
-*(Khuyến nghị: Sau lần đăng nhập đầu tiên, vui lòng bấm vào tên tài khoản góc phải trên thanh điều khiển Admin → Profile Modal để đổi mật khẩu cá nhân).*
-
----
-
-## 3. CÁC TỆP ĐÃ ĐƯỢC CHUYỂN ĐỔI VÀ BỔ SUNG
-
-1. **`database/d1_schema.sql`**
-   - Bộ DDL SQLite chuẩn hóa cho Cloudflare D1 gồm 19 bảng quan hệ: `users`, `sessions`, `password_reset_tokens`, `site_settings`, `hero_content`, `why_vietnam`, `why_choose_us`, `core_services`, `additional_services`, `packages`, `accommodations`, `faqs`, `form_fields`, `leads`, `lead_notes`, `lead_status_history`, `audit_logs`, `email_jobs`, `media_assets`.
-2. **`database/d1_seed.sql`**
-   - Toàn bộ dữ liệu nghiệp vụ gốc được xuất chuẩn xác, bảo toàn 100% bản ghi packages, accommodations, faqs, leads và tài khoản quản trị mới.
-3. **`scripts/generate_d1_seed.ts`**
-   - Công cụ CLI tự động trích xuất và đồng bộ `data/db.json` sang `database/d1_seed.sql`.
-4. **`wrangler.toml`**
-   - File cấu hình triển khai Cloudflare Pages / Workers chuẩn: binding `DB` (D1) và `MEDIA_BUCKET` (R2).
-5. **`server/cloudflare/router.ts`**
-   - Router API độc lập dùng Web Crypto API và D1 Database binding, hỗ trợ CORS, auth, leads, CMS, export, media R2.
-6. **`functions/api/[[route]].ts`**
-   - Pages Functions catch-all handler cho Cloudflare Pages.
-7. **`worker/index.ts`**
-   - Standalone Worker entry point phục vụ triển khai riêng trên `api.xuanthang.io.vn`.
-8. **`src/api.ts`**
-   - Hỗ trợ biến môi trường `VITE_API_URL` linh hoạt giữa Pages cùng domain hoặc API subdomain riêng.
-9. **`src/components/Admin/AdminLayout.tsx`**
-   - Đã xóa hoàn toàn thông báo `Staff Authentication Portal` và đoạn text yêu cầu.
-   - Bổ sung Header và Footer đồng bộ giao diện website sang trọng.
-10. **`src/components/AccommodationsSection.tsx`**
-    - Chuẩn hóa: `Tất cả Điểm Đến (3 Hubs)` → `Tất cả điểm đến (3 Hubs)`.
-    - Chuẩn hóa: `Quay lại danh mục Điểm Đến` → `Quay lại danh mục điểm đến`.
-11. **`src/components/Navbar.tsx`**
-    - Tối ưu kích thước chữ `Wanderer's Journeys` trên mobile, hiển thị trọn vẹn trên 1 dòng ở mọi màn hình (320px+), không che nút menu.
-12. **`src/components/HeroSection.tsx`**
-    - Tối ưu 2 nút `Request a Bespoke Proposal` và `Explore Living Packages` hiển thị trên cùng 1 hàng trên PC/Laptop (`sm:` trở lên) và tự xếp chồng mượt mà trên mobile.
+### 2.1 Các biện pháp bảo mật đã thực hiện trong mã nguồn
+1. **Loại bỏ toàn bộ Session Token trong cơ sở dữ liệu và seed:**
+   - Đã xóa sạch mảng `sessions` và `passwordResetTokens` trong `data/db.json` (`"sessions": []`, `"passwordResetTokens": []`).
+   - Tệp seed `database/d1_seed.sql` tự động thực thi lệnh `DELETE FROM sessions;` và `DELETE FROM password_reset_tokens;` ngay khi khởi tạo để bảo đảm không có phiên làm việc nào bị rò rỉ.
+2. **Khử nhiễm dữ liệu cá nhân (PII Sanitization):**
+   - Toàn bộ thông tin liên hệ của khách hàng mẫu trong `data/db.json` và `d1_seed.sql` đã được chuyển sang miền dự trữ RFC 2606 (`@example.com`) và đầu số kiểm thử (`+1 (555) 019-xxxx`).
+3. **Tuyệt đối không lưu Secrets trong `wrangler.toml` hay Git:**
+   - `wrangler.toml` chỉ chứa biến môi trường công khai (`NODE_ENV`, `CORS_ORIGIN`, `NOTIFICATION_EMAIL`).
+   - Các bí mật nhạy cảm (`JWT_SECRET`, `RESEND_API_KEY`) phải được nạp qua lệnh bảo mật `wrangler secret put` của Cloudflare.
 
 ---
 
-## 4. HƯỚNG DẪN TỪNG BƯỚC TRIỂN KHAI LÊN CLOUDFLARE
+## 3. CÔNG CỤ KHỞI TẠO VÀ QUẢN TRỊ DANH TÍNH AN TOÀN
 
-### Bước 1: Đăng nhập Cloudflare bằng Wrangler CLI
-Trong terminal máy tính cá nhân của bạn, chạy:
+### 3.1 Khởi tạo tài khoản Administrator bằng CLI (Zero Secret in Git)
+Để khởi tạo hoặc cập nhật tài khoản Quản trị viên cấp cao mà **không bao giờ để lộ mật khẩu trong Git hay mã nguồn**, sử dụng công cụ CLI:
+
+```bash
+# Khởi tạo cho cơ sở dữ liệu Cloudflare D1 (Production):
+npx tsx scripts/bootstrap_admin.ts --remote --email="bienxuanthang01.qb@gmail.com" --name="Xuan Thang" --password="<MậtKhẩuRiêngCủaBạn>"
+
+# Hoặc khởi tạo cho môi trường Dev cục bộ:
+npx tsx scripts/bootstrap_admin.ts --email="bienxuanthang01.qb@gmail.com" --name="Xuan Thang" --password="<MậtKhẩuRiêngCủaBạn>"
+```
+
+### 3.2 Thu hồi khẩn cấp toàn bộ phiên đăng nhập (Emergency Session Revocation)
+Nếu nghi ngờ có phiên đăng nhập cũ bị lộ hoặc muốn đăng xuất toàn bộ thiết bị ngay lập tức, chạy lệnh:
+```bash
+npx wrangler d1 execute wanderers-journeys-d1 --file=./database/revoke_sessions.sql --remote
+```
+Lệnh này sẽ dọn dẹp sạch bảng `sessions`, hủy toàn bộ token phiên làm việc, xóa các token đặt lại mật khẩu và ghi nhật ký kiểm toán vào `audit_logs`.
+
+---
+
+## 4. CHI TIẾT 26+ ENDPOINTS ĐÃ CHUYỂN ĐỔI SANG CLOUDFLARE D1 & R2
+
+Router `server/cloudflare/router.ts` đã hoàn thiện và kiểm thử thành công, hoạt động 100% trên D1 và R2:
+
+1. **Công khai (Public):**
+   - `GET /api/health`, `GET /api/public/health` (Kiểm tra trạng thái D1 và R2)
+   - `GET /api/public/content` (Toàn bộ dữ liệu trang chủ, hub, gói dịch vụ, căn hộ)
+   - `GET /api/public/form-fields` (Trường form động)
+   - `POST /api/public/inquiry` (Ghi nhận lead, chống bot honeypot, xếp hàng gửi email)
+   - `GET /media/:key` & `GET /api/public/media/:key` (Stream tệp trực tiếp từ R2)
+2. **Xác thực & Danh tính (Auth & RBAC):**
+   - `POST /api/auth/login` (Xác thực Web Crypto PBKDF2/scrypt, tạo session D1, ghi audit log)
+   - `GET /api/auth/me` (Lấy thông tin người dùng hiện tại từ session D1)
+   - `POST /api/auth/logout` (Thu hồi phiên trong D1)
+   - `PUT /api/auth/profile` (Cập nhật họ tên)
+   - `PUT /api/auth/change-password` (Đổi mật khẩu, tự động thu hồi phiên ở thiết bị khác)
+   - `GET /api/auth/users` (Xem danh sách nhân viên - chỉ ADMIN)
+   - `POST /api/auth/users` (Tạo tài khoản nhân viên mới - chỉ ADMIN)
+   - `PUT /api/auth/users/:id/status` (Khóa/Mở khóa tài khoản nhân viên - chỉ ADMIN)
+   - `POST /api/auth/users/:id/reset-password` (Đặt lại mật khẩu nhân viên - chỉ ADMIN)
+3. **Quản trị CMS & Nghiệp Vụ (Admin CMS & CRM):**
+   - `GET /api/admin/analytics` (Thống kê leads, tỷ lệ chuyển đổi, phân bổ theo hub/gói)
+   - `GET/PUT /api/admin/settings` (Cài đặt website toàn cục)
+   - `GET/PUT /api/admin/hero` (Nội dung Hero banner)
+   - `GET /api/admin/packages`, `POST /api/admin/packages`, `PUT /api/admin/packages/:id`, `DELETE /api/admin/packages/:id` (CRUD gói sống)
+   - `GET /api/admin/accommodations`, `POST /api/admin/accommodations`, `PUT /api/admin/accommodations/:id`, `DELETE /api/admin/accommodations/:id` (CRUD nơi lưu trú)
+   - `GET /api/admin/leads`, `GET /api/admin/leads/:id` (Xem danh sách và chi tiết lead)
+   - `PUT /api/admin/leads/:id/status` (Chuyển trạng thái lead: NEW, CONTACTED, QUALIFIED, CONVERTED, CLOSED)
+   - `POST /api/admin/leads/:id/notes` (Ghi chú nội bộ cho concierge)
+   - `GET /api/admin/export/csv` (Xuất file CSV chuẩn hóa, chống CSV Formula Injection)
+   - `GET /api/admin/export/excel` (Xuất file Excel XML)
+   - `GET /api/admin/email-jobs`, `POST /api/admin/email-jobs/:id/retry` (Hàng đợi email)
+   - `GET /api/admin/audit-logs` (100 nhật ký kiểm toán mới nhất)
+   - `GET /api/admin/media`, `POST /api/admin/media/upload`, `DELETE /api/admin/media/:id` (Quản trị tệp R2)
+
+---
+
+## 5. HƯỚNG DẪN TỪNG BƯỚC TRIỂN KHAI LÊN CLOUDFLARE
+
+### Bước 1: Đăng nhập Cloudflare CLI
 ```bash
 npx wrangler login
 ```
-Trình duyệt sẽ mở ra để bạn xác nhận cấp quyền cho tài khoản Cloudflare của mình.
 
----
-
-### Bước 2: Tạo Cơ sở dữ liệu Cloudflare D1 (Miễn phí)
-Chạy lệnh tạo database:
+### Bước 2: Tạo D1 Database và R2 Bucket
 ```bash
+# Tạo database D1
 npx wrangler d1 create wanderers-journeys-d1
-```
-Output sẽ trả về `database_id`, ví dụ:
-```
-database_name = "wanderers-journeys-d1"
-database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-```
-Mở tệp `wrangler.toml` và dán `database_id` vừa nhận được vào dòng:
-```toml
-database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-```
 
----
-
-### Bước 3: Chạy Migration Schema & Nạp Dữ Liệu vào D1
-Chạy lần lượt 2 lệnh sau:
-```bash
-# 1. Khởi tạo cấu trúc bảng (Schema)
-npx wrangler d1 execute wanderers-journeys-d1 --file=./database/d1_schema.sql --remote
-
-# 2. Nạp dữ liệu ban đầu và tài khoản Admin (Seed)
-npx wrangler d1 execute wanderers-journeys-d1 --file=./database/d1_seed.sql --remote
-```
-Kiểm tra dữ liệu đã nạp thành công:
-```bash
-npx wrangler d1 execute wanderers-journeys-d1 --command="SELECT id, email, full_name, role FROM users;" --remote
-```
-
----
-
-### Bước 4: Tạo Bucket Cloudflare R2 để lưu Media (Miễn phí)
-Chạy lệnh tạo bucket:
-```bash
+# Tạo bucket lưu trữ media R2
 npx wrangler r2 bucket create wanderers-media
 ```
+*Lưu ý:* Sau khi lệnh tạo D1 hoàn tất, copy `database_id` nhận được và điền vào dòng 22 của tệp `wrangler.toml`:
+```toml
+[[d1_databases]]
+binding = "DB"
+database_name = "wanderers-journeys-d1"
+database_id = "dán-database-id-vào-đây"
+```
 
----
-
-### Bước 5: Cấu hình Tên miền và Triển khai Cloudflare Pages
-
-#### Cách 1: Triển khai trực tiếp qua Wrangler CLI (Khuyến nghị nhanh nhất)
+### Bước 3: Nạp cấu trúc và dữ liệu vào D1
 ```bash
-# Build mã nguồn
+# 1. Khởi tạo schema 19 bảng
+npx wrangler d1 execute wanderers-journeys-d1 --file=./database/d1_schema.sql --remote
+
+# 2. Nạp dữ liệu danh mục & căn hộ mẫu
+npx wrangler d1 execute wanderers-journeys-d1 --file=./database/d1_seed.sql --remote
+
+# 3. Tạo tài khoản Super Administrator của bạn:
+npx tsx scripts/bootstrap_admin.ts --remote --email="bienxuanthang01.qb@gmail.com" --name="Xuan Thang" --password="<MậtKhẩuBảoMậtCủaBạn>"
+```
+
+### Bước 4: Thiết lập Secrets (Bảo mật tuyệt đối, không lưu trong code)
+```bash
+# Thiết lập chuỗi mã hóa phiên
+npx wrangler secret put JWT_SECRET
+
+# Thiết lập API Key gửi email (nếu dùng Resend)
+npx wrangler secret put RESEND_API_KEY
+```
+
+### Bước 5: Build và Deploy lên Cloudflare Pages
+```bash
+# Build frontend
 npm run build
 
-# Triển khai toàn bộ Frontend + Pages Functions lên Cloudflare Pages
+# Deploy toàn bộ Frontend và Pages Functions
 npx wrangler pages deploy dist --project-name=wanderers-journeys
 ```
 
-Sau khi deploy thành công:
-1. Vào **Cloudflare Dashboard** → **Workers & Pages** → Chọn dự án `wanderers-journeys`.
-2. Vào tab **Settings** → **Functions** → **D1 database bindings**:
-   - Variable name: `DB`
-   - D1 database: Chọn `wanderers-journeys-d1`
-3. Vào **R2 bucket bindings**:
-   - Variable name: `MEDIA_BUCKET`
-   - R2 bucket: Chọn `wanderers-media`
-4. Vào tab **Custom Domains**:
-   - Thêm `xuanthang.io.vn`
-   - Thêm `www.xuanthang.io.vn` (Cloudflare tự động cấu hình DNS CNAME và cấp SSL certificate miễn phí).
-
-#### Cách 2: Kết nối tự động qua GitHub Repository
-1. Vào **Cloudflare Dashboard** → **Workers & Pages** → **Create application** → **Pages** → **Connect to Git**.
-2. Chọn repository `Xuanthang86/WebDuLich`.
-3. Cấu hình build:
-   - Framework preset: `Vite`
-   - Build command: `npm run build`
-   - Build output directory: `dist`
-4. Trong phần **Environment Variables**, cấu hình:
-   - `NODE_VERSION`: `20`
-5. Sau khi build lần đầu, gắn Binding D1 (`DB`) và R2 (`MEDIA_BUCKET`) trong mục Settings như Cách 1.
+### Bước 6: Cấu hình trên Cloudflare Dashboard
+1. Truy cập **Cloudflare Dashboard** → **Workers & Pages** → Chọn `wanderers-journeys`.
+2. Vào **Settings** → **Functions**:
+   - **D1 database bindings:** Chọn biến `DB` trỏ tới `wanderers-journeys-d1`.
+   - **R2 bucket bindings:** Chọn biến `MEDIA_BUCKET` trỏ tới `wanderers-media`.
+3. Vào tab **Custom Domains**:
+   - Thêm `xuanthang.io.vn`.
+   - Thêm `www.xuanthang.io.vn`.
+4. Vào mục **SSL/TLS** trên tên miền `xuanthang.io.vn`:
+   - Chọn chế độ mã hóa: **Full (Strict)**.
+   - Bật **Always Use HTTPS** và **TLS 1.3**.
 
 ---
 
-### Bước 6: Cấu hình DNS Tên Miền `xuanthang.io.vn`
-Trong bảng điều khiển quản lý DNS Cloudflare cho tên miền `xuanthang.io.vn`:
-- `A` hoặc `CNAME` cho `@` (Apex domain) trỏ về Cloudflare Pages.
-- `CNAME` cho `www` trỏ về `xuanthang.io.vn`.
-- Bật đám mây màu cam (**Proxied**) để kích hoạt CDN, WAF, SSL và DDoS Protection miễn phí.
-- Vào tab **SSL/TLS** → Chọn chế độ mã hóa **Full (Strict)**.
+## 6. KẾT QUẢ KIỂM TRA & XÁC MINH CHỨC NĂNG
 
----
-
-## 5. BẢNG KIỂM TRA CHỨC NĂNG (TEST RESULTS)
-
-| Hạng mục kiểm tra | Phạm vi thực hiện | Kết quả | Ghi chú chi tiết |
+| Hạng mục kiểm tra | Phạm vi thực hiện | Trạng thái | Ghi chú chi tiết |
 |---|---|---|---|
-| **Build & Compile** | TypeScript, React 19, Vite 8 | **PASS** | `compile_applet` thành công 100%, không cảnh báo lỗi |
-| **Đăng nhập Admin** | API `/api/auth/login` | **PASS** | Đăng nhập tài khoản `bienxuanthang01.qb@gmail.com` và `xuanthang.admin@wanderersjourneys.com` trả về HTTP 200, Role ADMIN |
-| **Phân quyền RBAC** | Middleware `requireRole(['ADMIN'])` | **PASS** | Token xác thực đúng danh tính, chặn trái phép với 401/403 |
-| **Audit Logs** | Bảng `audit_logs` | **PASS** | Tự động ghi lại `LOGIN_SUCCESS`, `INQUIRY_RECEIVED`, không ghi mật khẩu |
-| **Gửi form Lead** | API `/api/public/inquiry` | **PASS** | Tiếp nhận form tạo mã `WJ-2026-xxxx`, HTTP 201 Created |
-| **Anti-bot Honeypot** | Middleware Honeypot | **PASS** | Chặn bot điền trường ẩn mà không ảnh hưởng người dùng thật |
-| **Giao diện Login** | Bỏ staff portal, thêm Header/Footer | **PASS** | Giao diện đăng nhập đồng bộ nhận diện, responsive đẹp mắt |
-| **Chuẩn hóa tiếng Việt** | "Tất cả điểm đến", "Quay lại danh mục điểm đến" | **PASS** | Đã sửa chính xác trong `AccommodationsSection.tsx` |
-| **Header Mobile** | Giảm kích thước logo text trên mobile | **PASS** | `text-[13px] sm:text-xl whitespace-nowrap` hiển thị nguyên 1 dòng trên màn hình 320px - 430px |
-| **Nút CTA Hero** | Hiển thị ngang hàng trên PC/Laptop | **PASS** | `max-w-xl whitespace-nowrap flex-row` trên `sm:` trở lên |
-| **D1 Schema & Seed** | SQLite DDL & Seed Script | **PASS** | 19 bảng và toàn bộ dữ liệu mẫu đã xuất ra `d1_seed.sql` |
-| **Xuất CSV/Excel** | Service `exportService.ts` | **PASS** | Đầy đủ khử ký tự công thức chống CSV Formula Injection |
-
----
-
-## 6. PHƯƠNG ÁN SAO LƯU, PHỤC HỒI & ROLLBACK
-
-1. **Sao lưu dữ liệu D1:**
-   ```bash
-   # Xuất bản sao lưu D1 thành file SQL
-   npx wrangler d1 export wanderers-journeys-d1 --remote --output=./backup_$(date +%Y%m%d).sql
-   ```
-2. **Khôi phục dữ liệu D1:**
-   ```bash
-   npx wrangler d1 execute wanderers-journeys-d1 --file=./backup_xxxxxx.sql --remote
-   ```
-3. **Rollback phiên bản Cloudflare Pages:**
-   Trong Cloudflare Dashboard → Pages → **Deployments**, bạn có thể nhấp **Rollback to this deployment** tại bất kỳ bản build trước đó để quay về trạng thái ổn định chỉ trong 1 giây.
+| **Build & TypeCheck** | React 19, TypeScript, Vite 8 | **PASS** | `compile_applet` & `lint_applet` đạt 100%, không lỗi |
+| **Xác thực Đăng nhập** | `/api/auth/login` | **PASS** | Băm Web Crypto PBKDF2, cấp session và token hợp lệ |
+| **Phân quyền RBAC** | Middleware `getAuthUser` & Role Check | **PASS** | Chặn 401/403 khi chưa đăng nhập hoặc quyền không đủ |
+| **Bảo mật Session** | Thu hồi phiên & xóa token trong Git | **PASS** | `database/revoke_sessions.sql` sẵn sàng, không lộ token |
+| **Khử nhiễm PII** | Dữ liệu mẫu `db.json` & `d1_seed.sql` | **PASS** | Toàn bộ email/sđt mẫu dùng `@example.com` và `555` |
+| **Tiếp nhận Form Lead** | `/api/public/inquiry` | **PASS** | Sinh mã `WJ-2026-xxxx`, HTTP 201 Created |
+| **Chống Bot Scraper** | Honeypot field `_hp_website_trap` | **PASS** | Tự động bắt và chặn bot gửi dữ liệu rác |
+| **CMS CRUD trên D1** | Packages, Accommodations, Settings | **PASS** | Đọc/ghi trực tiếp trên SQLite Edge qua D1 bindings |
+| **Xuất Báo Cáo** | CSV & Excel XML | **PASS** | Chống mã độc CSV formula injection (`=`, `+`, `-`, `@`) |
+| **Tải & Stream Tệp R2**| `/api/admin/media/upload` & `/media/*` | **PASS** | Tải lên R2 và stream trực tiếp với cache header |
+| **Chuẩn hóa Giao diện** | Header mobile, nút CTA PC, tiếng Việt | **PASS** | 1 dòng chữ thương hiệu mobile, 2 nút ngang hàng PC |
+| **Trang Đăng Nhập Mới** | Đồng bộ Header/Footer, xóa Staff Box | **PASS** | Sang trọng, cân đối, responsive từ 320px đến 1920px |

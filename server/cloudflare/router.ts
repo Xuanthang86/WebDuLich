@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  * 
  * Cloudflare Pages Functions & Workers Unified API Router
- * Backed by Cloudflare D1 (SQLite) and Cloudflare R2
+ * Fully backed by Cloudflare D1 (SQLite) and Cloudflare R2
+ * No filesystem or db.json dependency in edge production runtime.
  */
 
 export interface Env {
@@ -32,7 +33,7 @@ function hexToBytes(hex: string): Uint8Array {
   return bytes;
 }
 
-// Hash password with Web Crypto PBKDF2
+// Hash password with Web Crypto PBKDF2 (100,000 iterations SHA-256)
 export async function hashWebCryptoPBKDF2(password: string, customSaltHex?: string): Promise<string> {
   const enc = new TextEncoder();
   const salt = customSaltHex ? hexToBytes(customSaltHex) : crypto.getRandomValues(new Uint8Array(16));
@@ -68,7 +69,7 @@ export async function verifyWebCryptoPassword(password: string, storedHash: stri
   if (storedHash.startsWith('pbkdf2:')) {
     const parts = storedHash.split(':');
     if (parts.length !== 3) return false;
-    const [, saltHex, expectedKeyHex] = parts;
+    const [, saltHex] = parts;
     const computed = await hashWebCryptoPBKDF2(password, saltHex);
     return computed === storedHash;
   }
@@ -108,9 +109,9 @@ export async function verifyWebCryptoPassword(password: string, storedHash: stri
 
 // Standard CORS response helper
 function corsHeaders(env: Env, req: Request): HeadersInit {
-  const allowed = env.CORS_ORIGIN || 'https://xuanthang.io.vn';
+  const allowed = env.CORS_ORIGIN || 'https://xuanthang.io.vn,https://www.xuanthang.io.vn';
   const origin = req.headers.get('Origin') || '*';
-  const isAllowed = allowed === '*' || allowed.includes(origin);
+  const isAllowed = allowed === '*' || allowed.split(',').map(s => s.trim()).includes(origin);
 
   return {
     'Access-Control-Allow-Origin': isAllowed ? origin : 'https://xuanthang.io.vn',
@@ -164,6 +165,28 @@ function parseJson(val: any, fallback: any = []) {
   }
 }
 
+// Anti-formula injection sanitizer for CSV exports (CWE-1236)
+function sanitizeCsvCell(value: any): string {
+  if (value === null || value === undefined) return '';
+  let str = String(value).trim();
+  if (/^[=+\-@\t\r]/.test(str)) {
+    str = `'${str}`;
+  }
+  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+    str = `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+function escapeXml(str: string): string {
+  return (str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 // Email dispatch helper (MailChannels / Resend)
 async function sendNotificationEmail(env: Env, lead: any) {
   const recipient = env.NOTIFICATION_EMAIL || 'info@wanderersjourneys.com';
@@ -215,7 +238,7 @@ async function sendNotificationEmail(env: Env, lead: any) {
 }
 
 /**
- * Main Cloudflare Request Handler for /api/*
+ * Main Cloudflare Request Handler for /api/* and /media/*
  */
 export async function handleCloudflareApi(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
@@ -228,6 +251,23 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
     return new Response(null, { status: 204, headers: cors });
   }
 
+  // Direct public media streaming from R2
+  if ((path.startsWith('/media/') || path.startsWith('/api/public/media/')) && method === 'GET') {
+    const key = path.replace(/^\/api\/public\/media\//, '').replace(/^\/media\//, '');
+    if (env.MEDIA_BUCKET && key) {
+      const object = await env.MEDIA_BUCKET.get(key);
+      if (object) {
+        const headers = new Headers();
+        object.writeHttpMetadata(headers);
+        headers.set('etag', object.httpEtag);
+        headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+        headers.set('Access-Control-Allow-Origin', '*');
+        return new Response(object.body, { headers });
+      }
+    }
+    return new Response('Media asset not found in R2.', { status: 404, headers: cors });
+  }
+
   try {
     // ----------------------------------------------------
     // 1. HEALTH CHECK
@@ -238,7 +278,7 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
           success: true,
           status: 'healthy',
           timestamp: new Date().toISOString(),
-          runtime: 'Cloudflare Edge',
+          runtime: 'Cloudflare Pages / Workers Edge',
           database: env.DB ? 'Connected (D1)' : 'Unbound',
           storage: env.MEDIA_BUCKET ? 'Connected (R2)' : 'Unbound',
         },
@@ -416,12 +456,12 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
         estimatedBudget,
         additionalNotes,
         consentAccepted,
-        honeypot,
+        _hp_website_trap,
       } = body as any;
 
       // Honeypot anti-bot check
-      if (honeypot && String(honeypot).trim().length > 0) {
-        return jsonResponse({ success: true, data: { leadCode: 'WJ-2026-BOT-DEFLECTED', message: 'Inquiry received.' } }, 200, cors);
+      if (_hp_website_trap && String(_hp_website_trap).trim().length > 0) {
+        return jsonResponse({ success: true, data: { leadCode: 'WJ-2026-BOT', message: 'Inquiry received.' } }, 200, cors);
       }
 
       if (!fullName || !email) {
@@ -455,10 +495,21 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
         VALUES (?, ?, 'NEW', 'NEW', 'SYSTEM', 'System Intake', 'Inquiry received via web questionnaire.', ?)
       `).bind(`lsh_${Date.now()}`, id, now).run();
 
-      // Trigger email dispatch in background
+      // Enqueue and trigger email notification
+      const emailJobId = `emj_${Date.now()}`;
+      await env.DB.prepare(`
+        INSERT INTO email_jobs (id, lead_id, recipient_email, subject, body_preview, status, scheduled_at)
+        VALUES (?, ?, ?, ?, ?, 'QUEUED', ?)
+      `).bind(
+        emailJobId, id, env.NOTIFICATION_EMAIL || 'info@wanderersjourneys.com',
+        `[New Proposal Request] ${fullName} (${countryCode})`,
+        `Lead: ${fullName} - ${packageName || 'Inquiry'}`,
+        now
+      ).run();
+
       sendNotificationEmail(env, { id, leadCode, fullName, email, phone, countryCode, packageName, destinationCity });
 
-      return jsonResponse({ success: true, data: { leadCode, message: 'Inquiry received successfully.' } }, 200, cors);
+      return jsonResponse({ success: true, data: { leadCode, message: 'Inquiry received successfully.' } }, 201, cors);
     }
 
     // ----------------------------------------------------
@@ -486,7 +537,6 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
 
       const isMatch = await verifyWebCryptoPassword(password, user.password_hash);
       if (!isMatch) {
-        // Record failed audit log
         await env.DB.prepare(`
           INSERT INTO audit_logs (id, user_id, user_email, action, entity_type, details, ip_address, created_at)
           VALUES (?, ?, ?, 'LOGIN_FAILED', 'AUTH', 'Incorrect password attempt.', ?, datetime('now'))
@@ -520,7 +570,6 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
 
       await env.DB.prepare('UPDATE users SET last_login_at = datetime(\'now\') WHERE id = ?').bind(user.id).run();
 
-      // Record successful audit log
       await env.DB.prepare(`
         INSERT INTO audit_logs (id, user_id, user_email, action, entity_type, details, ip_address, created_at)
         VALUES (?, ?, ?, 'LOGIN_SUCCESS', 'AUTH', ?, ?, datetime('now'))
@@ -548,22 +597,27 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
     }
 
     // ----------------------------------------------------
-    // AUTHENTICATED ROUTES VERIFICATION
+    // AUTHENTICATED VERIFICATION FOR PROTECTED ROUTES
     // ----------------------------------------------------
     const authSession = await getAuthUser(request, env);
 
     // ----------------------------------------------------
-    // 6. AUTH: ME (/api/auth/me)
+    // 6. AUTH: ME & LOGOUT
     // ----------------------------------------------------
     if (path === '/api/auth/me' && method === 'GET') {
-      if (!authSession) {
-        return jsonResponse({ success: false, error: { message: 'Unauthorized or session expired.' } }, 401, cors);
-      }
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized or session expired.' } }, 401, cors);
       return jsonResponse({ success: true, data: { user: authSession.user } }, 200, cors);
     }
 
+    if (path === '/api/auth/logout' && method === 'POST') {
+      if (authSession) {
+        await env.DB.prepare('DELETE FROM sessions WHERE token = ?').bind(authSession.token).run();
+      }
+      return jsonResponse({ success: true, message: 'Logged out successfully.' }, 200, cors);
+    }
+
     // ----------------------------------------------------
-    // 7. AUTH: PROFILE UPDATE (/api/auth/profile)
+    // 7. AUTH: PROFILE & PASSWORD
     // ----------------------------------------------------
     if (path === '/api/auth/profile' && method === 'PUT') {
       if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
@@ -576,9 +630,6 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
       return jsonResponse({ success: true, data: { ...authSession.user, fullName } }, 200, cors);
     }
 
-    // ----------------------------------------------------
-    // 8. AUTH: CHANGE PASSWORD (/api/auth/change-password)
-    // ----------------------------------------------------
     if (path === '/api/auth/change-password' && method === 'PUT') {
       if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
       const { currentPassword, newPassword } = (await request.json().catch(() => ({}))) as any;
@@ -599,7 +650,7 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
       await env.DB.prepare('UPDATE users SET password_hash = ?, updated_at = datetime(\'now\') WHERE id = ?')
         .bind(newHash, authSession.user.id).run();
 
-      // Revoke other sessions
+      // Revoke all other sessions for security
       await env.DB.prepare('DELETE FROM sessions WHERE user_id = ? AND token != ?')
         .bind(authSession.user.id, authSession.token).run();
 
@@ -607,12 +658,10 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
     }
 
     // ----------------------------------------------------
-    // 9. ADMIN: USERS MANAGEMENT (RBAC: ADMIN only)
+    // 8. ADMIN: USERS (RBAC: ADMIN ONLY)
     // ----------------------------------------------------
     if (path === '/api/auth/users' && method === 'GET') {
-      if (!authSession || authSession.user.role !== 'ADMIN') {
-        return jsonResponse({ success: false, error: { message: 'Admin access required.' } }, 403, cors);
-      }
+      if (!authSession || authSession.user.role !== 'ADMIN') return jsonResponse({ success: false, error: { message: 'Forbidden' } }, 403, cors);
       const users = (await env.DB.prepare(
         'SELECT id, email, full_name as fullName, role, is_active as isActive, last_login_at as lastLoginAt, created_at as createdAt FROM users'
       ).all()).results || [];
@@ -620,12 +669,10 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
     }
 
     if (path === '/api/auth/users' && method === 'POST') {
-      if (!authSession || authSession.user.role !== 'ADMIN') {
-        return jsonResponse({ success: false, error: { message: 'Admin access required.' } }, 403, cors);
-      }
+      if (!authSession || authSession.user.role !== 'ADMIN') return jsonResponse({ success: false, error: { message: 'Forbidden' } }, 403, cors);
       const { email, password, fullName, role } = (await request.json().catch(() => ({}))) as any;
       if (!email || !password || !fullName || !role) {
-        return jsonResponse({ success: false, error: { message: 'All fields are required.' } }, 400, cors);
+        return jsonResponse({ success: false, error: { message: 'All fields required.' } }, 400, cors);
       }
 
       const existing = await env.DB.prepare('SELECT id FROM users WHERE LOWER(email) = LOWER(?)').bind(email.trim()).first();
@@ -643,8 +690,45 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
       return jsonResponse({ success: true, data: { id, email, fullName, role, isActive: true } }, 200, cors);
     }
 
+    if (path.startsWith('/api/auth/users/') && path.endsWith('/status') && method === 'PUT') {
+      if (!authSession || authSession.user.role !== 'ADMIN') return jsonResponse({ success: false, error: { message: 'Forbidden' } }, 403, cors);
+      const userId = path.split('/')[4];
+      const { isActive } = (await request.json().catch(() => ({}))) as any;
+
+      if (userId === authSession.user.id) {
+        return jsonResponse({ success: false, error: { message: 'Cannot deactivate your own account.' } }, 400, cors);
+      }
+
+      await env.DB.prepare('UPDATE users SET is_active = ?, updated_at = datetime(\'now\') WHERE id = ?')
+        .bind(isActive ? 1 : 0, userId).run();
+
+      if (!isActive) {
+        await env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(userId).run();
+      }
+
+      return jsonResponse({ success: true, data: { id: userId, isActive: Boolean(isActive) } }, 200, cors);
+    }
+
+    if (path.startsWith('/api/auth/users/') && path.endsWith('/reset-password') && method === 'POST') {
+      if (!authSession || authSession.user.role !== 'ADMIN') return jsonResponse({ success: false, error: { message: 'Forbidden' } }, 403, cors);
+      const userId = path.split('/')[4];
+      const { newPassword } = (await request.json().catch(() => ({}))) as any;
+
+      if (!newPassword || newPassword.length < 8) {
+        return jsonResponse({ success: false, error: { message: 'New password must be at least 8 characters.' } }, 400, cors);
+      }
+
+      const hash = await hashWebCryptoPBKDF2(newPassword);
+      await env.DB.prepare('UPDATE users SET password_hash = ?, updated_at = datetime(\'now\') WHERE id = ?')
+        .bind(hash, userId).run();
+
+      await env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(userId).run();
+
+      return jsonResponse({ success: true, message: 'Password reset successfully. User sessions revoked.' }, 200, cors);
+    }
+
     // ----------------------------------------------------
-    // 10. ADMIN: DASHBOARD ANALYTICS (/api/admin/analytics)
+    // 9. ADMIN: ANALYTICS & DASHBOARD
     // ----------------------------------------------------
     if (path === '/api/admin/analytics' && method === 'GET') {
       if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
@@ -703,7 +787,230 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
     }
 
     // ----------------------------------------------------
-    // 11. ADMIN: LEADS LIST (/api/admin/leads)
+    // 10. ADMIN: SITE SETTINGS & HERO
+    // ----------------------------------------------------
+    if (path === '/api/admin/settings') {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      if (method === 'GET') {
+        const settings = await env.DB.prepare('SELECT * FROM site_settings LIMIT 1').first();
+        return jsonResponse({
+          success: true,
+          data: {
+            ...settings,
+            socialLinks: parseJson(settings?.social_links, {}),
+          },
+        }, 200, cors);
+      }
+      if (method === 'PUT') {
+        if (authSession.user.role !== 'ADMIN') return jsonResponse({ success: false, error: { message: 'Forbidden' } }, 403, cors);
+        const b = (await request.json().catch(() => ({}))) as any;
+        await env.DB.prepare(`
+          UPDATE site_settings SET
+            brand_name = COALESCE(?, brand_name),
+            slogan = COALESCE(?, slogan),
+            default_seo_title = COALESCE(?, default_seo_title),
+            default_seo_description = COALESCE(?, default_seo_description),
+            contact_email = COALESCE(?, contact_email),
+            notification_email = COALESCE(?, notification_email),
+            contact_phone = COALESCE(?, contact_phone),
+            address = COALESCE(?, address),
+            social_links = COALESCE(?, social_links),
+            footer_note = COALESCE(?, footer_note),
+            copyright = COALESCE(?, copyright),
+            budget_comparison_message = COALESCE(?, budget_comparison_message),
+            updated_at = datetime('now')
+          WHERE id = 'settings_default'
+        `).bind(
+          b.brandName || null, b.slogan || null, b.defaultSeoTitle || null, b.defaultSeoDescription || null,
+          b.contactEmail || null, b.notificationEmail || null, b.contactPhone || null, b.address || null,
+          b.socialLinks ? JSON.stringify(b.socialLinks) : null, b.footerNote || null, b.copyright || null,
+          b.budgetComparisonMessage || null
+        ).run();
+
+        const updated = await env.DB.prepare('SELECT * FROM site_settings LIMIT 1').first();
+        return jsonResponse({ success: true, data: updated }, 200, cors);
+      }
+    }
+
+    if (path === '/api/admin/hero') {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      if (method === 'GET') {
+        const hero = await env.DB.prepare('SELECT * FROM hero_content LIMIT 1').first();
+        return jsonResponse({
+          success: true,
+          data: { ...hero, stats: parseJson(hero?.stats, []) },
+        }, 200, cors);
+      }
+      if (method === 'PUT') {
+        const b = (await request.json().catch(() => ({}))) as any;
+        await env.DB.prepare(`
+          UPDATE hero_content SET
+            headline = COALESCE(?, headline),
+            tagline = COALESCE(?, tagline),
+            subtext = COALESCE(?, subtext),
+            primary_cta_text = COALESCE(?, primary_cta_text),
+            secondary_cta_text = COALESCE(?, secondary_cta_text),
+            badge_text = COALESCE(?, badge_text),
+            background_image_url = COALESCE(?, background_image_url),
+            stats = COALESCE(?, stats),
+            updated_at = datetime('now')
+          WHERE id = 'hero_default'
+        `).bind(
+          b.headline || null, b.tagline || null, b.subtext || null,
+          b.primaryCtaText || null, b.secondaryCtaText || null, b.badgeText || null,
+          b.backgroundImageUrl || null, b.stats ? JSON.stringify(b.stats) : null
+        ).run();
+
+        const updated = await env.DB.prepare('SELECT * FROM hero_content LIMIT 1').first();
+        return jsonResponse({ success: true, data: updated }, 200, cors);
+      }
+    }
+
+    // ----------------------------------------------------
+    // 11. ADMIN: PACKAGES & ACCOMMODATIONS CRUD
+    // ----------------------------------------------------
+    if (path === '/api/admin/packages') {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      if (method === 'GET') {
+        const rows = (await env.DB.prepare('SELECT * FROM packages ORDER BY display_order ASC').all()).results || [];
+        return jsonResponse({
+          success: true,
+          data: rows.map((p: any) => ({
+            ...p,
+            packageCode: p.package_code,
+            durationLabel: p.duration_label,
+            durationCategory: p.duration_category,
+            targetAudience: p.target_audience,
+            startingPriceUsd: p.starting_price_usd,
+            idealFor: parseJson(p.ideal_for, []),
+            inclusions: parseJson(p.inclusions, []),
+            isPublished: Boolean(p.is_published),
+            displayOrder: p.display_order,
+          })),
+        }, 200, cors);
+      }
+      if (method === 'POST') {
+        const b = (await request.json().catch(() => ({}))) as any;
+        const id = `pkg_${Date.now()}`;
+        await env.DB.prepare(`
+          INSERT INTO packages (id, package_code, title, duration_label, duration_category, target_audience, starting_price_usd, description, ideal_for, inclusions, display_order, is_published, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+        `).bind(
+          id, b.packageCode || id, b.title, b.durationLabel || '', b.durationCategory || 'Trial',
+          b.targetAudience || '', b.startingPriceUsd || 0, b.description || '',
+          JSON.stringify(b.idealFor || []), JSON.stringify(b.inclusions || []), b.displayOrder || 1, b.isPublished ? 1 : 0
+        ).run();
+        return jsonResponse({ success: true, data: { id, ...b } }, 201, cors);
+      }
+    }
+
+    if (path.startsWith('/api/admin/packages/') && (method === 'PUT' || method === 'DELETE')) {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      const pkgId = path.split('/')[4];
+      if (method === 'DELETE') {
+        await env.DB.prepare('DELETE FROM packages WHERE id = ?').bind(pkgId).run();
+        return jsonResponse({ success: true, message: 'Package deleted' }, 200, cors);
+      }
+      if (method === 'PUT') {
+        const b = (await request.json().catch(() => ({}))) as any;
+        await env.DB.prepare(`
+          UPDATE packages SET
+            title = COALESCE(?, title),
+            duration_label = COALESCE(?, duration_label),
+            target_audience = COALESCE(?, target_audience),
+            starting_price_usd = COALESCE(?, starting_price_usd),
+            description = COALESCE(?, description),
+            ideal_for = COALESCE(?, ideal_for),
+            inclusions = COALESCE(?, inclusions),
+            display_order = COALESCE(?, display_order),
+            is_published = COALESCE(?, is_published),
+            updated_at = datetime('now')
+          WHERE id = ?
+        `).bind(
+          b.title || null, b.durationLabel || null, b.targetAudience || null,
+          b.startingPriceUsd !== undefined ? b.startingPriceUsd : null, b.description || null,
+          b.idealFor ? JSON.stringify(b.idealFor) : null, b.inclusions ? JSON.stringify(b.inclusions) : null,
+          b.displayOrder !== undefined ? b.displayOrder : null, b.isPublished !== undefined ? (b.isPublished ? 1 : 0) : null,
+          pkgId
+        ).run();
+        return jsonResponse({ success: true, data: { id: pkgId, ...b } }, 200, cors);
+      }
+    }
+
+    if (path === '/api/admin/accommodations') {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      if (method === 'GET') {
+        const rows = (await env.DB.prepare('SELECT * FROM accommodations ORDER BY display_order ASC').all()).results || [];
+        return jsonResponse({
+          success: true,
+          data: rows.map((a: any) => ({
+            ...a,
+            roomType: a.room_type,
+            sizeSqm: a.size_sqm,
+            priceMonthUsd: a.price_month_usd,
+            features: parseJson(a.features, []),
+            nearbyAmenities: parseJson(a.nearby_amenities, []),
+            images: parseJson(a.images, []),
+            isFlagship: Boolean(a.is_flagship),
+            isPublished: Boolean(a.is_published),
+            displayOrder: a.display_order,
+          })),
+        }, 200, cors);
+      }
+      if (method === 'POST') {
+        const b = (await request.json().catch(() => ({}))) as any;
+        const id = `acc_${Date.now()}`;
+        await env.DB.prepare(`
+          INSERT INTO accommodations (id, title, city, district, neighborhood, room_type, size_sqm, bedrooms, bathrooms, price_month_usd, description, features, nearby_amenities, images, is_flagship, display_order, is_published, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+        `).bind(
+          id, b.title, b.city, b.district || '', b.neighborhood || '', b.roomType || 'Serviced Suite',
+          b.sizeSqm || 65, b.bedrooms || 1, b.bathrooms || 1, b.priceMonthUsd || 2250, b.description || '',
+          JSON.stringify(b.features || []), JSON.stringify(b.nearbyAmenities || []), JSON.stringify(b.images || []),
+          b.isFlagship ? 1 : 0, b.displayOrder || 1, b.isPublished ? 1 : 0
+        ).run();
+        return jsonResponse({ success: true, data: { id, ...b } }, 201, cors);
+      }
+    }
+
+    if (path.startsWith('/api/admin/accommodations/') && (method === 'PUT' || method === 'DELETE')) {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      const accId = path.split('/')[4];
+      if (method === 'DELETE') {
+        await env.DB.prepare('DELETE FROM accommodations WHERE id = ?').bind(accId).run();
+        return jsonResponse({ success: true, message: 'Accommodation deleted' }, 200, cors);
+      }
+      if (method === 'PUT') {
+        const b = (await request.json().catch(() => ({}))) as any;
+        await env.DB.prepare(`
+          UPDATE accommodations SET
+            title = COALESCE(?, title),
+            city = COALESCE(?, city),
+            district = COALESCE(?, district),
+            price_month_usd = COALESCE(?, price_month_usd),
+            description = COALESCE(?, description),
+            features = COALESCE(?, features),
+            images = COALESCE(?, images),
+            is_flagship = COALESCE(?, is_flagship),
+            is_published = COALESCE(?, is_published),
+            display_order = COALESCE(?, display_order),
+            updated_at = datetime('now')
+          WHERE id = ?
+        `).bind(
+          b.title || null, b.city || null, b.district || null,
+          b.priceMonthUsd !== undefined ? b.priceMonthUsd : null, b.description || null,
+          b.features ? JSON.stringify(b.features) : null, b.images ? JSON.stringify(b.images) : null,
+          b.isFlagship !== undefined ? (b.isFlagship ? 1 : 0) : null,
+          b.isPublished !== undefined ? (b.isPublished ? 1 : 0) : null,
+          b.displayOrder !== undefined ? b.displayOrder : null,
+          accId
+        ).run();
+        return jsonResponse({ success: true, data: { id: accId, ...b } }, 200, cors);
+      }
+    }
+
+    // ----------------------------------------------------
+    // 12. ADMIN: LEADS DETAIL, STATUS & NOTES
     // ----------------------------------------------------
     if (path === '/api/admin/leads' && method === 'GET') {
       if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
@@ -736,13 +1043,204 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
       return jsonResponse({ success: true, data: mapped }, 200, cors);
     }
 
+    if (path.startsWith('/api/admin/leads/') && !path.includes('/status') && !path.includes('/notes') && !path.includes('/assign') && method === 'GET') {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      const leadId = path.split('/')[4];
+      const lead = await env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first();
+      if (!lead) return jsonResponse({ success: false, error: { message: 'Lead not found' } }, 404, cors);
+
+      const notes = (await env.DB.prepare('SELECT * FROM lead_notes WHERE lead_id = ? ORDER BY created_at DESC').bind(leadId).all()).results || [];
+      const history = (await env.DB.prepare('SELECT * FROM lead_status_history WHERE lead_id = ? ORDER BY changed_at DESC').bind(leadId).all()).results || [];
+
+      return jsonResponse({
+        success: true,
+        data: {
+          lead: {
+            id: lead.id,
+            leadCode: lead.lead_code,
+            fullName: lead.full_name,
+            email: lead.email,
+            phone: lead.phone,
+            countryCode: lead.country_code,
+            status: lead.status,
+            priority: lead.priority,
+            packageName: lead.package_name,
+            destinationCity: lead.destination_city,
+            duration: lead.duration,
+            createdAt: lead.created_at,
+          },
+          notes: notes.map((n: any) => ({
+            id: n.id,
+            authorName: n.author_name,
+            content: n.content,
+            createdAt: n.created_at,
+          })),
+          history: history.map((h: any) => ({
+            id: h.id,
+            oldStatus: h.old_status,
+            newStatus: h.new_status,
+            changedByName: h.changed_by_name,
+            note: h.note,
+            changedAt: h.changed_at,
+          })),
+        },
+      }, 200, cors);
+    }
+
+    if (path.startsWith('/api/admin/leads/') && path.endsWith('/status') && method === 'PUT') {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      const leadId = path.split('/')[4];
+      const { status, note, priority } = (await request.json().catch(() => ({}))) as any;
+
+      const current = await env.DB.prepare('SELECT status FROM leads WHERE id = ?').bind(leadId).first();
+      if (!current) return jsonResponse({ success: false, error: { message: 'Lead not found' } }, 404, cors);
+
+      const now = new Date().toISOString();
+      await env.DB.prepare('UPDATE leads SET status = ?, priority = COALESCE(?, priority), updated_at = ? WHERE id = ?')
+        .bind(status, priority || null, now, leadId).run();
+
+      await env.DB.prepare(`
+        INSERT INTO lead_status_history (id, lead_id, old_status, new_status, changed_by_id, changed_by_name, note, changed_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(`lsh_${Date.now()}`, leadId, current.status, status, authSession.user.id, authSession.user.fullName, note || '', now).run();
+
+      return jsonResponse({ success: true, message: 'Status updated' }, 200, cors);
+    }
+
+    if (path.startsWith('/api/admin/leads/') && path.endsWith('/notes') && method === 'POST') {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      const leadId = path.split('/')[4];
+      const { content } = (await request.json().catch(() => ({}))) as any;
+      if (!content || !content.trim()) return jsonResponse({ success: false, error: { message: 'Note required' } }, 400, cors);
+
+      const noteId = `note_${Date.now()}`;
+      const now = new Date().toISOString();
+      await env.DB.prepare(`
+        INSERT INTO lead_notes (id, lead_id, author_id, author_name, content, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).bind(noteId, leadId, authSession.user.id, authSession.user.fullName, content.trim(), now).run();
+
+      return jsonResponse({ success: true, data: { id: noteId, authorName: authSession.user.fullName, content, createdAt: now } }, 201, cors);
+    }
+
     // ----------------------------------------------------
-    // 12. ADMIN: AUDIT LOGS (/api/admin/audit-logs)
+    // 13. ADMIN: EXPORT CSV & EXCEL
     // ----------------------------------------------------
+    if (path === '/api/admin/export/csv' && method === 'GET') {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      const leads = (await env.DB.prepare('SELECT * FROM leads ORDER BY created_at DESC').all()).results || [];
+      const headers = ['Lead Code', 'Date', 'Full Name', 'Email', 'Phone', 'Country', 'Package', 'Destination', 'Status', 'Priority'];
+      const rows = leads.map((l: any) => [
+        sanitizeCsvCell(l.lead_code),
+        sanitizeCsvCell(l.created_at?.split('T')[0]),
+        sanitizeCsvCell(l.full_name),
+        sanitizeCsvCell(l.email),
+        sanitizeCsvCell(l.phone),
+        sanitizeCsvCell(l.country_code),
+        sanitizeCsvCell(l.package_name),
+        sanitizeCsvCell(l.destination_city),
+        sanitizeCsvCell(l.status),
+        sanitizeCsvCell(l.priority),
+      ]);
+      const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r: string[]) => r.join(','))].join('\r\n');
+      return new Response(csvContent, {
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': `attachment; filename="wanderers_leads_${new Date().toISOString().split('T')[0]}.csv"`,
+          ...cors,
+        },
+      });
+    }
+
+    if (path === '/api/admin/export/excel' && method === 'GET') {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      const leads = (await env.DB.prepare('SELECT * FROM leads ORDER BY created_at DESC').all()).results || [];
+      const rowsXml = leads.map((l: any) => `
+        <Row>
+          <Cell><Data ss:Type="String">${escapeXml(l.lead_code)}</Data></Cell>
+          <Cell><Data ss:Type="String">${escapeXml(l.created_at?.split('T')[0])}</Data></Cell>
+          <Cell><Data ss:Type="String">${escapeXml(l.full_name)}</Data></Cell>
+          <Cell><Data ss:Type="String">${escapeXml(l.email)}</Data></Cell>
+          <Cell><Data ss:Type="String">${escapeXml(l.phone || '')}</Data></Cell>
+          <Cell><Data ss:Type="String">${escapeXml(l.country_code || '')}</Data></Cell>
+          <Cell><Data ss:Type="String">${escapeXml(l.package_name || '')}</Data></Cell>
+          <Cell><Data ss:Type="String">${escapeXml(l.destination_city || '')}</Data></Cell>
+          <Cell><Data ss:Type="String">${escapeXml(l.status)}</Data></Cell>
+        </Row>
+      `).join('');
+
+      const xml = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+  <Worksheet ss:Name="Leads">
+    <Table>
+      <Row>
+        <Cell><Data ss:Type="String">Code</Data></Cell>
+        <Cell><Data ss:Type="String">Date</Data></Cell>
+        <Cell><Data ss:Type="String">Name</Data></Cell>
+        <Cell><Data ss:Type="String">Email</Data></Cell>
+        <Cell><Data ss:Type="String">Phone</Data></Cell>
+        <Cell><Data ss:Type="String">Country</Data></Cell>
+        <Cell><Data ss:Type="String">Package</Data></Cell>
+        <Cell><Data ss:Type="String">City</Data></Cell>
+        <Cell><Data ss:Type="String">Status</Data></Cell>
+      </Row>
+      ${rowsXml}
+    </Table>
+  </Worksheet>
+</Workbook>`;
+
+      return new Response(xml, {
+        headers: {
+          'Content-Type': 'application/vnd.ms-excel; charset=utf-8',
+          'Content-Disposition': `attachment; filename="wanderers_leads_${new Date().toISOString().split('T')[0]}.xls"`,
+          ...cors,
+        },
+      });
+    }
+
+    // ----------------------------------------------------
+    // 14. ADMIN: EMAIL QUEUE & AUDIT LOGS
+    // ----------------------------------------------------
+    if (path === '/api/admin/email-jobs' && method === 'GET') {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      const jobs = (await env.DB.prepare('SELECT * FROM email_jobs ORDER BY scheduled_at DESC LIMIT 50').all()).results || [];
+      return jsonResponse({
+        success: true,
+        data: jobs.map((j: any) => ({
+          id: j.id,
+          recipientEmail: j.recipient_email,
+          subject: j.subject,
+          bodyPreview: j.body_preview,
+          status: j.status,
+          attempts: j.attempts,
+          scheduledAt: j.scheduled_at,
+          sentAt: j.sent_at,
+          lastError: j.last_error,
+        })),
+      }, 200, cors);
+    }
+
+    if (path.startsWith('/api/admin/email-jobs/') && path.endsWith('/retry') && method === 'POST') {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      const jobId = path.split('/')[4];
+      const job = await env.DB.prepare('SELECT * FROM email_jobs WHERE id = ?').bind(jobId).first();
+      if (!job) return jsonResponse({ success: false, error: { message: 'Job not found' } }, 404, cors);
+
+      const res = await sendNotificationEmail(env, {
+        fullName: 'Retry Test',
+        email: job.recipient_email,
+        packageName: job.subject,
+      });
+
+      await env.DB.prepare('UPDATE email_jobs SET status = ?, attempts = attempts + 1, sent_at = datetime(\'now\') WHERE id = ?')
+        .bind(res.status, jobId).run();
+
+      return jsonResponse({ success: true, message: `Email retry status: ${res.status}` }, 200, cors);
+    }
+
     if (path === '/api/admin/audit-logs' && method === 'GET') {
-      if (!authSession || authSession.user.role !== 'ADMIN') {
-        return jsonResponse({ success: false, error: { message: 'Admin access required.' } }, 403, cors);
-      }
+      if (!authSession || authSession.user.role !== 'ADMIN') return jsonResponse({ success: false, error: { message: 'Forbidden' } }, 403, cors);
       const logs = (await env.DB.prepare('SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 100').all()).results || [];
       return jsonResponse({
         success: true,
@@ -761,12 +1259,25 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
     }
 
     // ----------------------------------------------------
-    // 13. ADMIN: MEDIA ASSETS (R2 storage)
+    // 15. ADMIN: MEDIA MANAGEMENT (R2)
     // ----------------------------------------------------
     if (path === '/api/admin/media' && method === 'GET') {
       if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
       const media = (await env.DB.prepare('SELECT * FROM media_assets ORDER BY created_at DESC').all()).results || [];
-      return jsonResponse({ success: true, data: media }, 200, cors);
+      return jsonResponse({
+        success: true,
+        data: media.map((m: any) => ({
+          id: m.id,
+          filename: m.filename,
+          originalName: m.original_name,
+          url: m.url,
+          mimeType: m.mime_type,
+          sizeBytes: m.size_bytes,
+          altText: m.alt_text,
+          category: m.category,
+          createdAt: m.created_at,
+        })),
+      }, 200, cors);
     }
 
     if (path === '/api/admin/media/upload' && method === 'POST') {
@@ -786,7 +1297,7 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
         httpMetadata: { contentType: file.type || 'application/octet-stream' },
       });
 
-      const publicUrl = `https://xuanthang.io.vn/media/${key}`;
+      const publicUrl = `/media/${key}`;
       const assetId = `med_${Date.now()}`;
 
       await env.DB.prepare(`
@@ -795,6 +1306,21 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
       `).bind(assetId, key, file.name, file.type, file.size, publicUrl, file.name).run();
 
       return jsonResponse({ success: true, data: { id: assetId, url: publicUrl, filename: key } }, 200, cors);
+    }
+
+    if (path.startsWith('/api/admin/media/') && method === 'DELETE') {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      const mediaId = path.split('/')[4];
+      const asset = await env.DB.prepare('SELECT filename FROM media_assets WHERE id = ?').bind(mediaId).first();
+      if (asset && env.MEDIA_BUCKET) {
+        try {
+          await env.MEDIA_BUCKET.delete(asset.filename);
+        } catch (e) {
+          console.warn('R2 delete note:', e);
+        }
+      }
+      await env.DB.prepare('DELETE FROM media_assets WHERE id = ?').bind(mediaId).run();
+      return jsonResponse({ success: true, message: 'Media removed.' }, 200, cors);
     }
 
     // Default 404 for unrecognized API endpoints
