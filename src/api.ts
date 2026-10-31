@@ -396,6 +396,10 @@ export async function toggleAdminUserStatus(id: string, isActive: boolean): Prom
   });
 }
 
+export async function deleteAdminUser(id: string): Promise<any> {
+  return request<any>(`/api/auth/users/${id}`, { method: 'DELETE' });
+}
+
 export async function resetAdminUserPassword(id: string, newPassword: string): Promise<any> {
   return request<any>(`/api/auth/users/${id}/reset-password`, {
     method: 'POST',
