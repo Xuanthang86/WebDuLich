@@ -4,11 +4,10 @@
 ---
 
 ## 1. Accessing the Staff Management Portal
-1. Navigate to the website header or footer and click **"Staff Portal"** (or open `/` and click the shield icon).
-2. Enter your authorized staff credentials or use the one-click role authenticator during testing:
-   * **Super Administrator:** `admin@wanderersjourneys.com` / `Admin2026!WJ` (Full privileges, user management, factory reset)
-   * **Manager:** `manager@wanderersjourneys.com` / `Manager2026!WJ` (CMS content, catalog, form builder, leads)
-   * **Concierge Lead Manager:** `concierge@wanderersjourneys.com` / `Lead2026!WJ` (Lead intake, notes, status transitions)
+1. Open the website and select **Admin Login** from the header.
+2. Sign in using the individual credentials issued by the system administrator.
+3. Demo credentials and passwords must never be stored in this manual, source code, seed files, screenshots, or version control.
+4. If an account is unavailable, contact the system owner to provision or reset the account through the secure account-management process.
 
 ---
 

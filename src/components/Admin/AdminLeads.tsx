@@ -10,7 +10,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { Lead, LeadStatus } from '../../types';
-import { fetchAdminLeads, getAuthToken } from '../../api';
+import { fetchAdminLeads } from '../../api';
 import { LeadDetailModal } from './LeadDetailModal';
 
 export const AdminLeads: React.FC = () => {
@@ -51,13 +51,11 @@ export const AdminLeads: React.FC = () => {
   };
 
   const handleExportCsv = () => {
-    const token = getAuthToken();
-    window.open(`/api/admin/export/csv?token=${token || ''}`, '_blank');
+    window.open('/api/admin/export/csv', '_blank');
   };
 
   const handleExportExcel = () => {
-    const token = getAuthToken();
-    window.open(`/api/admin/export/excel?token=${token || ''}`, '_blank');
+    window.open('/api/admin/export/excel', '_blank');
   };
 
   const getStatusBadge = (status: LeadStatus) => {

@@ -6,3 +6,7 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Local runtime database may contain sessions, password hashes and personal inquiries
+data/db.json
+data/db.json.tmp

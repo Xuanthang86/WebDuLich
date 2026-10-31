@@ -731,6 +731,25 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
       return jsonResponse({ success: true, data: { id, email, fullName, role, isActive: true } }, 200, cors);
     }
 
+    if (path.startsWith('/api/auth/users/') && method === 'DELETE') {
+      if (!authSession || authSession.user.role !== 'ADMIN') return jsonResponse({ success: false, error: { message: 'Forbidden' } }, 403, cors);
+      const userId = path.split('/')[4];
+      if (!userId || userId === authSession.user.id) {
+        return jsonResponse({ success: false, error: { message: 'You cannot delete your own account.' } }, 400, cors);
+      }
+      const target = await env.DB.prepare('SELECT id, email, role FROM users WHERE id = ?').bind(userId).first() as any;
+      if (!target) return jsonResponse({ success: false, error: { message: 'Staff user not found.' } }, 404, cors);
+      if (target.role === 'ADMIN') {
+        const count = await env.DB.prepare('SELECT COUNT(*) AS total FROM users WHERE role = ? AND is_active = 1').bind('ADMIN').first() as any;
+        if (Number(count?.total || 0) <= 1) {
+          return jsonResponse({ success: false, error: { message: 'The last active administrator cannot be deleted.' } }, 409, cors);
+        }
+      }
+      await env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(userId).run();
+      await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
+      return jsonResponse({ success: true, data: { id: userId, deleted: true } }, 200, cors);
+    }
+
     if (path.startsWith('/api/auth/users/') && path.endsWith('/status') && method === 'PUT') {
       if (!authSession || authSession.user.role !== 'ADMIN') return jsonResponse({ success: false, error: { message: 'Forbidden' } }, 403, cors);
       const userId = path.split('/')[4];

@@ -110,34 +110,46 @@ export const AdminContentCms: React.FC = () => {
     setLoading(true);
     setErrorMsg(null);
     try {
-      const [
-        heroData,
-        wvData,
-        coreData,
-        addlData,
-        pkgsData,
-        accsData,
-        wcuData,
-        faqsData,
-      ] = await Promise.all([
-        fetchAdminHero().catch(() => null),
-        fetchAdminWhyVietnam().catch(() => []),
-        fetchAdminCoreService().catch(() => null),
-        fetchAdminAdditionalServices().catch(() => []),
-        fetchAdminPackages().catch(() => []),
-        fetchAdminAccommodations().catch(() => []),
-        fetchAdminWhyChooseUs().catch(() => []),
-        fetchAdminFaqs().catch(() => []),
+      const results = await Promise.allSettled([
+        fetchAdminHero(),
+        fetchAdminWhyVietnam(),
+        fetchAdminCoreService(),
+        fetchAdminAdditionalServices(),
+        fetchAdminPackages(),
+        fetchAdminAccommodations(),
+        fetchAdminWhyChooseUs(),
+        fetchAdminFaqs(),
       ]);
+      const failedSections: string[] = [];
+      const read = <T,>(index: number, label: string): T | undefined => {
+        const result = results[index];
+        if (result.status === 'fulfilled') return result.value as T;
+        failedSections.push(label);
+        console.error(`Failed to load CMS section "${label}":`, result.reason);
+        return undefined;
+      };
 
-      if (heroData) setHero(heroData);
-      setWhyVietnamList(wvData || []);
-      if (coreData) setCore(coreData);
-      setAdditionalServices(addlData || []);
-      setPackages(pkgsData || []);
-      setAccommodations(accsData || []);
-      setWhyChooseUsList(wcuData || []);
-      setFaqs(faqsData || []);
+      const heroData = read<HeroContent>(0, 'Hero');
+      const wvData = read<WhyVietnamItem[]>(1, 'Why Vietnam');
+      const coreData = read<CoreServiceItem>(2, 'Core Service');
+      const addlData = read<AdditionalServiceItem[]>(3, 'Additional Services');
+      const pkgsData = read<PackageItem[]>(4, 'Packages');
+      const accsData = read<AccommodationItem[]>(5, 'Accommodations');
+      const wcuData = read<WhyChooseUsItem[]>(6, 'Why Choose Us');
+      const faqsData = read<FAQItem[]>(7, 'FAQs');
+
+      if (heroData !== undefined) setHero(heroData);
+      if (wvData !== undefined) setWhyVietnamList(wvData);
+      if (coreData !== undefined) setCore(coreData);
+      if (addlData !== undefined) setAdditionalServices(addlData);
+      if (pkgsData !== undefined) setPackages(pkgsData);
+      if (accsData !== undefined) setAccommodations(accsData);
+      if (wcuData !== undefined) setWhyChooseUsList(wcuData);
+      if (faqsData !== undefined) setFaqs(faqsData);
+
+      setErrorMsg(failedSections.length
+        ? `Some CMS sections could not be loaded: ${failedSections.join(', ')}. Existing data has been preserved. Use Retry Connection after checking the API/database.`
+        : null);
     } catch (err: any) {
       console.error('Failed to load CMS content:', err);
       setErrorMsg(err.message || 'Unable to connect to content store. Please check database connectivity.');
