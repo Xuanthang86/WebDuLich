@@ -15,32 +15,26 @@ import {
   AuditLog,
 } from './types';
 
-const TOKEN_KEY = 'wj_auth_token';
-
-export function getAuthToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
+// Authentication is cookie-only. Session credentials are held in an HttpOnly cookie.
+export function getAuthToken(): null {
+  return null;
 }
 
-export function setAuthToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token);
+export function setAuthToken(_token: string): void {
+  // Intentionally no-op: JavaScript must not persist bearer session tokens.
 }
 
 export function clearAuthToken(): void {
-  localStorage.removeItem(TOKEN_KEY);
+  // The server clears the HttpOnly session cookie on logout.
 }
 
 const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const token = getAuthToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
   };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
 
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
   const response = await fetch(url, {
