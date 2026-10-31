@@ -34,18 +34,10 @@ async function main() {
     '',
   ];
 
-  // 1. Users
-  if (data.users && data.users.length > 0) {
-    lines.push('-- 1. USERS');
-    for (const u of data.users) {
-      lines.push(
-        `INSERT OR REPLACE INTO users (id, email, password_hash, full_name, role, is_active, last_login_at, created_at, updated_at) VALUES (` +
-        `${escapeSql(u.id)}, ${escapeSql(u.email)}, ${escapeSql(u.passwordHash)}, ${escapeSql(u.fullName)}, ` +
-        `${escapeSql(u.role)}, ${escapeSql(u.isActive ? 1 : 0)}, ${escapeSql(u.lastLoginAt)}, ${escapeSql(u.createdAt)}, ${escapeSql(u.updatedAt)});`
-      );
-    }
-    lines.push('');
-  }
+  // 1. Users & Administrators (Omitted from git-tracked seeds for security compliance)
+  lines.push('-- 1. USERS & ADMINISTRATORS');
+  lines.push('-- Admin accounts are provisioned securely via scripts/bootstrap_admin.ts without hardcoding credentials in git.');
+  lines.push('');
 
   // 2. Site Settings
   if (data.siteSettings) {

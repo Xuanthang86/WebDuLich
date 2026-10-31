@@ -389,7 +389,7 @@ class DatabaseStore {
         JSON.stringify(INITIAL_DATABASE_STATE.coreService.inclusions || [])
       );
     }
-    return this.state.coreService.inclusions.sort((a, b) => a.displayOrder - b.displayOrder);
+    return (this.state.coreService.inclusions || []).sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
   }
 
   public saveCoreInclusion(data: any) {

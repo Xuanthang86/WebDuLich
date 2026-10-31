@@ -491,11 +491,14 @@ export const InquiryForm: React.FC<InquiryFormProps> = ({
                       className="w-full px-4 py-3.5 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-[#C9A45C] text-base"
                     >
                       {destinationHubs && destinationHubs.length > 0 ? (
-                        destinationHubs.map(hub => (
-                          <option key={hub.id || hub.city} value={hub.city}>
-                            {hub.city} ({hub.tagline || hub.hubName})
-                          </option>
-                        ))
+                        destinationHubs.map(hub => {
+                          const cityName = (hub as any).city || hub.name;
+                          return (
+                            <option key={hub.id || cityName} value={cityName}>
+                              {cityName} ({hub.tagline || hub.hubName})
+                            </option>
+                          );
+                        })
                       ) : (
                         <>
                           <option value="Da Nang (Beachfront & Coastal Living)">Da Nang (Beachfront & Coastal Living)</option>

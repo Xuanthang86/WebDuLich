@@ -135,9 +135,21 @@ function jsonResponse(data: any, status = 200, headers: HeadersInit = {}): Respo
 async function getAuthUser(req: Request, env: Env): Promise<{ user: any; token: string } | null> {
   let token: string | null = null;
   const authHeader = req.headers.get('Authorization');
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.split(' ')[1];
+  if (authHeader && /^Bearer\s+/i.test(authHeader)) {
+    token = authHeader.replace(/^Bearer\s+/i, '').trim();
+  } else if (req.headers.get('x-auth-token')) {
+    token = req.headers.get('x-auth-token')?.trim() || null;
   } else {
+    try {
+      const url = new URL(req.url);
+      const qToken = url.searchParams.get('token');
+      if (qToken) token = qToken.trim();
+    } catch {
+      // ignore
+    }
+  }
+
+  if (!token) {
     const cookieHeader = req.headers.get('Cookie');
     if (cookieHeader) {
       const match = cookieHeader.match(/(?:^|;\s*)wj_session=([^;]+)/);

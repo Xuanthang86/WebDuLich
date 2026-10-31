@@ -10,18 +10,22 @@ export interface User {
 
 export interface SectionHeader {
   badge: string;
-  title: string;
-  description: string;
+  title?: string;
+  subtitle?: string;
+  description?: string;
 }
 
 export interface WhyVietnamHeader extends SectionHeader {}
 
 export interface FinancialProjection {
   badge: string;
-  title: string;
-  comparisonMessage: string;
-  assumptionsTitle: string;
-  assumptionsNote: string;
+  title?: string;
+  headline?: string;
+  comparisonMessage?: string;
+  notesTitle?: string;
+  notesContent?: string;
+  assumptionsTitle?: string;
+  assumptionsNote?: string;
 }
 
 export interface PackagesHeader extends SectionHeader {}
@@ -37,9 +41,11 @@ export interface AdditionalServicesHeader extends SectionHeader {
 }
 
 export interface FaqsHeader extends SectionHeader {
-  ctaTitle: string;
-  ctaSubtitle: string;
-  ctaButtonText: string;
+  ctaTitle?: string;
+  ctaSubtitle?: string;
+  ctaButtonText?: string;
+  conciergePrompt?: string;
+  conciergeText?: string;
 }
 
 export interface SiteSettings {
@@ -73,7 +79,7 @@ export interface HeroValueBadge {
   id: string;
   text: string;
   icon?: string;
-  displayOrder: number;
+  displayOrder?: number;
 }
 
 export interface HeroContent {
@@ -113,8 +119,10 @@ export interface CoreInclusionCard {
   description: string;
   icon: string;
   bulletPoints?: string[];
-  displayOrder: number;
-  isPublished: boolean;
+  items?: string[];
+  order?: number;
+  displayOrder?: number;
+  isPublished?: boolean;
 }
 
 export interface CoreServiceItem {
@@ -158,11 +166,12 @@ export interface AdditionalServiceItem {
 export interface DestinationHubItem {
   id: string;
   name: string; // e.g. "Da Nang", "Nha Trang", "Ho Chi Minh City"
+  city?: string; // Optional convenience alias for name
   hubName: string; // e.g. "Da Nang Coastal Beaches & Nature Hub"
   tagline: string;
   description: string;
-  badgeClass: string;
-  heroImage: string;
+  badgeClass?: string;
+  heroImage?: string;
   displayOrder: number;
   isPublished: boolean;
   createdAt?: string;

@@ -120,27 +120,30 @@ export const Footer: React.FC<FooterProps> = ({
               {(destinationHubs && destinationHubs.length > 0
                 ? destinationHubs
                 : [
-                    { city: 'Da Nang', hubName: 'Da Nang Coastal Hub', tagline: 'My Khe Beach & Son Tra Peninsula Residences' },
-                    { city: 'Nha Trang', hubName: 'Nha Trang Tropical Bay', tagline: 'Tran Phu Waterfront & Marina Promenade' },
-                    { city: 'Ho Chi Minh City', hubName: 'Ho Chi Minh City', tagline: 'Thao Dien Expat Quarter & River Residences' },
+                    { name: 'Da Nang', hubName: 'Da Nang Coastal Hub', tagline: 'My Khe Beach & Son Tra Peninsula Residences' },
+                    { name: 'Nha Trang', hubName: 'Nha Trang Tropical Bay', tagline: 'Tran Phu Waterfront & Marina Promenade' },
+                    { name: 'Ho Chi Minh City', hubName: 'Ho Chi Minh City', tagline: 'Thao Dien Expat Quarter & River Residences' },
                   ]
-              ).map(hub => (
-                <li key={hub.city}>
-                  <button
-                    type="button"
-                    onClick={() => handleCityClick(hub.city)}
-                    className="text-left w-full group cursor-pointer"
-                  >
-                    <strong className="text-white block font-medium group-hover:text-[#C9A45C] transition-colors flex items-center gap-1">
-                      <span>{hub.hubName || `${hub.city} Hub`}</span>
-                      <span className="text-[#C9A45C] text-[10px] group-hover:translate-x-1 transition-transform">→</span>
-                    </strong>
-                    <span className="text-slate-400 text-[11px] group-hover:text-slate-300 transition-colors">
-                      {hub.tagline || hub.description || `${hub.city} Living Sanctuary`}
-                    </span>
-                  </button>
-                </li>
-              ))}
+              ).map((hub: any) => {
+                const cityName = hub.city || hub.name;
+                return (
+                  <li key={cityName}>
+                    <button
+                      type="button"
+                      onClick={() => handleCityClick(cityName)}
+                      className="text-left w-full group cursor-pointer"
+                    >
+                      <strong className="text-white block font-medium group-hover:text-[#C9A45C] transition-colors flex items-center gap-1">
+                        <span>{hub.hubName || `${cityName} Hub`}</span>
+                        <span className="text-[#C9A45C] text-[10px] group-hover:translate-x-1 transition-transform">→</span>
+                      </strong>
+                      <span className="text-slate-400 text-[11px] group-hover:text-slate-300 transition-colors">
+                        {hub.tagline || hub.description || `${cityName} Living Sanctuary`}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </div>
 

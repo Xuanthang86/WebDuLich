@@ -40,6 +40,15 @@ router.get('/content', (_req: Request, res: Response): void => {
   });
 });
 
+// Destination Hubs (Cities)
+router.get('/destination-hubs', (_req: Request, res: Response): void => {
+  const hubs = db
+    .getDestinationHubs()
+    .filter(h => h.isPublished)
+    .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+  res.json({ success: true, data: hubs });
+});
+
 // Dynamic Inquiry Form Fields
 router.get('/form-fields', (_req: Request, res: Response): void => {
   const fields = db

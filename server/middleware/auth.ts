@@ -15,8 +15,12 @@ declare global {
 export function authenticate(req: Request, res: Response, next: NextFunction): void {
   let token: string | undefined;
   const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.split(' ')[1];
+  if (authHeader && /^Bearer\s+/i.test(authHeader)) {
+    token = authHeader.replace(/^Bearer\s+/i, '').trim();
+  } else if (req.headers['x-auth-token']) {
+    token = String(req.headers['x-auth-token']).trim();
+  } else if (req.query?.token && typeof req.query.token === 'string') {
+    token = req.query.token.trim();
   } else if (req.headers.cookie) {
     const match = req.headers.cookie.match(/(?:^|;\s*)wj_session=([^;]+)/);
     if (match) token = match[1];

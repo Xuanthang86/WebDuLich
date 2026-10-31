@@ -7,6 +7,7 @@ import {
   AdditionalServiceItem,
   PackageItem,
   AccommodationItem,
+  DestinationHubItem,
   FAQItem,
   InquiryFormField,
   Lead,
@@ -72,6 +73,7 @@ export interface PublicContentResponse {
   packages: PackageItem[];
   accommodations: AccommodationItem[];
   faqs: FAQItem[];
+  destinationHubs?: DestinationHubItem[];
 }
 
 export async function fetchPublicContent(): Promise<PublicContentResponse> {
@@ -90,12 +92,14 @@ export async function submitInquiry(payload: any): Promise<{ leadCode: string; m
 }
 
 // Auth API
-export async function login(email: string, password: string): Promise<{ token: string; user: User }> {
-  const data = await request<{ token: string; user: User }>('/api/auth/login', {
+export async function login(email: string, password: string): Promise<{ user: User; token?: string }> {
+  const data = await request<{ user: User; token?: string }>('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   });
-  setAuthToken(data.token);
+  if (data?.token) {
+    setAuthToken(data.token);
+  }
   return data;
 }
 

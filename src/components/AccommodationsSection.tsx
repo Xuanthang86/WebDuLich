@@ -50,12 +50,16 @@ export const AccommodationsSection: React.FC<AccommodationsSectionProps> = ({
     // Unique list of all cities (from propHubs + any accommodations)
     const hubMap = new Map<string, Partial<DestinationHubItem>>();
     propHubs.forEach(h => {
-      hubMap.set(h.city.toLowerCase(), h);
+      const cityName = h.city || h.name;
+      if (cityName) {
+        hubMap.set(cityName.toLowerCase(), { ...h, city: cityName });
+      }
     });
 
     const allCities: string[] = [];
     propHubs.forEach(h => {
-      if (!allCities.includes(h.city)) allCities.push(h.city);
+      const cityName = h.city || h.name;
+      if (cityName && !allCities.includes(cityName)) allCities.push(cityName);
     });
 
     accommodations.forEach(a => {
