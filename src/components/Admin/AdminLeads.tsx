@@ -9,18 +9,25 @@ import {
   RefreshCw,
   Plus,
 } from 'lucide-react';
-import { Lead, LeadStatus } from '../../types';
-import { fetchAdminLeads, getAuthToken } from '../../api';
+import { Lead, LeadStatus, DestinationHubItem } from '../../types';
+import { fetchAdminLeads, fetchAdminHubs, getAuthToken } from '../../api';
 import { LeadDetailModal } from './LeadDetailModal';
 
 export const AdminLeads: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [hubs, setHubs] = useState<DestinationHubItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [cityFilter, setCityFilter] = useState<string>('ALL');
   const [priorityFilter, setPriorityFilter] = useState<string>('ALL');
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchAdminHubs()
+      .then(res => setHubs(res))
+      .catch(err => console.warn('Hubs fetch fallback:', err));
+  }, []);
 
   const loadLeads = () => {
     setLoading(true);
@@ -167,9 +174,19 @@ export const AdminLeads: React.FC = () => {
               className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-stone-50 hover:bg-white text-slate-800 font-medium focus:outline-none focus:border-[#C9A45C] focus:bg-white transition-all cursor-pointer shadow-2xs"
             >
               <option value="ALL">All Destination Hubs</option>
-              <option value="Da Nang">Da Nang Coastal Hub</option>
-              <option value="Nha Trang">Nha Trang Bay</option>
-              <option value="Ho Chi Minh City">Ho Chi Minh City</option>
+              {hubs && hubs.length > 0 ? (
+                hubs.map(h => (
+                  <option key={h.id || h.city} value={h.city}>
+                    {h.city} ({h.hubName})
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="Da Nang">Da Nang Coastal Hub</option>
+                  <option value="Nha Trang">Nha Trang Bay</option>
+                  <option value="Ho Chi Minh City">Ho Chi Minh City</option>
+                </>
+              )}
             </select>
           </div>
 

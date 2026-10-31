@@ -51,18 +51,28 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
         {/* Core Value Quick Badges */}
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 md:gap-6 text-[11px] sm:text-xs md:text-sm text-slate-300 mb-5 sm:mb-8">
-          <div className="flex items-center gap-1.5 bg-slate-900/60 backdrop-blur-sm px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full border border-slate-700/60">
-            <CheckCircle2 className="w-3.5 h-3.5 text-[#C9A45C]" />
-            <span>Turnkey 2-Bedroom Serviced Living</span>
-          </div>
-          <div className="flex items-center gap-1.5 bg-slate-900/60 backdrop-blur-sm px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full border border-slate-700/60">
-            <ShieldCheck className="w-3.5 h-3.5 text-[#C9A45C]" />
-            <span>Dedicated Bilingual Concierge</span>
-          </div>
-          <div className="flex items-center gap-1.5 bg-slate-900/60 backdrop-blur-sm px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full border border-slate-700/60">
-            <CheckCircle2 className="w-3.5 h-3.5 text-[#C9A45C]" />
-            <span>Healthcare & Visa Guidance</span>
-          </div>
+          {(hero.valueBadges && hero.valueBadges.length > 0
+            ? hero.valueBadges
+            : [
+                { id: 'vb1', text: 'Turnkey 2-Bedroom Serviced Living', icon: 'CheckCircle2' },
+                { id: 'vb2', text: 'Dedicated Bilingual Concierge', icon: 'ShieldCheck' },
+                { id: 'vb3', text: 'Healthcare & Visa Guidance', icon: 'CheckCircle2' },
+              ]
+          ).map(badge => (
+            <div
+              key={badge.id}
+              className="flex items-center gap-1.5 bg-slate-900/60 backdrop-blur-sm px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full border border-slate-700/60"
+            >
+              {badge.icon === 'ShieldCheck' ? (
+                <ShieldCheck className="w-3.5 h-3.5 text-[#C9A45C]" />
+              ) : badge.icon === 'Sparkles' ? (
+                <Sparkles className="w-3.5 h-3.5 text-[#C9A45C]" />
+              ) : (
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#C9A45C]" />
+              )}
+              <span>{badge.text}</span>
+            </div>
+          ))}
         </div>
 
         {/* Action CTAs */}

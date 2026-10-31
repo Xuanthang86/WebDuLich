@@ -224,8 +224,17 @@ export const AdminSettings: React.FC = () => {
 
         {/* Disclaimers & Footer Notes */}
         <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm space-y-4 md:col-span-2">
-          <h3 className="font-serif text-base font-bold text-[#0F172A]">Regulatory Disclaimer & Budget Messaging</h3>
+          <h3 className="font-serif text-base font-bold text-[#0F172A]">Regulatory Disclaimer & Footer Notes</h3>
           <div className="grid grid-cols-1 gap-4">
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Copyright Statement</label>
+              <input
+                type="text"
+                value={settings.copyright || ''}
+                onChange={e => setSettings({ ...settings, copyright: e.target.value })}
+                className="w-full p-2.5 rounded-lg border border-stone-300 text-xs"
+              />
+            </div>
             <div>
               <label className="text-xs font-bold text-slate-700 block mb-1">Hospitality Regulatory Notice (Footer)</label>
               <textarea
@@ -243,6 +252,264 @@ export const AdminSettings: React.FC = () => {
                 onChange={e => setSettings({ ...settings, budgetComparisonMessage: e.target.value })}
                 className="w-full p-2.5 rounded-lg border border-stone-300 text-xs"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Global Section Headers & Copy CMS */}
+        <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm space-y-6 md:col-span-2">
+          <div className="border-b border-stone-100 pb-3">
+            <h3 className="font-serif text-lg font-bold text-[#0F172A]">Homepage Section Headers & Copy</h3>
+            <p className="text-xs text-slate-500 font-light mt-0.5">
+              Customize badges, headlines, and descriptions for all homepage sections without modifying code.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* The Vietnam Advantage Header */}
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
+              <h4 className="font-bold text-xs uppercase tracking-wider text-[#A77A32]">The Vietnam Advantage Section</h4>
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">Badge</label>
+                <input
+                  type="text"
+                  value={settings.whyVietnamHeader?.badge || ''}
+                  onChange={e =>
+                    setSettings({
+                      ...settings,
+                      whyVietnamHeader: {
+                        badge: e.target.value,
+                        title: settings.whyVietnamHeader?.title || '',
+                        subtitle: settings.whyVietnamHeader?.subtitle || '',
+                      },
+                    })
+                  }
+                  placeholder="The Vietnam Advantage"
+                  className="w-full p-2 rounded-lg border border-stone-300 text-xs bg-white"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">Headline</label>
+                <input
+                  type="text"
+                  value={settings.whyVietnamHeader?.title || ''}
+                  onChange={e =>
+                    setSettings({
+                      ...settings,
+                      whyVietnamHeader: {
+                        badge: settings.whyVietnamHeader?.badge || '',
+                        title: e.target.value,
+                        subtitle: settings.whyVietnamHeader?.subtitle || '',
+                      },
+                    })
+                  }
+                  placeholder="Why Western Retirees & Explorers Choose Vietnam"
+                  className="w-full p-2 rounded-lg border border-stone-300 text-xs bg-white"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">Subtitle</label>
+                <textarea
+                  rows={2}
+                  value={settings.whyVietnamHeader?.subtitle || ''}
+                  onChange={e =>
+                    setSettings({
+                      ...settings,
+                      whyVietnamHeader: {
+                        badge: settings.whyVietnamHeader?.badge || '',
+                        title: settings.whyVietnamHeader?.title || '',
+                        subtitle: e.target.value,
+                      },
+                    })
+                  }
+                  className="w-full p-2 rounded-lg border border-stone-300 text-xs bg-white"
+                />
+              </div>
+            </div>
+
+            {/* Financial Projection Banner */}
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
+              <h4 className="font-bold text-xs uppercase tracking-wider text-[#A77A32]">Financial Purchasing Power Banner</h4>
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">Banner Badge</label>
+                <input
+                  type="text"
+                  value={settings.financialProjection?.badge || ''}
+                  onChange={e =>
+                    setSettings({
+                      ...settings,
+                      financialProjection: {
+                        badge: e.target.value,
+                        headline: settings.financialProjection?.headline || '',
+                        comparisonMessage: settings.financialProjection?.comparisonMessage || '',
+                        notesTitle: settings.financialProjection?.notesTitle || '',
+                        notesContent: settings.financialProjection?.notesContent || '',
+                      },
+                    })
+                  }
+                  placeholder="Financial Purchasing Power Projection"
+                  className="w-full p-2 rounded-lg border border-stone-300 text-xs bg-white"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">Main Headline</label>
+                <input
+                  type="text"
+                  value={settings.financialProjection?.headline || ''}
+                  onChange={e =>
+                    setSettings({
+                      ...settings,
+                      financialProjection: {
+                        badge: settings.financialProjection?.badge || '',
+                        headline: e.target.value,
+                        comparisonMessage: settings.financialProjection?.comparisonMessage || '',
+                        notesTitle: settings.financialProjection?.notesTitle || '',
+                        notesContent: settings.financialProjection?.notesContent || '',
+                      },
+                    })
+                  }
+                  placeholder="Live Like $90,000+ for Approximately $40,000 / Year"
+                  className="w-full p-2 rounded-lg border border-stone-300 text-xs bg-white"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">Comparison Message</label>
+                <textarea
+                  rows={2}
+                  value={settings.financialProjection?.comparisonMessage || ''}
+                  onChange={e =>
+                    setSettings({
+                      ...settings,
+                      financialProjection: {
+                        badge: settings.financialProjection?.badge || '',
+                        headline: settings.financialProjection?.headline || '',
+                        comparisonMessage: e.target.value,
+                        notesTitle: settings.financialProjection?.notesTitle || '',
+                        notesContent: settings.financialProjection?.notesContent || '',
+                      },
+                    })
+                  }
+                  className="w-full p-2 rounded-lg border border-stone-300 text-xs bg-white"
+                />
+              </div>
+            </div>
+
+            {/* Packages Section Header */}
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
+              <h4 className="font-bold text-xs uppercase tracking-wider text-[#A77A32]">Packages Section Header</h4>
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">Badge</label>
+                <input
+                  type="text"
+                  value={settings.packagesHeader?.badge || ''}
+                  onChange={e =>
+                    setSettings({
+                      ...settings,
+                      packagesHeader: {
+                        badge: e.target.value,
+                        title: settings.packagesHeader?.title || '',
+                        subtitle: settings.packagesHeader?.subtitle || '',
+                      },
+                    })
+                  }
+                  className="w-full p-2 rounded-lg border border-stone-300 text-xs bg-white"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">Headline</label>
+                <input
+                  type="text"
+                  value={settings.packagesHeader?.title || ''}
+                  onChange={e =>
+                    setSettings({
+                      ...settings,
+                      packagesHeader: {
+                        badge: settings.packagesHeader?.badge || '',
+                        title: e.target.value,
+                        subtitle: settings.packagesHeader?.subtitle || '',
+                      },
+                    })
+                  }
+                  className="w-full p-2 rounded-lg border border-stone-300 text-xs bg-white"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">Subtitle</label>
+                <textarea
+                  rows={2}
+                  value={settings.packagesHeader?.subtitle || ''}
+                  onChange={e =>
+                    setSettings({
+                      ...settings,
+                      packagesHeader: {
+                        badge: settings.packagesHeader?.badge || '',
+                        title: settings.packagesHeader?.title || '',
+                        subtitle: e.target.value,
+                      },
+                    })
+                  }
+                  className="w-full p-2 rounded-lg border border-stone-300 text-xs bg-white"
+                />
+              </div>
+            </div>
+
+            {/* Accommodations Section Header */}
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
+              <h4 className="font-bold text-xs uppercase tracking-wider text-[#A77A32]">Accommodations Section Header</h4>
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">Badge</label>
+                <input
+                  type="text"
+                  value={settings.accommodationsHeader?.badge || ''}
+                  onChange={e =>
+                    setSettings({
+                      ...settings,
+                      accommodationsHeader: {
+                        badge: e.target.value,
+                        title: settings.accommodationsHeader?.title || '',
+                        subtitle: settings.accommodationsHeader?.subtitle || '',
+                      },
+                    })
+                  }
+                  className="w-full p-2 rounded-lg border border-stone-300 text-xs bg-white"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">Headline</label>
+                <input
+                  type="text"
+                  value={settings.accommodationsHeader?.title || ''}
+                  onChange={e =>
+                    setSettings({
+                      ...settings,
+                      accommodationsHeader: {
+                        badge: settings.accommodationsHeader?.badge || '',
+                        title: e.target.value,
+                        subtitle: settings.accommodationsHeader?.subtitle || '',
+                      },
+                    })
+                  }
+                  className="w-full p-2 rounded-lg border border-stone-300 text-xs bg-white"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">Subtitle</label>
+                <textarea
+                  rows={2}
+                  value={settings.accommodationsHeader?.subtitle || ''}
+                  onChange={e =>
+                    setSettings({
+                      ...settings,
+                      accommodationsHeader: {
+                        badge: settings.accommodationsHeader?.badge || '',
+                        title: settings.accommodationsHeader?.title || '',
+                        subtitle: e.target.value,
+                      },
+                    })
+                  }
+                  className="w-full p-2 rounded-lg border border-stone-300 text-xs bg-white"
+                />
+              </div>
             </div>
           </div>
         </div>

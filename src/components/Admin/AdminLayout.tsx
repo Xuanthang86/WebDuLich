@@ -68,8 +68,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   const [activeNav, setActiveNav] = useState<NavSection>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Login form state - clean, secure initial values
-  const [emailInput, setEmailInput] = useState('');
+  // Login form state - clean, secure initial values with optional remembered email
+  const [emailInput, setEmailInput] = useState(() => {
+    return localStorage.getItem('wj_remembered_email') || '';
+  });
+  const [rememberMe, setRememberMe] = useState(() => {
+    return Boolean(localStorage.getItem('wj_remembered_email'));
+  });
   const [passwordInput, setPasswordInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -113,6 +118,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     setIsSubmittingLogin(true);
     try {
       await login(emailInput.trim(), passwordInput);
+      if (rememberMe) {
+        localStorage.setItem('wj_remembered_email', emailInput.trim());
+      } else {
+        localStorage.removeItem('wj_remembered_email');
+      }
     } catch (err: any) {
       setLoginError(err.message || 'Invalid email or password.');
     } finally {
@@ -338,8 +348,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 </div>
               )}
 
-              {/* Standard Login Form with Show/Hide Password Eye Toggle */}
+              {/* Standard Login Form with Show/Hide Password Eye Toggle & Remember Me */}
               <form onSubmit={handleLoginSubmit} className="space-y-4">
+                <style>{`
+                  input::-ms-reveal, input::-ms-clear { display: none !important; }
+                  input::-webkit-contacts-auto-fill-button { visibility: hidden !important; }
+                `}</style>
+
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Account Email
@@ -347,6 +362,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                   <input
                     type="email"
                     required
+                    autoComplete="username"
                     value={emailInput}
                     onChange={e => setEmailInput(e.target.value)}
                     placeholder="name@wanderersjourneys.com"
@@ -362,6 +378,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                     <input
                       type={showPassword ? 'text' : 'password'}
                       required
+                      autoComplete="current-password"
                       value={passwordInput}
                       onChange={e => setPasswordInput(e.target.value)}
                       placeholder="Enter password..."
@@ -376,6 +393,19 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+                </div>
+
+                {/* Remember Me Option */}
+                <div className="flex items-center justify-between pt-0.5">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 select-none">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={e => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 rounded text-[#C9A45C] accent-[#C9A45C] cursor-pointer"
+                    />
+                    <span>Remember me on this device</span>
+                  </label>
                 </div>
 
                 <button
@@ -398,44 +428,40 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           </div>
         </main>
 
-        {/* Synchronized Footer */}
-        <footer className="bg-[#0B1120] text-white border-t border-slate-800 py-6 sm:py-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400 text-center sm:text-left">
-              <div>
-                <p>{settings?.copyright || '© 2026 Wanderer’s Journeys Hospitality Ltd. All rights reserved.'}</p>
-                <p className="text-[11px] text-slate-400 font-light mt-0.5">
-                  {settings?.contactEmail || 'concierge@wanderersjourneys.com'} • {settings?.contactPhone || '+84 (0) 28 3822 5588'}
-                </p>
-              </div>
-              <div className="flex items-center gap-4">
-                {onOpenPrivacy && (
+        {/* Clean Login Footer: Row 1 Copyright Centered; Row 2 Email • Phone • Privacy • Terms Centered */}
+        <footer className="bg-[#0B1120] text-white border-t border-slate-800 py-6 sm:py-7">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-2">
+            <p className="text-xs text-slate-400 font-normal">
+              {settings?.copyright || '© 2026 Wanderer’s Journeys Hospitality Ltd. All rights reserved.'}
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs text-slate-400">
+              <span>{settings?.contactEmail || 'concierge@wanderersjourneys.com'}</span>
+              <span>•</span>
+              <span>{settings?.contactPhone || '+84 (0) 28 3822 5588'}</span>
+              {onOpenPrivacy && (
+                <>
+                  <span>•</span>
                   <button
                     type="button"
                     onClick={onOpenPrivacy}
-                    className="hover:text-[#C9A45C] transition-colors cursor-pointer"
+                    className="hover:text-[#C9A45C] transition-colors cursor-pointer underline"
                   >
                     Privacy Policy
                   </button>
-                )}
-                {onOpenTerms && (
+                </>
+              )}
+              {onOpenTerms && (
+                <>
+                  <span>•</span>
                   <button
                     type="button"
                     onClick={onOpenTerms}
-                    className="hover:text-[#C9A45C] transition-colors cursor-pointer"
+                    className="hover:text-[#C9A45C] transition-colors cursor-pointer underline"
                   >
                     Terms of Service
                   </button>
-                )}
-                <button
-                  type="button"
-                  onClick={onBackToWebsite}
-                  className="hover:text-[#C9A45C] transition-colors cursor-pointer flex items-center gap-1"
-                >
-                  <ArrowLeft className="w-3 h-3" />
-                  <span>Main Website</span>
-                </button>
-              </div>
+                </>
+              )}
             </div>
           </div>
         </footer>
@@ -683,19 +709,6 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setProfileFullName(user?.fullName || '');
-                    setShowProfileModal(true);
-                  }}
-                  className="w-full py-2.5 rounded-xl border border-stone-300 bg-white text-xs font-bold text-slate-800 flex items-center justify-center gap-2 cursor-pointer hover:bg-stone-50"
-                >
-                  <UserCheck className="w-4 h-4 text-[#A77A32]" />
-                  <span>Account Information</span>
-                </button>
-
-                <button
-                  type="button"
                   onClick={handleLogout}
                   className="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                 >
@@ -783,6 +796,20 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               </div>
             )}
           </main>
+
+          {/* Authenticated Admin Footer */}
+          <footer className="bg-white border-t border-stone-200 py-3 px-4 sm:px-6 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-slate-700">Wanderer’s Journeys Admin CMS</span>
+              <span>•</span>
+              <span>Enterprise TLS 1.3 Active</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span>{settings?.copyright || '© 2026 Wanderer’s Journeys Hospitality Ltd.'}</span>
+              <span>•</span>
+              <span className="text-[#A77A32] font-medium">Logged in as {user?.fullName} ({user?.role})</span>
+            </div>
+          </footer>
         </div>
       </div>
 

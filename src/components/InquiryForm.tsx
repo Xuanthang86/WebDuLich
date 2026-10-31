@@ -12,18 +12,24 @@ import {
   Lock,
 } from 'lucide-react';
 import { submitInquiry } from '../api';
-import { InquiryFormField } from '../types';
+import { InquiryFormField, DestinationHubItem, PackageItem, InquiryHeader } from '../types';
 
 interface InquiryFormProps {
   initialPackage?: string;
   initialCity?: string;
   fields?: InquiryFormField[];
+  destinationHubs?: DestinationHubItem[];
+  packages?: PackageItem[];
+  header?: InquiryHeader;
   onOpenPrivacyPolicy?: () => void;
 }
 
 export const InquiryForm: React.FC<InquiryFormProps> = ({
   initialPackage,
   initialCity,
+  destinationHubs,
+  packages,
+  header,
   onOpenPrivacyPolicy,
 }) => {
   const [step, setStep] = useState<number>(1);
@@ -184,14 +190,14 @@ export const InquiryForm: React.FC<InquiryFormProps> = ({
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
           <div className="text-xs sm:text-sm font-semibold tracking-widest text-[#C9A45C] uppercase mb-2">
-            Personalized Concierge Intake
+            {header?.badge || 'Personalized Concierge Intake'}
           </div>
           <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">
-            Request Your Bespoke Proposal
+            {header?.title || 'Request Your Bespoke Proposal'}
           </h2>
           <p className="text-base text-slate-300 font-light leading-relaxed">
-            Tell us about your target timing, desired coastal hub, and lifestyle passions. We will tailor
-            a detailed proposal with pricing, sample floorplans, and healthcare orientation.
+            {header?.subtitle ||
+              'Tell us about your target timing, desired coastal hub, and lifestyle passions. We will tailor a detailed proposal with pricing, sample floorplans, and healthcare orientation.'}
           </p>
         </div>
 
@@ -458,11 +464,19 @@ export const InquiryForm: React.FC<InquiryFormProps> = ({
                       }}
                       className="w-full px-4 py-3.5 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-[#C9A45C] text-base"
                     >
-                      <option value="Private Discovery Tour (7-14 Days)">Private Discovery Tour (7-14 Days)</option>
-                      <option value="30-Day Living Trial">30-Day Living Trial</option>
-                      <option value="Snowbird Special (30-90 Days)">Snowbird Special (30-90 Days)</option>
-                      <option value="Six-Month Exploratory Stay">Six-Month Exploratory Stay</option>
-                      <option value="Full Retirement Package (12 Months)">Full Retirement Package (12 Months)</option>
+                      {packages && packages.length > 0 ? (
+                        packages.map(p => (
+                          <option key={p.id} value={p.title}>{p.title}</option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="Private Discovery Tour (7-14 Days)">Private Discovery Tour (7-14 Days)</option>
+                          <option value="30-Day Living Trial">30-Day Living Trial</option>
+                          <option value="Snowbird Special (30-90 Days)">Snowbird Special (30-90 Days)</option>
+                          <option value="Six-Month Exploratory Stay">Six-Month Exploratory Stay</option>
+                          <option value="Full Retirement Package (12 Months)">Full Retirement Package (12 Months)</option>
+                        </>
+                      )}
                       <option value="Custom Consultation">Custom Consultation</option>
                     </select>
                   </div>
@@ -476,9 +490,19 @@ export const InquiryForm: React.FC<InquiryFormProps> = ({
                       onChange={e => handleChange('destinationCity', e.target.value)}
                       className="w-full px-4 py-3.5 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-[#C9A45C] text-base"
                     >
-                      <option value="Da Nang (Beachfront & Coastal Living)">Da Nang (Beachfront & Coastal Living)</option>
-                      <option value="Nha Trang (Tropical Bay & Wellness Promenade)">Nha Trang (Tropical Bay & Wellness Promenade)</option>
-                      <option value="Ho Chi Minh City (Vibrant Culture & Medical Center)">Ho Chi Minh City (Vibrant Culture & Medical Center)</option>
+                      {destinationHubs && destinationHubs.length > 0 ? (
+                        destinationHubs.map(hub => (
+                          <option key={hub.id || hub.city} value={hub.city}>
+                            {hub.city} ({hub.tagline || hub.hubName})
+                          </option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="Da Nang (Beachfront & Coastal Living)">Da Nang (Beachfront & Coastal Living)</option>
+                          <option value="Nha Trang (Tropical Bay & Wellness Promenade)">Nha Trang (Tropical Bay & Wellness Promenade)</option>
+                          <option value="Ho Chi Minh City (Vibrant Culture & Medical Center)">Ho Chi Minh City (Vibrant Culture & Medical Center)</option>
+                        </>
+                      )}
                       <option value="Multi-City Split (e.g. Da Nang + Saigon)">Multi-City Split (e.g. Da Nang + Saigon)</option>
                       <option value="Undecided / Open to Advice">Undecided / Open to Advice</option>
                     </select>

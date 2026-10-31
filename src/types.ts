@@ -8,6 +8,40 @@ export interface User {
   isActive?: boolean;
 }
 
+export interface SectionHeader {
+  badge: string;
+  title: string;
+  description: string;
+}
+
+export interface WhyVietnamHeader extends SectionHeader {}
+
+export interface FinancialProjection {
+  badge: string;
+  title: string;
+  comparisonMessage: string;
+  assumptionsTitle: string;
+  assumptionsNote: string;
+}
+
+export interface PackagesHeader extends SectionHeader {}
+export interface AccommodationsHeader extends SectionHeader {}
+export interface InquiryHeader extends SectionHeader {}
+
+export interface WhyChooseUsHeader extends SectionHeader {
+  trustBadge: string;
+}
+
+export interface AdditionalServicesHeader extends SectionHeader {
+  ctaButtonText: string;
+}
+
+export interface FaqsHeader extends SectionHeader {
+  ctaTitle: string;
+  ctaSubtitle: string;
+  ctaButtonText: string;
+}
+
 export interface SiteSettings {
   brandName: string;
   slogan: string;
@@ -25,6 +59,21 @@ export interface SiteSettings {
   footerNote: string;
   copyright: string;
   budgetComparisonMessage: string;
+  whyVietnamHeader?: WhyVietnamHeader;
+  financialProjection?: FinancialProjection;
+  packagesHeader?: PackagesHeader;
+  accommodationsHeader?: AccommodationsHeader;
+  whyChooseUsHeader?: WhyChooseUsHeader;
+  additionalServicesHeader?: AdditionalServicesHeader;
+  faqsHeader?: FaqsHeader;
+  inquiryHeader?: InquiryHeader;
+}
+
+export interface HeroValueBadge {
+  id: string;
+  text: string;
+  icon?: string;
+  displayOrder: number;
 }
 
 export interface HeroContent {
@@ -36,6 +85,7 @@ export interface HeroContent {
   badgeText: string;
   backgroundImageUrl: string;
   stats: Array<{ label: string; value: string }>;
+  valueBadges?: HeroValueBadge[];
 }
 
 export interface WhyVietnamItem {
@@ -57,10 +107,26 @@ export interface WhyChooseUsItem {
   isPublished?: boolean;
 }
 
-export interface CoreServiceItem {
+export interface CoreInclusionCard {
   id: string;
   title: string;
+  description: string;
+  icon: string;
+  bulletPoints?: string[];
+  displayOrder: number;
+  isPublished: boolean;
+}
+
+export interface CoreServiceItem {
+  id: string;
+  sectionBadge?: string;
+  sectionTitle?: string;
+  sectionSubtitle?: string;
+  baselineBadge?: string;
+  title: string;
   monthlyStartingPrice: number;
+  pricePeriodLabel?: string;
+  priceSubtext?: string;
   description: string;
   utilityAllowanceNote: string;
   resortAmenities: string[];
@@ -70,6 +136,7 @@ export interface CoreServiceItem {
   visaSupportNote: string;
   healthInsuranceSupportNote: string;
   bankingSupportNote: string;
+  inclusions?: CoreInclusionCard[];
   displayOrder: number;
   isPublished: boolean;
 }
@@ -82,8 +149,24 @@ export interface AdditionalServiceItem {
   category: string;
   icon: string;
   conditions: string;
+  partnerInfo?: string;
+  ctaText?: string;
   isPublished: boolean;
   displayOrder: number;
+}
+
+export interface DestinationHubItem {
+  id: string;
+  name: string; // e.g. "Da Nang", "Nha Trang", "Ho Chi Minh City"
+  hubName: string; // e.g. "Da Nang Coastal Beaches & Nature Hub"
+  tagline: string;
+  description: string;
+  badgeClass: string;
+  heroImage: string;
+  displayOrder: number;
+  isPublished: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface PackageItem {
@@ -115,9 +198,9 @@ export interface AccommodationImage {
 export interface AccommodationItem {
   id: string;
   title: string;
-  city: 'Ho Chi Minh City' | 'Da Nang' | 'Nha Trang';
+  city: string; // Dynamically links to DestinationHubItem.name
   district: string;
-  propertyType: 'Luxury Apartment' | 'Ocean Villa' | 'Boutique Townhouse' | 'Resort Suite';
+  propertyType: string;
   bedrooms: number;
   bathrooms: number;
   areaSqm: number;

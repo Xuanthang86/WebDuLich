@@ -1,15 +1,19 @@
 import React from 'react';
 import { PiggyBank, SunMedium, HeartHandshake, ShieldCheck, TrendingUp, Info } from 'lucide-react';
-import { WhyVietnamItem } from '../types';
+import { WhyVietnamItem, WhyVietnamHeader, FinancialProjection } from '../types';
 
 interface WhyVietnamSectionProps {
   items: WhyVietnamItem[];
   budgetComparisonMessage?: string;
+  header?: WhyVietnamHeader;
+  financialProjection?: FinancialProjection;
 }
 
 export const WhyVietnamSection: React.FC<WhyVietnamSectionProps> = ({
   items,
   budgetComparisonMessage,
+  header,
+  financialProjection,
 }) => {
   const getIcon = (iconName: string) => {
     switch (iconName) {
@@ -31,14 +35,14 @@ export const WhyVietnamSection: React.FC<WhyVietnamSectionProps> = ({
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12">
           <div className="text-xs sm:text-sm font-semibold tracking-widest text-[#A77A32] uppercase mb-2">
-            The Vietnam Advantage
+            {header?.badge || 'The Vietnam Advantage'}
           </div>
           <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#0F172A] mb-4">
-            Why Western Retirees & Explorers Choose Vietnam
+            {header?.title || 'Why Western Retirees & Explorers Choose Vietnam'}
           </h2>
           <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed">
-            A harmonious fusion of natural coastal tranquility, world-class modern healthcare,
-            exceptional personal safety, and unprecedented purchasing power.
+            {header?.subtitle ||
+              'A harmonious fusion of natural coastal tranquility, world-class modern healthcare, exceptional personal safety, and unprecedented purchasing power.'}
           </p>
         </div>
 
@@ -77,13 +81,14 @@ export const WhyVietnamSection: React.FC<WhyVietnamSectionProps> = ({
             <div className="max-w-3xl">
               <div className="flex items-center gap-2 text-xs font-semibold text-[#C9A45C] uppercase tracking-wider mb-2">
                 <PiggyBank className="w-4 h-4 text-[#C9A45C]" />
-                <span>Financial Purchasing Power Projection</span>
+                <span>{financialProjection?.badge || 'Financial Purchasing Power Projection'}</span>
               </div>
               <h4 className="font-serif text-2xl sm:text-3xl font-bold text-white mb-3">
-                Live Like $90,000+ for Approximately $40,000 / Year
+                {financialProjection?.headline || 'Live Like $90,000+ for Approximately $40,000 / Year'}
               </h4>
               <p className="text-slate-300 text-sm sm:text-base leading-relaxed font-light">
-                {budgetComparisonMessage ||
+                {financialProjection?.comparisonMessage ||
+                  budgetComparisonMessage ||
                   'Experience premier coastal resort living, daily wellness, and dedicated concierge care in Vietnam for $40,000/year with a standard of living rivaling $90,000+ in North America or Western Europe.'}
               </p>
             </div>
@@ -91,10 +96,11 @@ export const WhyVietnamSection: React.FC<WhyVietnamSectionProps> = ({
             <div className="bg-slate-800/80 p-5 rounded-2xl border border-slate-700/80 text-xs text-slate-300 space-y-2 lg:w-96 shrink-0">
               <div className="flex items-center gap-1.5 font-semibold text-[#C9A45C]">
                 <Info className="w-4 h-4 shrink-0" />
-                <span>Transparent Assumptions & Context</span>
+                <span>{financialProjection?.notesTitle || 'Transparent Assumptions & Context'}</span>
               </div>
               <p className="leading-normal">
-                Estimated comparison includes 2-bedroom executive serviced residence, utilities allowance, 3x weekly housekeeping, private fitness/pool access, fresh dining, and lifestyle concierge. Figures are comparative estimations based on standard Western urban living costs and do not constitute individual financial advice.
+                {financialProjection?.notesContent ||
+                  'Estimated comparison includes 2-bedroom executive serviced residence, utilities allowance, 3x weekly housekeeping, private fitness/pool access, fresh dining, and lifestyle concierge. Figures are comparative estimations based on standard Western urban living costs and do not constitute individual financial advice.'}
               </p>
             </div>
           </div>

@@ -1,9 +1,10 @@
 import React from 'react';
 import { Compass, Phone, Mail, MapPin, Shield } from 'lucide-react';
-import { SiteSettings } from '../types';
+import { SiteSettings, DestinationHubItem } from '../types';
 
 interface FooterProps {
   settings: SiteSettings;
+  destinationHubs?: DestinationHubItem[];
   onOpenPrivacy: () => void;
   onOpenTerms: () => void;
   onOpenAdmin: () => void;
@@ -11,6 +12,7 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({
   settings,
+  destinationHubs,
   onOpenPrivacy,
   onOpenTerms,
   onOpenAdmin,
@@ -115,51 +117,30 @@ export const Footer: React.FC<FooterProps> = ({
               Coastal Living Hubs
             </h4>
             <ul className="space-y-3 text-xs text-slate-300">
-              <li>
-                <button
-                  type="button"
-                  onClick={() => handleCityClick('Da Nang')}
-                  className="text-left w-full group cursor-pointer"
-                >
-                  <strong className="text-white block font-medium group-hover:text-[#C9A45C] transition-colors flex items-center gap-1">
-                    <span>Da Nang Coastal Hub</span>
-                    <span className="text-[#C9A45C] text-[10px] group-hover:translate-x-1 transition-transform">→</span>
-                  </strong>
-                  <span className="text-slate-400 text-[11px] group-hover:text-slate-300 transition-colors">
-                    My Khe Beach & Son Tra Peninsula Residences
-                  </span>
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => handleCityClick('Nha Trang')}
-                  className="text-left w-full group cursor-pointer"
-                >
-                  <strong className="text-white block font-medium group-hover:text-[#C9A45C] transition-colors flex items-center gap-1">
-                    <span>Nha Trang Tropical Bay</span>
-                    <span className="text-[#C9A45C] text-[10px] group-hover:translate-x-1 transition-transform">→</span>
-                  </strong>
-                  <span className="text-slate-400 text-[11px] group-hover:text-slate-300 transition-colors">
-                    Tran Phu Waterfront & Marina Promenade
-                  </span>
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => handleCityClick('Ho Chi Minh City')}
-                  className="text-left w-full group cursor-pointer"
-                >
-                  <strong className="text-white block font-medium group-hover:text-[#C9A45C] transition-colors flex items-center gap-1">
-                    <span>Ho Chi Minh City</span>
-                    <span className="text-[#C9A45C] text-[10px] group-hover:translate-x-1 transition-transform">→</span>
-                  </strong>
-                  <span className="text-slate-400 text-[11px] group-hover:text-slate-300 transition-colors">
-                    Thao Dien Expat Quarter & River Residences
-                  </span>
-                </button>
-              </li>
+              {(destinationHubs && destinationHubs.length > 0
+                ? destinationHubs
+                : [
+                    { city: 'Da Nang', hubName: 'Da Nang Coastal Hub', tagline: 'My Khe Beach & Son Tra Peninsula Residences' },
+                    { city: 'Nha Trang', hubName: 'Nha Trang Tropical Bay', tagline: 'Tran Phu Waterfront & Marina Promenade' },
+                    { city: 'Ho Chi Minh City', hubName: 'Ho Chi Minh City', tagline: 'Thao Dien Expat Quarter & River Residences' },
+                  ]
+              ).map(hub => (
+                <li key={hub.city}>
+                  <button
+                    type="button"
+                    onClick={() => handleCityClick(hub.city)}
+                    className="text-left w-full group cursor-pointer"
+                  >
+                    <strong className="text-white block font-medium group-hover:text-[#C9A45C] transition-colors flex items-center gap-1">
+                      <span>{hub.hubName || `${hub.city} Hub`}</span>
+                      <span className="text-[#C9A45C] text-[10px] group-hover:translate-x-1 transition-transform">→</span>
+                    </strong>
+                    <span className="text-slate-400 text-[11px] group-hover:text-slate-300 transition-colors">
+                      {hub.tagline || hub.description || `${hub.city} Living Sanctuary`}
+                    </span>
+                  </button>
+                </li>
+              ))}
             </ul>
           </div>
 

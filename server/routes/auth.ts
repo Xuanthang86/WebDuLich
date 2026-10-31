@@ -409,4 +409,63 @@ router.post('/users/:id/reset-password', authenticate, requireRole(['ADMIN']), (
   res.json({ success: true, message: `Password reset successfully for ${user.fullName}. All active sessions have been revoked.` });
 });
 
+// Delete Staff / Administrator User (ADMIN role required)
+router.delete('/users/:id', authenticate, requireRole(['ADMIN']), (req: Request, res: Response): void => {
+  const { id } = req.params;
+
+  // 1. Cannot self-delete
+  if (id === req.user!.id) {
+    res.status(400).json({
+      success: false,
+      error: {
+        code: 'SELF_DELETION_PROHIBITED',
+        message: 'Security Violation: You cannot delete your currently authenticated account.',
+      },
+    });
+    return;
+  }
+
+  const targetUser = db.getUserById(id);
+  if (!targetUser) {
+    res.status(404).json({ success: false, error: { message: 'User account not found.' } });
+    return;
+  }
+
+  // 2. Cannot delete the last active Administrator
+  if (targetUser.role === 'ADMIN') {
+    const activeAdmins = db.getState().users.filter(u => u.role === 'ADMIN' && u.isActive);
+    if (activeAdmins.length <= 1) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'LAST_ADMIN_PROTECTED',
+          message: 'Operation Denied: Cannot delete the last remaining active Administrator in the system.',
+        },
+      });
+      return;
+    }
+  }
+
+  const deleted = db.deleteUser(id);
+  if (!deleted) {
+    res.status(500).json({ success: false, error: { message: 'Failed to delete user.' } });
+    return;
+  }
+
+  db.addAuditLog({
+    userId: req.user!.id,
+    userEmail: req.user!.email,
+    action: 'USER_DELETED',
+    entityType: 'USER',
+    entityId: id,
+    details: `Administrator deleted user account "${targetUser.fullName}" (${targetUser.email}) with role ${targetUser.role}. All sessions revoked immediately.`,
+    ipAddress: req.ip || (req.headers['x-forwarded-for'] as string),
+  });
+
+  res.json({
+    success: true,
+    message: `Account "${targetUser.fullName}" (${targetUser.email}) has been permanently deleted and all sessions revoked.`,
+  });
+});
+
 export default router;

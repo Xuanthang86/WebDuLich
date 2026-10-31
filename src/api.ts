@@ -409,6 +409,54 @@ export async function resetAdminUserPassword(id: string, newPassword: string): P
   });
 }
 
+export async function deleteAdminUser(id: string): Promise<any> {
+  return request<any>(`/api/auth/users/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+// Destination Hubs (Cities & Provinces)
+export async function fetchAdminHubs(): Promise<any[]> {
+  return request<any[]>('/api/admin/hubs');
+}
+
+export async function saveAdminHub(hub: any): Promise<any> {
+  if (hub.id) {
+    return request<any>(`/api/admin/hubs/${hub.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(hub),
+    });
+  }
+  return request<any>('/api/admin/hubs', {
+    method: 'POST',
+    body: JSON.stringify(hub),
+  });
+}
+
+export async function deleteAdminHub(id: string): Promise<any> {
+  return request<any>(`/api/admin/hubs/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+// Core Inclusions (9 Baseline Cards)
+export async function fetchAdminCoreInclusions(): Promise<any[]> {
+  return request<any[]>('/api/admin/core-service/inclusions');
+}
+
+export async function saveAdminCoreInclusion(inclusion: any): Promise<any> {
+  return request<any>('/api/admin/core-service/inclusions', {
+    method: 'POST',
+    body: JSON.stringify(inclusion),
+  });
+}
+
+export async function deleteAdminCoreInclusion(id: string): Promise<any> {
+  return request<any>(`/api/admin/core-service/inclusions/${id}`, {
+    method: 'DELETE',
+  });
+}
+
 export async function resetDemoData(): Promise<any> {
   return request<any>('/api/admin/system/reset-demo', { method: 'POST' });
 }

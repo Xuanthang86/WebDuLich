@@ -1,11 +1,13 @@
 import React from 'react';
 import { Compass, CheckCircle2, Users2, Anchor, Shield } from 'lucide-react';
+import { WhyChooseUsItem, WhyChooseUsHeader } from '../types';
 
 interface WhyChooseUsSectionProps {
-  items: Array<{ id: string; title: string; description: string; icon: string }>;
+  items: WhyChooseUsItem[];
+  header?: WhyChooseUsHeader;
 }
 
-export const WhyChooseUsSection: React.FC<WhyChooseUsSectionProps> = ({ items }) => {
+export const WhyChooseUsSection: React.FC<WhyChooseUsSectionProps> = ({ items, header }) => {
   const getIcon = (iconName: string) => {
     switch (iconName) {
       case 'Compass':
@@ -25,14 +27,14 @@ export const WhyChooseUsSection: React.FC<WhyChooseUsSectionProps> = ({ items })
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
           <div className="text-xs sm:text-sm font-semibold tracking-widest text-[#A77A32] uppercase mb-2">
-            Peace of Mind
+            {header?.badge || 'Peace of Mind'}
           </div>
           <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#0F172A] mb-4">
-            Why Western Seniors Trust Wanderer’s Journeys
+            {header?.title || 'Why Western Seniors Trust Wanderer’s Journeys'}
           </h2>
           <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed">
-            Relocating or wintering abroad shouldn't be stressful. We bridge Western lifestyle expectations
-            with local Vietnamese hospitality, warmth, and legal reliability.
+            {header?.subtitle ||
+              'Relocating or wintering abroad shouldn\'t be stressful. We bridge Western lifestyle expectations with local Vietnamese hospitality, warmth, and legal reliability.'}
           </p>
         </div>
 
@@ -56,7 +58,7 @@ export const WhyChooseUsSection: React.FC<WhyChooseUsSectionProps> = ({ items })
 
               <div className="pt-6 border-t border-stone-100 mt-6 flex items-center gap-1.5 text-xs text-[#A77A32] font-semibold">
                 <Shield className="w-4 h-4 text-[#C9A45C]" />
-                <span>Verified Resident Standard</span>
+                <span>{header?.trustBadge || 'Verified Resident Standard'}</span>
               </div>
             </div>
           ))}

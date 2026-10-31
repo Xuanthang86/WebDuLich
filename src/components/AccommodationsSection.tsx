@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Bed, Bath, Maximize2, MapPin, Eye, ArrowRight, Star, Compass, Layers, ArrowLeft, CheckCircle2 } from 'lucide-react';
-import { AccommodationItem, AccommodationImage } from '../types';
+import { AccommodationItem, AccommodationImage, DestinationHubItem, AccommodationsHeader } from '../types';
 import { LightboxModal } from './LightboxModal';
 
 interface AccommodationsSectionProps {
   accommodations: AccommodationItem[];
+  destinationHubs?: DestinationHubItem[];
+  header?: AccommodationsHeader;
   onSelectAccommodation: (accommodationTitle: string, city: string) => void;
 }
 
 export const AccommodationsSection: React.FC<AccommodationsSectionProps> = ({
   accommodations,
+  destinationHubs: propHubs = [],
+  header,
   onSelectAccommodation,
 }) => {
   const [activeCity, setActiveCity] = useState<string>('ALL');
@@ -41,76 +45,56 @@ export const AccommodationsSection: React.FC<AccommodationsSectionProps> = ({
     };
   }, []);
 
-  // Dynamically extract unique cities from accommodations to ensure full extensibility
-  const dynamicCities = React.useMemo(() => {
-    const citiesSet = new Set<string>();
-    accommodations.forEach(a => {
-      if (a.city) citiesSet.add(a.city);
-    });
-    return Array.from(citiesSet);
-  }, [accommodations]);
-
-  // Destination Hub metadata dictionary with graceful automatic fallbacks for new cities
-  const cityMetadata: Record<string, { hubName: string; tagline: string; description: string; badgeClass: string; heroFallback: string }> = {
-    'Da Nang': {
-      hubName: 'Da Nang Coastal Beaches & Nature Hub',
-      tagline: 'My Khe shoreline, Son Tra peninsula & heritage sanctuaries',
-      description: 'Central Vietnam’s crown jewel offering turquoise coastlines, temperate sea breezes, world-class golf links, and peaceful seaside living.',
-      badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-      heroFallback: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80',
-    },
-    'Nha Trang': {
-      hubName: 'Nha Trang Tropical Bay & Marina Hub',
-      tagline: 'Tran Phu waterfront, palm promenade & An Vien yacht marina',
-      description: 'Vietnam’s premier year-round sunny coastal bay featuring 300+ days of warmth, mineral mud baths, calm seas, and private marina enclaves.',
-      badgeClass: 'bg-blue-100 text-blue-800 border-blue-300',
-      heroFallback: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80',
-    },
-    'Ho Chi Minh City': {
-      hubName: 'Ho Chi Minh City Expat & Heritage Hub',
-      tagline: 'Thao Dien leafy quarter, Saigon riverfront & premier clinics',
-      description: 'A vibrant international metropolis blending French colonial verandas, renowned JCI hospitals (FV Hospital), Michelin dining, and riverside tranquility.',
-      badgeClass: 'bg-amber-100 text-amber-800 border-amber-300',
-      heroFallback: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
-    },
-  };
-
-  // Build structured destination hubs
+  // Build structured destination hubs combining CMS hubs and accommodation records
   const destinationHubs = React.useMemo(() => {
-    return dynamicCities.map(city => {
+    // Unique list of all cities (from propHubs + any accommodations)
+    const hubMap = new Map<string, Partial<DestinationHubItem>>();
+    propHubs.forEach(h => {
+      hubMap.set(h.city.toLowerCase(), h);
+    });
+
+    const allCities: string[] = [];
+    propHubs.forEach(h => {
+      if (!allCities.includes(h.city)) allCities.push(h.city);
+    });
+
+    accommodations.forEach(a => {
+      if (a.city && !allCities.some(c => c.toLowerCase() === a.city.toLowerCase())) {
+        allCities.push(a.city);
+      }
+    });
+
+    return allCities.map(city => {
       const items = accommodations
-        .filter(a => a.city === city)
+        .filter(a => a.city && a.city.toLowerCase() === city.toLowerCase())
         .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
 
-      const meta = cityMetadata[city] || {
-        hubName: `${city} Sanctuary Hub`,
-        tagline: `Curated retirement living and serviced suites in ${city}`,
-        description: `Premier serviced residences, English-speaking personal navigators, and bespoke hospitality in ${city}.`,
-        badgeClass: 'bg-purple-100 text-purple-800 border-purple-300',
-        heroFallback: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80',
-      };
+      const existingCmsHub = hubMap.get(city.toLowerCase());
 
+      const hubName = existingCmsHub?.hubName || `${city} Sanctuary Hub`;
+      const tagline = existingCmsHub?.tagline || `Curated retirement living and serviced suites in ${city}`;
+      const description = existingCmsHub?.description || `Premier serviced residences, English-speaking personal navigators, and bespoke hospitality in ${city}.`;
+      const badgeClass = existingCmsHub?.badgeClass || 'bg-amber-100 text-amber-800 border-amber-300';
       const startingPrice = items.length > 0
         ? Math.min(...items.map(i => i.priceMonthUsd || 2250))
         : 2250;
 
-      const heroImage = items[0]?.images[0]?.url || meta.heroFallback;
-
+      const heroImage = existingCmsHub?.heroImage || items[0]?.images[0]?.url || 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80';
       const subDistricts = Array.from(new Set(items.map(i => i.district))).filter(Boolean);
 
       return {
         city,
-        hubName: meta.hubName,
-        tagline: meta.tagline,
-        description: meta.description,
-        badgeClass: meta.badgeClass,
+        hubName,
+        tagline,
+        description,
+        badgeClass,
         heroImage,
         items,
         startingPrice,
         subDistricts,
       };
     });
-  }, [accommodations, dynamicCities]);
+  }, [accommodations, propHubs]);
 
   const visibleHubs = destinationHubs.filter(hub => {
     if (activeCity === 'ALL') return true;
@@ -137,13 +121,14 @@ export const AccommodationsSection: React.FC<AccommodationsSectionProps> = ({
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
           <div className="text-xs sm:text-sm font-semibold tracking-widest text-[#A77A32] uppercase mb-2">
-            Sanctuary Residences
+            {header?.badge || 'Sanctuary Residences'}
           </div>
           <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#0F172A] mb-3 sm:mb-4">
-            Curated Westerner Retirement Residences
+            {header?.title || 'Curated Westerner Retirement Residences'}
           </h2>
           <p className="text-sm sm:text-base md:text-lg text-slate-600 font-normal leading-relaxed">
-            Discover premier extended-stay and retirement destinations across Vietnam. Each destination hub features handpicked residences categorized by tier and location, complete with concierge care and resort amenities.
+            {header?.subtitle ||
+              'Discover premier extended-stay and retirement destinations across Vietnam. Each destination hub features handpicked residences categorized by tier and location, complete with concierge care and resort amenities.'}
           </p>
 
           {/* View Mode & City Selector Tabs */}

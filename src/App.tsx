@@ -118,46 +118,60 @@ export default function App() {
                 <WhyVietnamSection
                   items={content.whyVietnam}
                   budgetComparisonMessage={content.settings.budgetComparisonMessage}
+                  header={content.settings.whyVietnamHeader}
+                  financialProjection={content.settings.financialProjection}
                 />
 
                 {/* 4. Core Services & Benefits */}
                 <CoreServicesSection
                   core={content.coreService}
                   additional={content.additionalServices}
+                  additionalHeader={content.settings.additionalServicesHeader}
                   onOpenQuestionnaire={() => scrollToQuestionnaire()}
                 />
 
                 {/* 5. Packages Showcase */}
                 <PackagesSection
                   packages={content.packages}
+                  header={content.settings.packagesHeader}
                   onSelectPackage={pkgTitle => scrollToQuestionnaire(pkgTitle)}
                 />
 
                 {/* 6. Accommodations Showcase */}
                 <AccommodationsSection
                   accommodations={content.accommodations}
+                  destinationHubs={content.destinationHubs}
+                  header={content.settings.accommodationsHeader}
                   onSelectAccommodation={(accTitle, city) => scrollToQuestionnaire(undefined, city)}
                 />
 
                 {/* 7. Why Choose Us */}
-                <WhyChooseUsSection items={content.whyChooseUs} />
+                <WhyChooseUsSection
+                  items={content.whyChooseUs}
+                  header={content.settings.whyChooseUsHeader}
+                />
 
                 {/* 8. Inquiry Questionnaire Form */}
                 <InquiryForm
                   initialPackage={selectedPackage}
                   initialCity={selectedCity}
+                  destinationHubs={content.destinationHubs}
+                  packages={content.packages}
+                  header={content.settings.inquiryHeader}
                   onOpenPrivacyPolicy={() => setPolicyType('privacy')}
                 />
 
                 {/* 9. FAQ Section */}
                 <FaqSection
                   faqs={content.faqs}
+                  header={content.settings.faqsHeader}
                   onOpenQuestionnaire={() => scrollToQuestionnaire()}
                 />
 
                 {/* 10. Footer */}
                 <Footer
                   settings={content.settings}
+                  destinationHubs={content.destinationHubs}
                   onOpenPrivacy={() => setPolicyType('privacy')}
                   onOpenTerms={() => setPolicyType('terms')}
                   onOpenAdmin={() => setCurrentView('admin')}

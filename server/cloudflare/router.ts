@@ -804,6 +804,59 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
       return jsonResponse({ success: true, message: `Password reset successfully for ${targetUser.fullName}. All active sessions have been revoked.` }, 200, cors);
     }
 
+    // Delete user account (ADMIN role required)
+    if (path.startsWith('/api/auth/users/') && !path.includes('/status') && !path.includes('/reset-password') && method === 'DELETE') {
+      if (!authSession || authSession.user.role !== 'ADMIN') return jsonResponse({ success: false, error: { message: 'Forbidden' } }, 403, cors);
+      const userId = path.split('/')[4];
+
+      if (userId === authSession.user.id) {
+        return jsonResponse({
+          success: false,
+          error: {
+            code: 'SELF_DELETION_PROHIBITED',
+            message: 'Security Violation: You cannot delete your currently authenticated account.',
+          },
+        }, 400, cors);
+      }
+
+      const targetUser = await env.DB.prepare('SELECT id, role, full_name as fullName, email FROM users WHERE id = ?').bind(userId).first();
+      if (!targetUser) {
+        return jsonResponse({ success: false, error: { message: 'User account not found.' } }, 404, cors);
+      }
+
+      if (targetUser.role === 'ADMIN') {
+        const activeAdmins = (await env.DB.prepare('SELECT id FROM users WHERE role = "ADMIN" AND is_active = 1').all()).results || [];
+        if (activeAdmins.length <= 1) {
+          return jsonResponse({
+            success: false,
+            error: {
+              code: 'LAST_ADMIN_PROTECTED',
+              message: 'Operation Denied: Cannot delete the last remaining active Administrator in the system.',
+            },
+          }, 400, cors);
+        }
+      }
+
+      await env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(userId).run();
+      await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
+
+      await env.DB.prepare(`
+        INSERT INTO audit_logs (id, user_id, user_email, action, entity_type, details, ip_address, created_at)
+        VALUES (?, ?, ?, 'USER_DELETED', 'USER', ?, ?, datetime('now'))
+      `).bind(
+        `aud_${Date.now()}`,
+        authSession.user.id,
+        authSession.user.email,
+        `Administrator deleted user account "${targetUser.fullName}" (${targetUser.email}).`,
+        request.headers.get('cf-connecting-ip') || 'edge'
+      ).run();
+
+      return jsonResponse({
+        success: true,
+        message: `Account "${targetUser.fullName}" (${targetUser.email}) has been permanently deleted and all sessions revoked.`,
+      }, 200, cors);
+    }
+
     // ----------------------------------------------------
     // 9. ADMIN: ANALYTICS & DASHBOARD
     // ----------------------------------------------------
@@ -1235,6 +1288,97 @@ export async function handleCloudflareApi(request: Request, env: Env): Promise<R
           pkgId
         ).run();
         return jsonResponse({ success: true, data: { id: pkgId, ...b } }, 200, cors);
+      }
+    }
+
+    // Destination Hubs (Provinces / Cities)
+    if (path === '/api/admin/hubs') {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      if (method === 'GET') {
+        const rows = (await env.DB.prepare('SELECT * FROM destination_hubs ORDER BY display_order ASC').all()).results || [];
+        return jsonResponse({
+          success: true,
+          data: rows.map((h: any) => ({
+            id: h.id,
+            name: h.name,
+            hubName: h.hub_name,
+            tagline: h.tagline,
+            description: h.description,
+            badgeClass: h.badge_class,
+            heroImage: h.hero_image,
+            displayOrder: h.display_order,
+            isPublished: Boolean(h.is_published),
+            createdAt: h.created_at,
+            updatedAt: h.updated_at,
+          })),
+        }, 200, cors);
+      }
+      if (method === 'POST') {
+        const b = (await request.json().catch(() => ({}))) as any;
+        if (!b.name || !b.name.trim()) return jsonResponse({ success: false, error: { message: 'City / Province name is required.' } }, 400, cors);
+        const existing = await env.DB.prepare('SELECT id FROM destination_hubs WHERE LOWER(name) = LOWER(?)').bind(b.name.trim()).first();
+        if (existing) return jsonResponse({ success: false, error: { message: `Destination Hub for "${b.name}" already exists.` } }, 400, cors);
+
+        const id = b.id || `hub_${Date.now()}`;
+        await env.DB.prepare(`
+          INSERT INTO destination_hubs (id, name, hub_name, tagline, description, badge_class, hero_image, display_order, is_published, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+        `).bind(
+          id, b.name.trim(), b.hubName || `${b.name.trim()} Sanctuary Hub`,
+          b.tagline || `Extended-stay and retirement residences in ${b.name.trim()}`,
+          b.description || `Premier retirement community in ${b.name.trim()}.`,
+          b.badgeClass || 'bg-emerald-100 text-emerald-800 border-emerald-300',
+          b.heroImage || 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80',
+          b.displayOrder || 1, b.isPublished !== false ? 1 : 0
+        ).run();
+
+        return jsonResponse({ success: true, data: { id, ...b } }, 201, cors);
+      }
+    }
+
+    if (path.startsWith('/api/admin/hubs/') && (method === 'PUT' || method === 'DELETE')) {
+      if (!authSession) return jsonResponse({ success: false, error: { message: 'Unauthorized' } }, 401, cors);
+      const hubId = path.split('/')[4];
+      if (method === 'DELETE') {
+        const hub = await env.DB.prepare('SELECT name FROM destination_hubs WHERE id = ?').bind(hubId).first();
+        if (!hub) return jsonResponse({ success: false, error: { message: 'Hub not found.' } }, 404, cors);
+
+        const linked = (await env.DB.prepare('SELECT id, title FROM accommodations WHERE LOWER(city) = LOWER(?)').bind(hub.name).all()).results || [];
+        if (linked.length > 0) {
+          return jsonResponse({
+            success: false,
+            error: {
+              code: 'LINKED_ACCOMMODATIONS_EXIST',
+              message: `Cannot delete Destination Hub: ${linked.length} residence(s) (${linked.map((l: any) => l.title).join(', ')}) are located in this city. Please reassign or delete these accommodations first.`,
+            },
+          }, 400, cors);
+        }
+
+        await env.DB.prepare('DELETE FROM destination_hubs WHERE id = ?').bind(hubId).run();
+        return jsonResponse({ success: true, message: 'Destination Hub deleted.' }, 200, cors);
+      }
+
+      if (method === 'PUT') {
+        const b = (await request.json().catch(() => ({}))) as any;
+        await env.DB.prepare(`
+          UPDATE destination_hubs SET
+            name = COALESCE(?, name),
+            hub_name = COALESCE(?, hub_name),
+            tagline = COALESCE(?, tagline),
+            description = COALESCE(?, description),
+            badge_class = COALESCE(?, badge_class),
+            hero_image = COALESCE(?, hero_image),
+            display_order = COALESCE(?, display_order),
+            is_published = COALESCE(?, is_published),
+            updated_at = datetime('now')
+          WHERE id = ?
+        `).bind(
+          b.name || null, b.hubName || null, b.tagline || null, b.description || null,
+          b.badgeClass || null, b.heroImage || null, b.displayOrder !== undefined ? b.displayOrder : null,
+          b.isPublished !== undefined ? (b.isPublished ? 1 : 0) : null,
+          hubId
+        ).run();
+        return jsonResponse({ success: true, data: { id: hubId, ...b } }, 200, cors);
       }
     }
 

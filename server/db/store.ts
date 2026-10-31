@@ -25,11 +25,73 @@ class DatabaseStore {
         const raw = fs.readFileSync(DB_FILE, 'utf-8');
         const parsed = JSON.parse(raw);
         // Ensure all required top-level collections exist
+        const mergedSiteSettings = {
+          ...INITIAL_DATABASE_STATE.siteSettings,
+          ...(parsed.siteSettings || {}),
+          whyVietnamHeader: {
+            ...INITIAL_DATABASE_STATE.siteSettings.whyVietnamHeader,
+            ...(parsed.siteSettings?.whyVietnamHeader || {}),
+          },
+          financialProjection: {
+            ...INITIAL_DATABASE_STATE.siteSettings.financialProjection,
+            ...(parsed.siteSettings?.financialProjection || {}),
+          },
+          packagesHeader: {
+            ...INITIAL_DATABASE_STATE.siteSettings.packagesHeader,
+            ...(parsed.siteSettings?.packagesHeader || {}),
+          },
+          accommodationsHeader: {
+            ...INITIAL_DATABASE_STATE.siteSettings.accommodationsHeader,
+            ...(parsed.siteSettings?.accommodationsHeader || {}),
+          },
+          whyChooseUsHeader: {
+            ...INITIAL_DATABASE_STATE.siteSettings.whyChooseUsHeader,
+            ...(parsed.siteSettings?.whyChooseUsHeader || {}),
+          },
+          additionalServicesHeader: {
+            ...INITIAL_DATABASE_STATE.siteSettings.additionalServicesHeader,
+            ...(parsed.siteSettings?.additionalServicesHeader || {}),
+          },
+          faqsHeader: {
+            ...INITIAL_DATABASE_STATE.siteSettings.faqsHeader,
+            ...(parsed.siteSettings?.faqsHeader || {}),
+          },
+          inquiryHeader: {
+            ...INITIAL_DATABASE_STATE.siteSettings.inquiryHeader,
+            ...(parsed.siteSettings?.inquiryHeader || {}),
+          },
+        };
+
+        const mergedHero = {
+          ...INITIAL_DATABASE_STATE.heroContent,
+          ...(parsed.heroContent || {}),
+          valueBadges:
+            parsed.heroContent?.valueBadges && parsed.heroContent.valueBadges.length > 0
+              ? parsed.heroContent.valueBadges
+              : INITIAL_DATABASE_STATE.heroContent.valueBadges,
+        };
+
+        const mergedCore = {
+          ...INITIAL_DATABASE_STATE.coreService,
+          ...(parsed.coreService || {}),
+          inclusions:
+            parsed.coreService?.inclusions && parsed.coreService.inclusions.length > 0
+              ? parsed.coreService.inclusions
+              : INITIAL_DATABASE_STATE.coreService.inclusions,
+        };
+
+        const mergedHubs =
+          parsed.destinationHubs && parsed.destinationHubs.length > 0
+            ? parsed.destinationHubs
+            : INITIAL_DATABASE_STATE.destinationHubs;
+
         return {
           ...INITIAL_DATABASE_STATE,
           ...parsed,
-          siteSettings: { ...INITIAL_DATABASE_STATE.siteSettings, ...(parsed.siteSettings || {}) },
-          heroContent: { ...INITIAL_DATABASE_STATE.heroContent, ...(parsed.heroContent || {}) },
+          siteSettings: mergedSiteSettings,
+          heroContent: mergedHero,
+          coreService: mergedCore,
+          destinationHubs: mergedHubs,
         };
       }
     } catch (err) {
@@ -250,6 +312,114 @@ class DatabaseStore {
     Object.assign(field, updates);
     this.save();
     return field;
+  }
+
+  // User deletion
+  public deleteUser(id: string): boolean {
+    const index = this.state.users.findIndex(u => u.id === id);
+    if (index === -1) return false;
+    this.revokeUserSessions(id);
+    this.state.users.splice(index, 1);
+    this.save();
+    return true;
+  }
+
+  // Destination Hubs
+  public getDestinationHubs() {
+    if (!this.state.destinationHubs) {
+      this.state.destinationHubs = JSON.parse(JSON.stringify(INITIAL_DATABASE_STATE.destinationHubs || []));
+    }
+    return this.state.destinationHubs.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+  }
+
+  public getDestinationHubById(id: string) {
+    return this.getDestinationHubs().find(h => h.id === id);
+  }
+
+  public createDestinationHub(hub: any) {
+    const hubs = this.getDestinationHubs();
+    const newHub = {
+      ...hub,
+      id: hub.id || `hub_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      displayOrder: hub.displayOrder || hubs.length + 1,
+      isPublished: hub.isPublished !== undefined ? hub.isPublished : true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    this.state.destinationHubs.push(newHub);
+    this.save();
+    return newHub;
+  }
+
+  public updateDestinationHub(id: string, updates: any) {
+    const hub = this.getDestinationHubById(id);
+    if (!hub) return null;
+    Object.assign(hub, updates, { updatedAt: new Date().toISOString() });
+    this.save();
+    return hub;
+  }
+
+  public deleteDestinationHub(id: string) {
+    const hubs = this.getDestinationHubs();
+    const hub = hubs.find(h => h.id === id);
+    if (!hub) return { success: false, reason: 'NOT_FOUND' };
+
+    // Check if accommodations reference this city
+    const linkedAccs = this.state.accommodations.filter(
+      a => a.city.toLowerCase() === hub.name.toLowerCase()
+    );
+    if (linkedAccs.length > 0) {
+      return {
+        success: false,
+        reason: 'LINKED_ACCOMMODATIONS',
+        count: linkedAccs.length,
+        accommodations: linkedAccs.map(a => a.title),
+      };
+    }
+
+    this.state.destinationHubs = this.state.destinationHubs.filter(h => h.id !== id);
+    this.save();
+    return { success: true };
+  }
+
+  // Core Service Inclusions
+  public getCoreInclusions() {
+    if (!this.state.coreService.inclusions || this.state.coreService.inclusions.length === 0) {
+      this.state.coreService.inclusions = JSON.parse(
+        JSON.stringify(INITIAL_DATABASE_STATE.coreService.inclusions || [])
+      );
+    }
+    return this.state.coreService.inclusions.sort((a, b) => a.displayOrder - b.displayOrder);
+  }
+
+  public saveCoreInclusion(data: any) {
+    const inclusions = this.getCoreInclusions();
+    if (data.id) {
+      const idx = inclusions.findIndex(inc => inc.id === data.id);
+      if (idx !== -1) {
+        inclusions[idx] = { ...inclusions[idx], ...data };
+        this.save();
+        return inclusions[idx];
+      }
+    }
+    const newInc = {
+      id: data.id || `inc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      title: data.title || 'Service Inclusion',
+      description: data.description || '',
+      icon: data.icon || 'Sparkles',
+      bulletPoints: data.bulletPoints || [],
+      displayOrder: data.displayOrder || inclusions.length + 1,
+      isPublished: data.isPublished !== undefined ? data.isPublished : true,
+    };
+    inclusions.push(newInc);
+    this.save();
+    return newInc;
+  }
+
+  public deleteCoreInclusion(id: string) {
+    this.state.coreService.inclusions = this.getCoreInclusions().filter(i => i.id !== id);
+    this.save();
+    return true;
   }
 
   public resetToDefault() {

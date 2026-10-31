@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { ChevronDown, HelpCircle } from 'lucide-react';
-import { FAQItem } from '../types';
+import { FAQItem, FaqsHeader } from '../types';
 
 interface FaqSectionProps {
   faqs: FAQItem[];
+  header?: FaqsHeader;
   onOpenQuestionnaire: () => void;
 }
 
-export const FaqSection: React.FC<FaqSectionProps> = ({ faqs, onOpenQuestionnaire }) => {
+export const FaqSection: React.FC<FaqSectionProps> = ({ faqs, header, onOpenQuestionnaire }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [openIds, setOpenIds] = useState<Record<string, boolean>>({
     [faqs[0]?.id || 'faq_01']: true, // first open by default
@@ -29,14 +30,14 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ faqs, onOpenQuestionnair
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
           <div className="text-xs sm:text-sm font-semibold tracking-widest text-[#A77A32] uppercase mb-2">
-            Clear Answers
+            {header?.badge || 'Clear Answers'}
           </div>
           <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#0F172A] mb-4">
-            Frequently Asked Questions
+            {header?.title || 'Frequently Asked Questions'}
           </h2>
           <p className="text-base text-slate-600 font-normal leading-relaxed">
-            Essential facts on residency visas, international health coverage, financial transfers, and
-            daily community life in Vietnam.
+            {header?.subtitle ||
+              'Essential facts on residency visas, international health coverage, financial transfers, and daily community life in Vietnam.'}
           </p>
 
           {/* Category Tabs */}
@@ -102,10 +103,11 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ faqs, onOpenQuestionnair
         <div className="mt-12 text-center p-8 rounded-3xl bg-white border border-stone-200 shadow-sm">
           <HelpCircle className="w-8 h-8 text-[#C9A45C] mx-auto mb-3" />
           <h3 className="font-serif text-xl font-bold text-[#0F172A] mb-2">
-            Have a question specific to your personal circumstances?
+            {header?.conciergePrompt || 'Have a question specific to your personal circumstances?'}
           </h3>
           <p className="text-sm text-slate-600 max-w-lg mx-auto mb-6 font-light">
-            Whether inquiring about prescription medications, pet import regulations, or bringing personal items, our senior concierge is pleased to assist.
+            {header?.conciergeText ||
+              'Whether inquiring about prescription medications, pet import regulations, or bringing personal items, our senior concierge is pleased to assist.'}
           </p>
           <button
             onClick={onOpenQuestionnaire}

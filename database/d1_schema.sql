@@ -151,6 +151,22 @@ CREATE TABLE IF NOT EXISTS packages (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- 10b. DESTINATION HUBS (Cities & Provinces)
+CREATE TABLE IF NOT EXISTS destination_hubs (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    hub_name TEXT NOT NULL,
+    tagline TEXT NOT NULL,
+    description TEXT NOT NULL,
+    badge_class TEXT NOT NULL DEFAULT 'bg-emerald-100 text-emerald-800 border-emerald-300',
+    hero_image TEXT,
+    display_order INTEGER NOT NULL DEFAULT 1,
+    is_published INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_destination_hubs_name ON destination_hubs(name);
+
 -- 11. ACCOMMODATIONS
 CREATE TABLE IF NOT EXISTS accommodations (
     id TEXT PRIMARY KEY,

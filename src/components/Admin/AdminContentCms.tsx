@@ -20,6 +20,7 @@ import {
   Layers,
   Inbox,
   ArrowUpRight,
+  MapPin,
 } from 'lucide-react';
 import {
   fetchAdminHero,
@@ -44,6 +45,9 @@ import {
   fetchAdminFaqs,
   saveAdminFaq,
   deleteAdminFaq,
+  fetchAdminHubs,
+  saveAdminHub,
+  deleteAdminHub,
 } from '../../api';
 import {
   HeroContent,
@@ -54,6 +58,9 @@ import {
   AccommodationItem,
   WhyChooseUsItem,
   FAQItem,
+  DestinationHubItem,
+  CoreInclusionCard,
+  HeroValueBadge,
 } from '../../types';
 
 type CmsTab =
@@ -63,6 +70,7 @@ type CmsTab =
   | 'additionalServices'
   | 'packages'
   | 'accommodations'
+  | 'hubs'
   | 'whyChooseUs'
   | 'faqs';
 
@@ -81,6 +89,7 @@ export const AdminContentCms: React.FC = () => {
   const [additionalServices, setAdditionalServices] = useState<AdditionalServiceItem[]>([]);
   const [packages, setPackages] = useState<PackageItem[]>([]);
   const [accommodations, setAccommodations] = useState<AccommodationItem[]>([]);
+  const [hubs, setHubs] = useState<DestinationHubItem[]>([]);
   const [whyChooseUsList, setWhyChooseUsList] = useState<WhyChooseUsItem[]>([]);
   const [faqs, setFaqs] = useState<FAQItem[]>([]);
 
@@ -89,12 +98,13 @@ export const AdminContentCms: React.FC = () => {
   const [editingAdditionalService, setEditingAdditionalService] = useState<Partial<AdditionalServiceItem> | null>(null);
   const [editingPkg, setEditingPkg] = useState<Partial<PackageItem> | null>(null);
   const [editingAcc, setEditingAcc] = useState<Partial<AccommodationItem> | null>(null);
+  const [editingHub, setEditingHub] = useState<Partial<DestinationHubItem> | null>(null);
   const [editingWhyChooseUs, setEditingWhyChooseUs] = useState<Partial<WhyChooseUsItem> | null>(null);
   const [editingFaq, setEditingFaq] = useState<Partial<FAQItem> | null>(null);
 
   // Custom Deletion Confirmation Modal
   const [deleteTarget, setDeleteTarget] = useState<{
-    type: 'whyVietnam' | 'additionalService' | 'package' | 'accommodation' | 'whyChooseUs' | 'faq';
+    type: 'whyVietnam' | 'additionalService' | 'package' | 'accommodation' | 'whyChooseUs' | 'faq' | 'hub';
     id: string;
     title: string;
   } | null>(null);
@@ -117,6 +127,7 @@ export const AdminContentCms: React.FC = () => {
         addlData,
         pkgsData,
         accsData,
+        hubsData,
         wcuData,
         faqsData,
       ] = await Promise.all([
@@ -126,6 +137,7 @@ export const AdminContentCms: React.FC = () => {
         fetchAdminAdditionalServices().catch(() => []),
         fetchAdminPackages().catch(() => []),
         fetchAdminAccommodations().catch(() => []),
+        fetchAdminHubs().catch(() => []),
         fetchAdminWhyChooseUs().catch(() => []),
         fetchAdminFaqs().catch(() => []),
       ]);
@@ -136,6 +148,7 @@ export const AdminContentCms: React.FC = () => {
       setAdditionalServices(addlData || []);
       setPackages(pkgsData || []);
       setAccommodations(accsData || []);
+      setHubs(hubsData || []);
       setWhyChooseUsList(wcuData || []);
       setFaqs(faqsData || []);
     } catch (err: any) {
@@ -290,6 +303,24 @@ export const AdminContentCms: React.FC = () => {
     }
   };
 
+  // 9. Save Destination Hub
+  const handleSaveHub = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingHub) return;
+    setIsSaving(true);
+    try {
+      await saveAdminHub(editingHub);
+      const refreshed = await fetchAdminHubs();
+      setHubs(refreshed);
+      setEditingHub(null);
+      triggerSaveNotification('Destination hub saved.');
+    } catch (err: any) {
+      triggerSaveNotification(`Error saving hub: ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Unified Deletion Handler
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
@@ -315,6 +346,11 @@ export const AdminContentCms: React.FC = () => {
           await deleteAdminAccommodation(deleteTarget.id);
           setAccommodations(await fetchAdminAccommodations());
           triggerSaveNotification('Residence removed.');
+          break;
+        case 'hub':
+          await deleteAdminHub(deleteTarget.id);
+          setHubs(await fetchAdminHubs());
+          triggerSaveNotification('Destination hub removed.');
           break;
         case 'whyChooseUs':
           await deleteAdminWhyChooseUs(deleteTarget.id);
@@ -342,6 +378,7 @@ export const AdminContentCms: React.FC = () => {
     { id: 'additionalServices' as CmsTab, label: 'Additional Services', icon: Layers, count: additionalServices.length },
     { id: 'packages' as CmsTab, label: 'Living Packages', icon: Package, count: packages.length },
     { id: 'accommodations' as CmsTab, label: 'Residences Showcase', icon: Building, count: accommodations.length },
+    { id: 'hubs' as CmsTab, label: 'Destination Hubs', icon: MapPin, count: hubs.length },
     { id: 'whyChooseUs' as CmsTab, label: 'Trust Pillars', icon: HeartHandshake, count: whyChooseUsList.length },
     { id: 'faqs' as CmsTab, label: 'FAQs', icon: HelpCircle, count: faqs.length },
   ];
@@ -487,6 +524,28 @@ export const AdminContentCms: React.FC = () => {
                 />
               </div>
 
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Primary CTA Button</label>
+                <input
+                  type="text"
+                  value={hero.primaryCtaText || ''}
+                  placeholder="Request a Bespoke Proposal"
+                  onChange={e => setHero({ ...hero, primaryCtaText: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-xs sm:text-sm focus:outline-none focus:border-[#C9A45C]"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Secondary CTA Button</label>
+                <input
+                  type="text"
+                  value={hero.secondaryCtaText || ''}
+                  placeholder="Explore Living Packages"
+                  onChange={e => setHero({ ...hero, secondaryCtaText: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-xs sm:text-sm focus:outline-none focus:border-[#C9A45C]"
+                />
+              </div>
+
               <div className="sm:col-span-2">
                 <label className="font-bold text-slate-700 block mb-1">Introduction Subtext (WRC Model)</label>
                 <textarea
@@ -497,7 +556,79 @@ export const AdminContentCms: React.FC = () => {
                 />
               </div>
 
-              <div className="sm:col-span-2 space-y-2">
+              {/* Value Badges Editor */}
+              <div className="sm:col-span-2 pt-2 border-t border-stone-100">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <span className="font-bold text-slate-800 text-xs sm:text-sm">Hero Value Quick Badges</span>
+                    <p className="text-[11px] text-slate-500 font-light">E.g., Turnkey 2-Bedroom Serviced Living, Dedicated Bilingual Concierge, Healthcare Guidance</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const current = hero.valueBadges || [];
+                      const newBadge = { id: `vb_${Date.now()}`, text: 'New Value Pillar', icon: 'CheckCircle2' };
+                      setHero({ ...hero, valueBadges: [...current, newBadge] });
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-slate-700 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-[#C9A45C]" />
+                    <span>Add Badge</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {(hero.valueBadges && hero.valueBadges.length > 0
+                    ? hero.valueBadges
+                    : [
+                        { id: 'vb1', text: 'Turnkey 2-Bedroom Serviced Living', icon: 'CheckCircle2' },
+                        { id: 'vb2', text: 'Dedicated Bilingual Concierge', icon: 'ShieldCheck' },
+                        { id: 'vb3', text: 'Healthcare & Visa Guidance', icon: 'CheckCircle2' },
+                      ]
+                  ).map((b, idx) => (
+                    <div key={b.id || idx} className="flex items-center gap-2 bg-[#FDFBF7] p-2.5 rounded-xl border border-stone-200">
+                      <select
+                        value={b.icon || 'CheckCircle2'}
+                        onChange={e => {
+                          const updated = [...(hero.valueBadges || [])];
+                          if (!updated[idx]) return;
+                          updated[idx] = { ...updated[idx], icon: e.target.value };
+                          setHero({ ...hero, valueBadges: updated });
+                        }}
+                        className="px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
+                      >
+                        <option value="CheckCircle2">CheckCircle</option>
+                        <option value="ShieldCheck">ShieldCheck</option>
+                        <option value="Sparkles">Sparkles</option>
+                      </select>
+                      <input
+                        type="text"
+                        value={b.text}
+                        onChange={e => {
+                          const updated = [...(hero.valueBadges || [])];
+                          if (!updated[idx]) return;
+                          updated[idx] = { ...updated[idx], text: e.target.value };
+                          setHero({ ...hero, valueBadges: updated });
+                        }}
+                        className="flex-1 px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs font-medium"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = (hero.valueBadges || []).filter((_, i) => i !== idx);
+                          setHero({ ...hero, valueBadges: updated });
+                        }}
+                        className="p-1.5 text-rose-500 hover:text-rose-700 cursor-pointer"
+                        title="Delete badge"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="sm:col-span-2 space-y-2 pt-2 border-t border-stone-100">
                 <label className="font-bold text-slate-700 block">Hero Background Image</label>
                 {hero.backgroundImageUrl && (
                   <div className="relative h-44 rounded-xl overflow-hidden border border-stone-200">
@@ -715,7 +846,51 @@ export const AdminContentCms: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Title</label>
+                <label className="font-bold text-slate-700 block mb-1">Section Badge</label>
+                <input
+                  type="text"
+                  value={core.sectionBadge || ''}
+                  placeholder="The Wanderer’s Standard"
+                  onChange={e => setCore({ ...core, sectionBadge: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-xs sm:text-sm focus:outline-none focus:border-[#C9A45C]"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Baseline Banner Badge</label>
+                <input
+                  type="text"
+                  value={core.baselineBadge || ''}
+                  placeholder="All-Inclusive Living Baseline"
+                  onChange={e => setCore({ ...core, baselineBadge: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-xs sm:text-sm focus:outline-none focus:border-[#C9A45C]"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="font-bold text-slate-700 block mb-1">Section Title</label>
+                <input
+                  type="text"
+                  value={core.sectionTitle || ''}
+                  placeholder="Turnkey Living Inclusions & Benefits"
+                  onChange={e => setCore({ ...core, sectionTitle: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#C9A45C]"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="font-bold text-slate-700 block mb-1">Section Subtitle</label>
+                <textarea
+                  rows={2}
+                  value={core.sectionSubtitle || ''}
+                  placeholder="Every long-term stay is designed as a frictionless, fully serviced sanctuary..."
+                  onChange={e => setCore({ ...core, sectionSubtitle: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-xs sm:text-sm leading-relaxed focus:outline-none focus:border-[#C9A45C]"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Baseline Accommodation Title</label>
                 <input
                   type="text"
                   required
@@ -778,6 +953,101 @@ export const AdminContentCms: React.FC = () => {
                   onChange={e => setCore({ ...core, personalAssistant: e.target.value })}
                   className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-xs sm:text-sm focus:outline-none focus:border-[#C9A45C]"
                 />
+              </div>
+
+              {/* Baseline Inclusions Cards Manager (9 Pillars) */}
+              <div className="sm:col-span-2 pt-4 border-t border-stone-100">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h4 className="font-serif font-bold text-base text-[#0F172A]">All-Inclusive Living Baseline Cards (9 Items)</h4>
+                    <p className="text-slate-500 text-[11px] font-light">Custom titles, icons, and descriptions for each standard inclusion.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const current = core.inclusions || [];
+                      const newInc: CoreInclusionCard = {
+                        id: `inc_${Date.now()}`,
+                        title: 'New Inclusion Standard',
+                        description: 'Detailed description of the standard amenity or service included.',
+                        icon: 'Sparkles',
+                        displayOrder: current.length + 1,
+                        isPublished: true,
+                      };
+                      setCore({ ...core, inclusions: [...current, newInc] });
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-slate-700 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-[#C9A45C]" />
+                    <span>Add Item</span>
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {(core.inclusions || []).map((inc, idx) => (
+                    <div key={inc.id || idx} className="p-4 rounded-2xl bg-[#FDFBF7] border border-stone-200 space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 flex-1">
+                          <span className="w-6 h-6 rounded-full bg-[#C9A45C]/20 text-[#0F172A] flex items-center justify-center text-xs font-bold shrink-0">
+                            {idx + 1}
+                          </span>
+                          <input
+                            type="text"
+                            value={inc.title}
+                            placeholder="Inclusion Title"
+                            onChange={e => {
+                              const updated = [...(core.inclusions || [])];
+                              updated[idx] = { ...updated[idx], title: e.target.value };
+                              setCore({ ...core, inclusions: updated });
+                            }}
+                            className="flex-1 px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs font-bold"
+                          />
+                        </div>
+                        <select
+                          value={inc.icon || 'Sparkles'}
+                          onChange={e => {
+                            const updated = [...(core.inclusions || [])];
+                            updated[idx] = { ...updated[idx], icon: e.target.value };
+                            setCore({ ...core, inclusions: updated });
+                          }}
+                          className="px-2 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
+                        >
+                          <option value="Home">Home (Living Space)</option>
+                          <option value="Zap">Zap (Utilities)</option>
+                          <option value="Sparkles">Sparkles (Housekeeping)</option>
+                          <option value="UserCheck">UserCheck (Concierge)</option>
+                          <option value="Wifi">Wifi (High-Speed Internet)</option>
+                          <option value="Compass">Compass (Resort Amenities)</option>
+                          <option value="FileCheck2">FileCheck2 (Visa Support)</option>
+                          <option value="HeartPulse">HeartPulse (Healthcare)</option>
+                          <option value="Landmark">Landmark (Banking)</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = (core.inclusions || []).filter((_, i) => i !== idx);
+                            setCore({ ...core, inclusions: updated });
+                          }}
+                          className="p-1.5 text-rose-500 hover:text-rose-700 cursor-pointer"
+                          title="Remove item"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <textarea
+                        rows={2}
+                        value={inc.description}
+                        placeholder="Inclusion description..."
+                        onChange={e => {
+                          const updated = [...(core.inclusions || [])];
+                          updated[idx] = { ...updated[idx], description: e.target.value };
+                          setCore({ ...core, inclusions: updated });
+                        }}
+                        className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs leading-relaxed"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </form>
@@ -882,6 +1152,26 @@ export const AdminContentCms: React.FC = () => {
                     type="text"
                     value={editingAdditionalService.conditions || ''}
                     onChange={e => setEditingAdditionalService({ ...editingAdditionalService, conditions: e.target.value })}
+                    className="w-full p-2.5 rounded-lg border border-stone-300 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1">Partner Information (Hospital / Provider)</label>
+                  <input
+                    type="text"
+                    placeholder="E.g. Partnered with FV Hospital and Family Medical Practice..."
+                    value={editingAdditionalService.partnerInfo || ''}
+                    onChange={e => setEditingAdditionalService({ ...editingAdditionalService, partnerInfo: e.target.value })}
+                    className="w-full p-2.5 rounded-lg border border-stone-300 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1">Action Button CTA Text</label>
+                  <input
+                    type="text"
+                    placeholder="Inquire for Stay"
+                    value={editingAdditionalService.ctaText || ''}
+                    onChange={e => setEditingAdditionalService({ ...editingAdditionalService, ctaText: e.target.value })}
                     className="w-full p-2.5 rounded-lg border border-stone-300 bg-white"
                   />
                 </div>
@@ -1214,13 +1504,13 @@ export const AdminContentCms: React.FC = () => {
                 <div>
                   <label className="font-semibold block mb-1">Destination Hub City</label>
                   <select
-                    value={editingAcc.city || 'Da Nang'}
-                    onChange={e => setEditingAcc({ ...editingAcc, city: e.target.value as any })}
+                    value={editingAcc.city || (hubs[0]?.name || 'Da Nang')}
+                    onChange={e => setEditingAcc({ ...editingAcc, city: e.target.value })}
                     className="w-full p-2.5 rounded-lg border border-stone-300 bg-white"
                   >
-                    <option value="Da Nang">Da Nang</option>
-                    <option value="Nha Trang">Nha Trang</option>
-                    <option value="Ho Chi Minh City">Ho Chi Minh City</option>
+                    {Array.from(new Set([...hubs.map(h => h.name), 'Da Nang', 'Nha Trang', 'Ho Chi Minh City'])).map(cityName => (
+                      <option key={cityName} value={cityName}>{cityName}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -1357,7 +1647,7 @@ export const AdminContentCms: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-6">
-              {(['Da Nang', 'Nha Trang', 'Ho Chi Minh City'] as const).map(city => {
+              {Array.from(new Set([...hubs.map(h => h.name), ...accommodations.map(a => a.city)])).map(city => {
                 const cityAccs = accommodations.filter(a => a.city === city);
                 if (cityAccs.length === 0) return null;
                 return (
@@ -1402,6 +1692,227 @@ export const AdminContentCms: React.FC = () => {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* =========================================================================
+          TAB 7: DESTINATION HUBS (EXTENSIBLE PROVINCES & CITIES)
+          ========================================================================= */}
+      {!loading && activeTab === 'hubs' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-serif text-xl font-bold text-[#0F172A]">Destination Hubs ({hubs.length})</h3>
+              <p className="text-xs text-slate-500 font-light mt-0.5">
+                Manage destination cities (e.g. Da Nang, Nha Trang, Ho Chi Minh City, Phu Quoc). Changes propagate to homepage, residences, and inquiries.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                setEditingHub({
+                  name: '',
+                  hubName: '',
+                  tagline: '',
+                  description: '',
+                  badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+                  heroImage: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80',
+                  displayOrder: hubs.length + 1,
+                  isPublished: true,
+                })
+              }
+              className="px-4 py-2 rounded-xl bg-[#0F172A] hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-sm"
+            >
+              <Plus className="w-4 h-4 text-[#C9A45C]" />
+              <span>Add Destination Hub</span>
+            </button>
+          </div>
+
+          {editingHub && (
+            <form onSubmit={handleSaveHub} className="p-6 rounded-3xl bg-[#FDFBF7] border-2 border-[#C9A45C]/50 space-y-4 text-xs">
+              <h4 className="font-serif text-lg font-bold text-[#0F172A]">
+                {editingHub.id ? 'Edit Destination Hub' : 'Create Destination Hub'}
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="font-semibold block mb-1">City / Destination Name (e.g. Da Nang, Phu Quoc)</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingHub.name || ''}
+                    placeholder="E.g. Da Nang"
+                    onChange={e => setEditingHub({ ...editingHub, name: e.target.value })}
+                    className="w-full p-2.5 rounded-lg border border-stone-300 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1">Hub Showcase Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingHub.hubName || ''}
+                    placeholder="E.g. Da Nang Coastal Beaches & Nature Hub"
+                    onChange={e => setEditingHub({ ...editingHub, hubName: e.target.value })}
+                    className="w-full p-2.5 rounded-lg border border-stone-300 bg-white"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="font-semibold block mb-1">Tagline</label>
+                  <input
+                    type="text"
+                    value={editingHub.tagline || ''}
+                    placeholder="E.g. My Khe shoreline, Son Tra peninsula & heritage sanctuaries"
+                    onChange={e => setEditingHub({ ...editingHub, tagline: e.target.value })}
+                    className="w-full p-2.5 rounded-lg border border-stone-300 bg-white"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="font-semibold block mb-1">Overview Description</label>
+                  <textarea
+                    rows={3}
+                    value={editingHub.description || ''}
+                    placeholder="Comprehensive description of living lifestyle in this coastal hub..."
+                    onChange={e => setEditingHub({ ...editingHub, description: e.target.value })}
+                    className="w-full p-2.5 rounded-lg border border-stone-300 bg-white"
+                  />
+                </div>
+                <div className="sm:col-span-2 space-y-2">
+                  <label className="font-semibold block text-slate-700">Hub Showcase Cover Image</label>
+                  {editingHub.heroImage && (
+                    <div className="relative rounded-xl overflow-hidden h-40 bg-slate-900 border border-stone-200">
+                      <img src={editingHub.heroImage} alt="Hub" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div>
+                      <label className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-[#C9A45C] bg-white hover:bg-stone-50 font-semibold cursor-pointer">
+                        <Upload className="w-4 h-4 text-[#C9A45C]" />
+                        <span>Upload Hub Image...</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = evt => {
+                                setEditingHub({ ...editingHub, heroImage: evt.target?.result as string });
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Or direct image URL..."
+                        value={editingHub.heroImage?.startsWith('data:') ? '' : editingHub.heroImage || ''}
+                        onChange={e => setEditingHub({ ...editingHub, heroImage: e.target.value })}
+                        className="w-full p-2.5 rounded-lg border border-stone-300 bg-white text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1">Display Order</label>
+                  <input
+                    type="number"
+                    value={editingHub.displayOrder || 1}
+                    onChange={e => setEditingHub({ ...editingHub, displayOrder: parseInt(e.target.value, 10) })}
+                    className="w-full p-2.5 rounded-lg border border-stone-300 bg-white"
+                  />
+                </div>
+                <div className="flex items-center gap-2 pt-6">
+                  <input
+                    type="checkbox"
+                    id="hubPublished"
+                    checked={editingHub.isPublished !== false}
+                    onChange={e => setEditingHub({ ...editingHub, isPublished: e.target.checked })}
+                    className="w-4 h-4 text-[#0F172A] rounded border-stone-300"
+                  />
+                  <label htmlFor="hubPublished" className="font-semibold cursor-pointer text-slate-700">
+                    Publish this hub on public website and inquiry forms
+                  </label>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingHub(null)}
+                  className="px-4 py-2 rounded-lg border border-stone-300 text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="px-5 py-2 rounded-lg bg-[#0F172A] text-white text-xs font-semibold"
+                >
+                  Save Hub
+                </button>
+              </div>
+            </form>
+          )}
+
+          {hubs.length === 0 ? (
+            <div className="p-8 text-center bg-white rounded-3xl border border-stone-200 text-slate-500 text-xs">
+              No destination hubs registered. Click "Add Destination Hub" to create one.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {hubs.map(hub => {
+                const linkedCount = accommodations.filter(
+                  a => a.city.toLowerCase() === hub.name.toLowerCase()
+                ).length;
+                return (
+                  <div key={hub.id} className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm flex flex-col justify-between">
+                    <div className="relative h-40 bg-stone-100">
+                      {hub.heroImage && (
+                        <img src={hub.heroImage} alt={hub.name} className="w-full h-full object-cover" />
+                      )}
+                      <div className="absolute top-2.5 right-2.5 bg-[#0F172A]/85 backdrop-blur-xs text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
+                        {linkedCount} {linkedCount === 1 ? 'Residence' : 'Residences'}
+                      </div>
+                    </div>
+                    <div className="p-4 flex-1">
+                      <div className="text-[10px] font-bold text-[#A77A32] uppercase tracking-wider">{hub.name}</div>
+                      <h4 className="font-serif font-bold text-sm text-[#0F172A] mt-0.5">{hub.hubName}</h4>
+                      <div className="text-xs text-slate-500 mt-1 line-clamp-2">{hub.tagline || hub.description}</div>
+                    </div>
+                    <div className="p-3 border-t border-stone-100 flex items-center justify-between text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setEditingHub(hub)}
+                        className="font-bold text-blue-700 hover:underline cursor-pointer"
+                      >
+                        Edit
+                      </button>
+                      {linkedCount > 0 ? (
+                        <span
+                          className="text-[11px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded cursor-not-allowed"
+                          title={`Cannot delete: ${linkedCount} residence(s) linked to this city.`}
+                        >
+                          Linked ({linkedCount})
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTarget({ type: 'hub', id: hub.id, title: hub.name })}
+                          className="font-bold text-rose-600 hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 );

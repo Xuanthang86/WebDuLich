@@ -12,29 +12,24 @@ router.get('/content', (_req: Request, res: Response): void => {
   res.json({
     success: true,
     data: {
-      settings: {
-        brandName: state.siteSettings.brandName,
-        slogan: state.siteSettings.slogan,
-        defaultSeoTitle: state.siteSettings.defaultSeoTitle,
-        defaultSeoDescription: state.siteSettings.defaultSeoDescription,
-        contactEmail: state.siteSettings.contactEmail,
-        contactPhone: state.siteSettings.contactPhone,
-        address: state.siteSettings.address,
-        socialLinks: state.siteSettings.socialLinks,
-        footerNote: state.siteSettings.footerNote,
-        copyright: state.siteSettings.copyright,
-        budgetComparisonMessage: state.siteSettings.budgetComparisonMessage,
-      },
+      settings: state.siteSettings,
       hero: state.heroContent,
       whyVietnam: state.whyVietnam,
       whyChooseUs: state.whyChooseUs,
-      coreService: state.coreService,
+      coreService: {
+        ...state.coreService,
+        inclusions: db.getCoreInclusions().filter(i => i.isPublished),
+      },
       additionalServices: state.additionalServices
         .filter(s => s.isPublished)
         .sort((a, b) => a.displayOrder - b.displayOrder),
       packages: state.packages
         .filter(p => p.isPublished)
         .sort((a, b) => a.displayOrder - b.displayOrder),
+      destinationHubs: db
+        .getDestinationHubs()
+        .filter(h => h.isPublished)
+        .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)),
       accommodations: state.accommodations
         .filter(a => a.isPublished)
         .sort((a, b) => a.displayOrder - b.displayOrder),

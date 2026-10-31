@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { Check, Clock, Calendar, ArrowRight, Star } from 'lucide-react';
-import { PackageItem } from '../types';
+import { PackageItem, PackagesHeader } from '../types';
 
 interface PackagesSectionProps {
   packages: PackageItem[];
+  header?: PackagesHeader;
   onSelectPackage: (packageTitle: string) => void;
 }
 
 export const PackagesSection: React.FC<PackagesSectionProps> = ({
   packages,
+  header,
   onSelectPackage,
 }) => {
   const [selectedFilter, setSelectedFilter] = useState<'ALL' | 'SHORT' | 'SEASONAL' | 'LONG'>('ALL');
@@ -26,14 +28,14 @@ export const PackagesSection: React.FC<PackagesSectionProps> = ({
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
           <div className="text-xs sm:text-sm font-semibold tracking-widest text-[#A77A32] uppercase mb-2">
-            Tailored Journeys
+            {header?.badge || 'Tailored Journeys'}
           </div>
           <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#0F172A] mb-4">
-            Curated Living & Retirement Packages
+            {header?.title || 'Curated Living & Retirement Packages'}
           </h2>
           <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed">
-            From two-week private exploratory inspections to annual full-residency communities,
-            experience total peace of mind in Vietnam.
+            {header?.subtitle ||
+              'From two-week private exploratory inspections to annual full-residency communities, experience total peace of mind in Vietnam.'}
           </p>
 
           {/* Filter Pills */}

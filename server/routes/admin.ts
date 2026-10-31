@@ -138,6 +138,38 @@ router.put('/core-service', requireRole(['ADMIN', 'MANAGER']), (req: Request, re
   res.json({ success: true, data: current });
 });
 
+// Core Service Inclusions (9 Baseline Cards)
+router.get('/core-service/inclusions', requireRole(['ADMIN', 'MANAGER']), (_req: Request, res: Response): void => {
+  res.json({ success: true, data: db.getCoreInclusions() });
+});
+
+router.post('/core-service/inclusions', requireRole(['ADMIN', 'MANAGER']), (req: Request, res: Response): void => {
+  const inc = db.saveCoreInclusion(req.body);
+  db.addAuditLog({
+    userId: req.user!.id,
+    userEmail: req.user!.email,
+    action: 'CORE_INCLUSION_SAVED',
+    entityType: 'SERVICE_INCLUSION',
+    entityId: inc.id,
+    details: `Saved core inclusion: ${inc.title}`,
+  });
+  res.json({ success: true, data: inc });
+});
+
+router.delete('/core-service/inclusions/:id', requireRole(['ADMIN', 'MANAGER']), (req: Request, res: Response): void => {
+  const { id } = req.params;
+  db.deleteCoreInclusion(id);
+  db.addAuditLog({
+    userId: req.user!.id,
+    userEmail: req.user!.email,
+    action: 'CORE_INCLUSION_DELETED',
+    entityType: 'SERVICE_INCLUSION',
+    entityId: id,
+    details: `Deleted core inclusion ID: ${id}`,
+  });
+  res.json({ success: true, message: 'Core inclusion deleted.' });
+});
+
 // Additional Services
 router.get('/additional-services', requireRole(['ADMIN', 'MANAGER']), (_req: Request, res: Response): void => {
   res.json({ success: true, data: db.getState().additionalServices });
@@ -379,6 +411,97 @@ router.delete('/packages/:id', requireRole(['ADMIN', 'MANAGER']), (req: Request,
   db.getState().packages = db.getState().packages.filter(p => p.id !== id);
   db.save();
   res.json({ success: true, message: 'Package deleted.' });
+});
+
+// ==========================================
+// 4b. DESTINATION HUBS (PROVINCES / CITIES)
+// ==========================================
+router.get('/hubs', requireRole(['ADMIN', 'MANAGER']), (_req: Request, res: Response): void => {
+  res.json({ success: true, data: db.getDestinationHubs() });
+});
+
+router.post('/hubs', requireRole(['ADMIN', 'MANAGER']), (req: Request, res: Response): void => {
+  const { name, hubName, tagline, description, badgeClass, heroImage, displayOrder, isPublished } = req.body;
+  if (!name || !name.trim()) {
+    res.status(400).json({ success: false, error: { message: 'City / Province name is required.' } });
+    return;
+  }
+  const existing = db.getDestinationHubs().find(h => h.name.toLowerCase() === name.trim().toLowerCase());
+  if (existing) {
+    res.status(400).json({ success: false, error: { message: `Destination Hub for "${name}" already exists.` } });
+    return;
+  }
+  const created = db.createDestinationHub({
+    name: name.trim(),
+    hubName: hubName?.trim() || `${name.trim()} Sanctuary Hub`,
+    tagline: tagline?.trim() || `Extended-stay and retirement residences in ${name.trim()}`,
+    description: description?.trim() || `Premier retirement community in ${name.trim()}.`,
+    badgeClass: badgeClass || 'bg-emerald-100 text-emerald-800 border-emerald-300',
+    heroImage: heroImage || 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80',
+    displayOrder: displayOrder || db.getDestinationHubs().length + 1,
+    isPublished: isPublished !== undefined ? isPublished : true,
+  });
+
+  db.addAuditLog({
+    userId: req.user!.id,
+    userEmail: req.user!.email,
+    action: 'DESTINATION_HUB_CREATED',
+    entityType: 'DESTINATION_HUB',
+    entityId: created.id,
+    details: `Created new Destination Hub for: ${created.name}`,
+  });
+
+  res.json({ success: true, data: created });
+});
+
+router.put('/hubs/:id', requireRole(['ADMIN', 'MANAGER']), (req: Request, res: Response): void => {
+  const { id } = req.params;
+  const updated = db.updateDestinationHub(id, req.body);
+  if (!updated) {
+    res.status(404).json({ success: false, error: { message: 'Destination Hub not found.' } });
+    return;
+  }
+
+  db.addAuditLog({
+    userId: req.user!.id,
+    userEmail: req.user!.email,
+    action: 'DESTINATION_HUB_UPDATED',
+    entityType: 'DESTINATION_HUB',
+    entityId: id,
+    details: `Updated Destination Hub: ${updated.name}`,
+  });
+
+  res.json({ success: true, data: updated });
+});
+
+router.delete('/hubs/:id', requireRole(['ADMIN', 'MANAGER']), (req: Request, res: Response): void => {
+  const { id } = req.params;
+  const result = db.deleteDestinationHub(id);
+  if (!result.success) {
+    if (result.reason === 'LINKED_ACCOMMODATIONS') {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'LINKED_ACCOMMODATIONS_EXIST',
+          message: `Cannot delete Destination Hub: ${result.count} residence(s) (${result.accommodations?.join(', ')}) are located in this city. Please reassign or delete these accommodations first to prevent orphaned records.`,
+        },
+      });
+      return;
+    }
+    res.status(404).json({ success: false, error: { message: 'Destination Hub not found.' } });
+    return;
+  }
+
+  db.addAuditLog({
+    userId: req.user!.id,
+    userEmail: req.user!.email,
+    action: 'DESTINATION_HUB_DELETED',
+    entityType: 'DESTINATION_HUB',
+    entityId: id,
+    details: `Deleted Destination Hub ID: ${id}`,
+  });
+
+  res.json({ success: true, message: 'Destination Hub deleted.' });
 });
 
 // ==========================================
