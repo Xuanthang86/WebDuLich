@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Shield, CheckCircle, Ban, RefreshCw, KeyRound, Eye, EyeOff, Copy, Check, X } from 'lucide-react';
+import { UserPlus, Shield, CheckCircle, Ban, RefreshCw, KeyRound, Eye, EyeOff, Copy, Check, X, Trash2 } from 'lucide-react';
 import { User, UserRole } from '../../types';
-import { fetchAdminUsers, createAdminUser, toggleAdminUserStatus, resetAdminUserPassword } from '../../api';
+import { fetchAdminUsers, createAdminUser, toggleAdminUserStatus, resetAdminUserPassword, deleteAdminUser } from '../../api';
 
 export const AdminUsers: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -70,6 +70,18 @@ export const AdminUsers: React.FC = () => {
       loadUsers();
     } catch (err: any) {
       triggerToast(err.message || 'Cannot modify account status.');
+    }
+  };
+
+  const handleDeleteUser = async (user: User) => {
+    const confirmed = window.confirm(`Permanently delete the staff account for ${user.fullName} (${user.email})? This action cannot be undone.`);
+    if (!confirmed) return;
+    try {
+      await deleteAdminUser(user.id);
+      triggerToast(`Staff account deleted: ${user.email}.`);
+      loadUsers();
+    } catch (err: any) {
+      triggerToast(err.message || 'Unable to delete this staff account.');
     }
   };
 
@@ -300,6 +312,15 @@ export const AdminUsers: React.FC = () => {
                       >
                         {u.isActive !== false ? 'Deactivate' : 'Reactivate'}
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteUser(u)}
+                        className="px-2.5 py-1.5 rounded-lg border border-rose-200 hover:bg-rose-50 text-rose-700 text-xs font-semibold cursor-pointer inline-flex items-center gap-1"
+                        title="Permanently delete staff account"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Delete
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -367,6 +388,15 @@ export const AdminUsers: React.FC = () => {
                     }`}
                   >
                     {u.isActive !== false ? 'Deactivate' : 'Reactivate'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteUser(u)}
+                    className="px-2.5 py-1 rounded-lg border border-rose-200 hover:bg-rose-50 text-rose-700 text-[11px] font-semibold cursor-pointer inline-flex items-center gap-1"
+                    title="Permanently delete staff account"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    Delete
                   </button>
                 </div>
               </div>
