@@ -138,36 +138,56 @@ export const AdminLeads: React.FC = () => {
           </button>
         </form>
 
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-stone-100 text-xs">
-          <span className="text-slate-400 font-medium">Status:</span>
-          {['ALL', 'NEW', 'CONTACTED', 'QUALIFIED', 'CONVERTED', 'CLOSED'].map(st => (
-            <button
-              key={st}
-              onClick={() => setStatusFilter(st)}
-              className={`px-3 py-1 rounded-full font-medium transition-all cursor-pointer ${
-                statusFilter === st
-                  ? 'bg-[#0F172A] text-white shadow-sm'
-                  : 'bg-stone-100 text-slate-600 hover:bg-stone-200'
-              }`}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-stone-100 text-xs">
+          {/* Status Dropdown */}
+          <div className="flex items-center gap-2">
+            <label htmlFor="status-filter-select" className="text-slate-500 font-semibold shrink-0">Status:</label>
+            <select
+              id="status-filter-select"
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-stone-50 hover:bg-white text-slate-800 font-medium focus:outline-none focus:border-[#C9A45C] focus:bg-white transition-all cursor-pointer shadow-2xs"
             >
-              {st}
-            </button>
-          ))}
+              <option value="ALL">All Statuses (Pipeline)</option>
+              <option value="NEW">NEW - Intake uncontacted</option>
+              <option value="CONTACTED">CONTACTED - Dialogue in progress</option>
+              <option value="QUALIFIED">QUALIFIED - Match confirmed</option>
+              <option value="CONVERTED">CONVERTED - Deposit / Lease confirmed</option>
+              <option value="CLOSED">CLOSED - Archived / Lost</option>
+            </select>
+          </div>
 
-          <span className="text-slate-400 font-medium ml-4">Hub:</span>
-          {['ALL', 'Da Nang', 'Nha Trang', 'Ho Chi Minh City'].map(hub => (
-            <button
-              key={hub}
-              onClick={() => setCityFilter(hub)}
-              className={`px-3 py-1 rounded-full font-medium transition-all cursor-pointer ${
-                cityFilter === hub
-                  ? 'bg-[#A77A32] text-white shadow-sm'
-                  : 'bg-stone-100 text-slate-600 hover:bg-stone-200'
-              }`}
+          {/* Hub Dropdown */}
+          <div className="flex items-center gap-2">
+            <label htmlFor="hub-filter-select" className="text-slate-500 font-semibold shrink-0">Hub:</label>
+            <select
+              id="hub-filter-select"
+              value={cityFilter}
+              onChange={e => setCityFilter(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-stone-50 hover:bg-white text-slate-800 font-medium focus:outline-none focus:border-[#C9A45C] focus:bg-white transition-all cursor-pointer shadow-2xs"
             >
-              {hub}
-            </button>
-          ))}
+              <option value="ALL">All Destination Hubs</option>
+              <option value="Da Nang">Da Nang Coastal Hub</option>
+              <option value="Nha Trang">Nha Trang Bay</option>
+              <option value="Ho Chi Minh City">Ho Chi Minh City</option>
+            </select>
+          </div>
+
+          {/* Priority Dropdown */}
+          <div className="flex items-center gap-2">
+            <label htmlFor="priority-filter-select" className="text-slate-500 font-semibold shrink-0">Priority:</label>
+            <select
+              id="priority-filter-select"
+              value={priorityFilter}
+              onChange={e => setPriorityFilter(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-stone-50 hover:bg-white text-slate-800 font-medium focus:outline-none focus:border-[#C9A45C] focus:bg-white transition-all cursor-pointer shadow-2xs"
+            >
+              <option value="ALL">All Priorities</option>
+              <option value="HIGH">High Priority</option>
+              <option value="MEDIUM">Medium Priority</option>
+              <option value="LOW">Low Priority</option>
+            </select>
+          </div>
         </div>
       </div>
 

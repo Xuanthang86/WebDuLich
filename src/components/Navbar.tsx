@@ -80,10 +80,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={onOpenAdmin}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-slate-200 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 border-2 border-slate-600 hover:border-[#C9A45C] transition-all cursor-pointer shadow-sm"
-              title="Access Management Portal"
+              title={user ? "Access Admin Dashboard" : "Access Management Portal"}
             >
               <Shield className="w-4 h-4 text-[#C9A45C]" />
-              <span>{user ? `Login (${user.role})` : 'Login'}</span>
+              <span>{user ? 'Access Admin Dashboard' : 'Admin Login'}</span>
             </button>
           </div>
 
@@ -134,7 +134,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="w-full py-3 rounded-xl border-2 border-slate-600 hover:border-[#C9A45C] bg-slate-800 text-white text-base font-semibold flex items-center justify-center gap-2 hover:bg-slate-750 transition-colors shadow-sm"
             >
               <Shield className="w-4 h-4 text-[#C9A45C]" />
-              <span>{user ? `Login (${user.role})` : 'Login'}</span>
+              <span>{user ? 'Access Admin Dashboard' : 'Admin Login'}</span>
             </button>
           </div>
 

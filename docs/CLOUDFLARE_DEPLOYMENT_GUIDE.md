@@ -45,10 +45,10 @@
 
 ```bash
 # Khởi tạo cho cơ sở dữ liệu Cloudflare D1 (Production):
-npx tsx scripts/bootstrap_admin.ts --remote --email="bienxuanthang01.qb@gmail.com" --name="Xuan Thang" --password="<MậtKhẩuRiêngCủaBạn>"
+npx tsx scripts/bootstrap_admin.ts --remote --email="admin@wanderersjourneys.com" --name="Xuan Thang" --password="<MậtKhẩuRiêngCủaBạn>"
 
 # Hoặc khởi tạo cho môi trường Dev cục bộ:
-npx tsx scripts/bootstrap_admin.ts --email="bienxuanthang01.qb@gmail.com" --name="Xuan Thang" --password="<MậtKhẩuRiêngCủaBạn>"
+npx tsx scripts/bootstrap_admin.ts --email="admin@wanderersjourneys.com" --name="Xuan Thang" --password="<MậtKhẩuRiêngCủaBạn>"
 ```
 
 ### 3.2 Thu hồi khẩn cấp toàn bộ phiên đăng nhập (Emergency Session Revocation)
@@ -129,7 +129,7 @@ npx wrangler d1 execute wanderers-journeys-d1 --file=./database/d1_schema.sql --
 npx wrangler d1 execute wanderers-journeys-d1 --file=./database/d1_seed.sql --remote
 
 # 3. Tạo tài khoản Super Administrator của bạn:
-npx tsx scripts/bootstrap_admin.ts --remote --email="bienxuanthang01.qb@gmail.com" --name="Xuan Thang" --password="<MậtKhẩuBảoMậtCủaBạn>"
+npx tsx scripts/bootstrap_admin.ts --remote --email="admin@wanderersjourneys.com" --name="Xuan Thang" --password="<MậtKhẩuBảoMậtCủaBạn>"
 ```
 
 ### Bước 4: Thiết lập Secrets (Bảo mật tuyệt đối, không lưu trong code)

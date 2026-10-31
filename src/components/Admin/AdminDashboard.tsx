@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Users,
   UserCheck,
@@ -8,6 +8,9 @@ import {
   Package,
   Clock,
   ArrowUpRight,
+  RefreshCw,
+  AlertCircle,
+  Inbox,
 } from 'lucide-react';
 import { fetchAdminAnalytics } from '../../api';
 
@@ -18,30 +21,160 @@ interface AdminDashboardProps {
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToLeads }) => {
   const [analytics, setAnalytics] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadAnalytics = useCallback(() => {
+    setLoading(true);
+    setError(null);
     fetchAdminAnalytics()
-      .then(res => setAnalytics(res))
-      .catch(err => console.error('Error loading analytics:', err))
+      .then(res => {
+        if (!res) {
+          throw new Error('Analytics response was empty or malformed.');
+        }
+        setAnalytics(res);
+        setError(null);
+      })
+      .catch(err => {
+        console.error('Error loading analytics:', err);
+        setError(err.message || 'Unable to retrieve executive analytics from the database.');
+      })
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading || !analytics) {
-    return <div className="p-12 text-center text-slate-500">Loading business analytics...</div>;
+  useEffect(() => {
+    loadAnalytics();
+  }, [loadAnalytics]);
+
+  // 1. Loading State
+  if (loading && !analytics) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between pb-4 border-b border-stone-200">
+          <div>
+            <h2 className="font-serif text-2xl font-bold text-[#0F172A]">
+              Hospitality Executive Dashboard
+            </h2>
+            <p className="text-xs text-slate-500 font-light mt-0.5">
+              Loading real-time performance indicators and database metrics...
+            </p>
+          </div>
+        </div>
+
+        <div className="p-12 text-center bg-white rounded-3xl border border-stone-200 shadow-sm flex flex-col items-center justify-center space-y-3">
+          <div className="w-10 h-10 rounded-full border-4 border-[#C9A45C]/30 border-t-[#C9A45C] animate-spin" />
+          <p className="text-sm font-medium text-slate-700">Loading business analytics from database...</p>
+          <span className="text-xs text-slate-400 font-light">Aggregating inquiry metrics and conversion rates</span>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Error State (With Retry capability)
+  if (error && !analytics) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between pb-4 border-b border-stone-200">
+          <div>
+            <h2 className="font-serif text-2xl font-bold text-[#0F172A]">
+              Hospitality Executive Dashboard
+            </h2>
+            <p className="text-xs text-slate-500 font-light mt-0.5">
+              Intake performance, package popularity, and conversion metrics.
+            </p>
+          </div>
+        </div>
+
+        <div className="p-8 sm:p-12 text-center bg-white rounded-3xl border border-rose-200 shadow-sm flex flex-col items-center justify-center space-y-4">
+          <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center">
+            <AlertCircle className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-serif text-lg font-bold text-slate-900">Unable to Load Business Analytics</h3>
+            <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto mt-1">{error}</p>
+          </div>
+          <button
+            type="button"
+            onClick={loadAnalytics}
+            className="px-5 py-2.5 rounded-xl bg-[#0F172A] hover:bg-[#C9A45C] hover:text-[#0F172A] text-white text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-sm transition-all"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>Retry Loading Analytics</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. Empty State (When no leads exist)
+  if (analytics && analytics.metrics && analytics.metrics.totalLeads === 0) {
+    return (
+      <div className="space-y-8">
+        <div className="flex items-center justify-between pb-2 border-b border-stone-200">
+          <div>
+            <h2 className="font-serif text-2xl font-bold text-[#0F172A]">
+              Hospitality Executive Dashboard
+            </h2>
+            <p className="text-xs text-slate-500 font-light mt-0.5">
+              Real-time intake performance, package popularity, and conversion metrics calculated from database state.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={loadAnalytics}
+            className="p-2 rounded-xl border border-stone-300 hover:bg-stone-100 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Refresh Analytics"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+        </div>
+
+        <div className="p-12 text-center bg-white rounded-3xl border border-stone-200 shadow-sm flex flex-col items-center justify-center space-y-4">
+          <div className="w-14 h-14 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center">
+            <Inbox className="w-7 h-7" />
+          </div>
+          <div>
+            <h3 className="font-serif text-lg font-bold text-[#0F172A]">No Inquiries in Pipeline Yet</h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
+              New client proposals submitted through the website questionnaire will appear here with instant analytics.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onNavigateToLeads}
+            className="px-5 py-2.5 rounded-xl bg-[#0F172A] hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-2 cursor-pointer"
+          >
+            <span>Go to Leads Management</span>
+            <ArrowUpRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const { metrics, packageDistribution, cityDistribution, recentLeads } = analytics;
 
   return (
     <div className="space-y-8">
-      {/* Title */}
-      <div>
-        <h2 className="font-serif text-2xl font-bold text-[#0F172A]">
-          Hospitality Executive Dashboard
-        </h2>
-        <p className="text-xs text-slate-500 font-light mt-0.5">
-          Real-time intake performance, package popularity, and conversion metrics calculated from database state.
-        </p>
+      {/* Title with Refresh Button */}
+      <div className="flex items-center justify-between pb-2 border-b border-stone-200">
+        <div>
+          <h2 className="font-serif text-2xl font-bold text-[#0F172A]">
+            Hospitality Executive Dashboard
+          </h2>
+          <p className="text-xs text-slate-500 font-light mt-0.5">
+            Real-time intake performance, package popularity, and conversion metrics calculated from database state.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={loadAnalytics}
+          className="p-2.5 rounded-xl border border-stone-300 hover:bg-stone-100 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+          title="Refresh metrics from database"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <span className="hidden sm:inline">Refresh Data</span>
+        </button>
       </div>
 
       {/* KPI Metric Cards */}

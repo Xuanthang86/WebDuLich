@@ -375,7 +375,7 @@ export const AdminUsers: React.FC = () => {
         </div>
       </div>
 
-      {/* Cập nhật mật khẩu Modal */}
+      {/* Reset Password Modal */}
       {resettingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-stone-200 space-y-4">

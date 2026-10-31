@@ -53,7 +53,7 @@ export const AccommodationsSection: React.FC<AccommodationsSectionProps> = ({
   // Destination Hub metadata dictionary with graceful automatic fallbacks for new cities
   const cityMetadata: Record<string, { hubName: string; tagline: string; description: string; badgeClass: string; heroFallback: string }> = {
     'Da Nang': {
-      hubName: 'Đà Nẵng Coastal Beaches & Nature Hub',
+      hubName: 'Da Nang Coastal Beaches & Nature Hub',
       tagline: 'My Khe shoreline, Son Tra peninsula & heritage sanctuaries',
       description: 'Central Vietnam’s crown jewel offering turquoise coastlines, temperate sea breezes, world-class golf links, and peaceful seaside living.',
       badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300',
@@ -143,7 +143,7 @@ export const AccommodationsSection: React.FC<AccommodationsSectionProps> = ({
             Curated Westerner Retirement Residences
           </h2>
           <p className="text-sm sm:text-base md:text-lg text-slate-600 font-normal leading-relaxed">
-            Khám phá các Điểm Đến lưu trú dài hạn hàng đầu tại Việt Nam. Mỗi tỉnh/thành phố tập trung các khu căn hộ cao cấp theo từng vị trí (Position 1 Flagship, Position 2, Position 3...) với đầy đủ dịch vụ chăm sóc và tiện ích resort.
+            Discover premier extended-stay and retirement destinations across Vietnam. Each destination hub features handpicked residences categorized by tier and location, complete with concierge care and resort amenities.
           </p>
 
           {/* View Mode & City Selector Tabs */}

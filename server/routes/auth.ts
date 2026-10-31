@@ -203,10 +203,18 @@ router.post('/change-password', authenticate, (req: Request, res: Response): voi
     return;
   }
 
-  if (!/[A-Za-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+  if (
+    !/[A-Z]/.test(newPassword) ||
+    !/[a-z]/.test(newPassword) ||
+    !/[0-9]/.test(newPassword) ||
+    !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(newPassword)
+  ) {
     res.status(400).json({
       success: false,
-      error: { code: 'WEAK_PASSWORD', message: 'New password must contain at least one letter and one number.' },
+      error: {
+        code: 'WEAK_PASSWORD',
+        message: 'New password must be strong (at least 8 characters with uppercase, lowercase, number, and special character).',
+      },
     });
     return;
   }

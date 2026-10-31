@@ -29,9 +29,9 @@
       "fullName": "Alexander Vance",
       "role": "ADMIN",
       "isActive": true,
-      "lastLoginAt": "2026-10-30T17:51:27.501Z",
+      "lastLoginAt": "2026-10-31T06:28:04.023Z",
       "createdAt": "2026-01-01T00:00:00Z",
-      "updatedAt": "2026-10-30T17:51:27.501Z"
+      "updatedAt": "2026-10-31T06:28:04.023Z"
     },
     {
       "id": "usr_mgr_01",
@@ -56,7 +56,17 @@
       "updatedAt": "2026-10-30T17:51:27.709Z"
     }
   ],
-  "sessions": [],
+  "sessions": [
+    {
+      "id": "ses_1793428084022_5b4c615a",
+      "token": "046cd72b9320c4b2c8fa78b02d694dffc58d177ac1e4300ab3fea7565024183e",
+      "userId": "usr_admin_01",
+      "expiresAt": "2026-11-01T06:28:04.021Z",
+      "userAgent": "curl/7.88.1",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-31T06:28:04.022Z"
+    }
+  ],
   "passwordResetTokens": [],
   "siteSettings": {
     "id": "settings_default",
@@ -1353,6 +1363,16 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "aud_1793428084024_db9zw",
+      "userId": "usr_admin_01",
+      "userEmail": "admin@wanderersjourneys.com",
+      "action": "LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "details": "User logged in successfully with role ADMIN.",
+      "ipAddress": "127.0.0.1",
+      "createdAt": "2026-10-31T06:28:04.024Z"
+    },
     {
       "id": "aud_1793417169371_aeg8g",
       "userId": "SYSTEM",

@@ -106,7 +106,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!emailInput.trim() || !passwordInput) {
-      setLoginError('Vui lòng nhập đầy đủ email và mật khẩu.');
+      setLoginError('Please enter both email and password.');
       return;
     }
     setLoginError(null);
@@ -114,7 +114,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     try {
       await login(emailInput.trim(), passwordInput);
     } catch (err: any) {
-      setLoginError(err.message || 'Email hoặc mật khẩu không chính xác.');
+      setLoginError(err.message || 'Invalid email or password.');
     } finally {
       setIsSubmittingLogin(false);
     }
@@ -133,7 +133,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profileFullName.trim()) {
-      setProfileMsg({ type: 'error', text: 'Họ và tên không được để trống.' });
+      setProfileMsg({ type: 'error', text: 'Full name cannot be blank.' });
       return;
     }
     setIsUpdatingProfile(true);
@@ -141,10 +141,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     try {
       const updated = await updateUserProfile(profileFullName.trim());
       updateUserInContext({ fullName: updated.fullName });
-      setProfileMsg({ type: 'success', text: 'Thông tin tài khoản đã được cập nhật thành công.' });
+      setProfileMsg({ type: 'success', text: 'Account profile updated successfully.' });
       setTimeout(() => setProfileMsg(null), 3000);
     } catch (err: any) {
-      setProfileMsg({ type: 'error', text: err.message || 'Cập nhật thông tin thất bại.' });
+      setProfileMsg({ type: 'error', text: err.message || 'Failed to update profile.' });
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -155,30 +155,44 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     setPassMsg(null);
     setPassError(null);
     if (!currPass || !newPass || !confirmPass) {
-      setPassError('Vui lòng điền đầy đủ cả 3 ô mật khẩu.');
+      setPassError('Please fill in all three password fields.');
       return;
     }
     if (newPass.length < 8) {
-      setPassError('Mật khẩu mới phải có tối thiểu 8 ký tự.');
+      setPassError('New password must be at least 8 characters long.');
+      return;
+    }
+    if (
+      !/[A-Z]/.test(newPass) ||
+      !/[a-z]/.test(newPass) ||
+      !/[0-9]/.test(newPass) ||
+      !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(newPass)
+    ) {
+      setPassError('New password must include uppercase, lowercase, numbers, and special symbols.');
+      return;
+    }
+    if (currPass === newPass) {
+      setPassError('New password must be different from current password.');
       return;
     }
     if (newPass !== confirmPass) {
-      setPassError('Xác nhận mật khẩu mới không khớp. Vui lòng kiểm tra lại.');
+      setPassError('New password confirmation does not match. Please verify.');
       return;
     }
     setIsChangingPass(true);
     try {
       await changePassword(currPass, newPass);
-      setPassMsg('Đã đổi mật khẩu thành công. Các phiên đăng nhập trên thiết bị khác đã được thu hồi.');
+      setPassMsg('Password changed successfully! All prior sessions have been revoked. Logging out for re-authentication...');
       setCurrPass('');
       setNewPass('');
       setConfirmPass('');
-      setTimeout(() => {
+      setTimeout(async () => {
         setIsPasswordAccordionOpen(false);
-        setPassMsg(null);
-      }, 2500);
+        setShowProfileModal(false);
+        await handleLogout();
+      }, 1800);
     } catch (err: any) {
-      setPassError(err.message || 'Không thể đổi mật khẩu. Vui lòng kiểm tra lại mật khẩu hiện tại.');
+      setPassError(err.message || 'Unable to update password. Please verify your current password.');
     } finally {
       setIsChangingPass(false);
     }
@@ -200,11 +214,12 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     try {
       const token = getAuthToken();
       const res = await fetch('/api/admin/system/backup', {
+        credentials: 'include',
         headers: {
           Authorization: `Bearer ${token || ''}`,
         },
       });
-      if (!res.ok) throw new Error('Không thể tải bản sao lưu. Vui lòng kiểm tra quyền quản trị.');
+      if (!res.ok) throw new Error('Unable to download backup. Please check administrator privileges.');
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -215,7 +230,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (err: any) {
-      alert(err.message || 'Lỗi tải bản sao lưu');
+      alert(err.message || 'Backup download error');
     }
   };
 
@@ -292,7 +307,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 className="flex items-center gap-1.5 sm:gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold text-slate-200 hover:text-white bg-slate-800/90 hover:bg-slate-700/90 border border-slate-600 hover:border-[#C9A45C] transition-all cursor-pointer shadow-sm hover:shadow-md shrink-0"
               >
                 <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#C9A45C]" />
-                <span className="hidden xs:inline">Quay lại Website</span>
+                <span className="hidden xs:inline">Back to Website</span>
                 <span className="xs:hidden">Website</span>
               </button>
             </div>
@@ -309,7 +324,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                   <Lock className="w-7 h-7 stroke-[2.2]" />
                 </div>
                 <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#0F172A]">
-                  Đăng Nhập Quản Trị
+                  Admin Portal Login
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-500 font-light mt-1">
                   Wanderer's Journeys • Executive Management Portal
@@ -327,7 +342,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               <form onSubmit={handleLoginSubmit} className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Email đăng nhập
+                    Account Email
                   </label>
                   <input
                     type="email"
@@ -341,7 +356,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Mật khẩu
+                    Password
                   </label>
                   <div className="relative">
                     <input
@@ -349,7 +364,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                       required
                       value={passwordInput}
                       onChange={e => setPasswordInput(e.target.value)}
-                      placeholder="Nhập mật khẩu..."
+                      placeholder="Enter password..."
                       className="w-full pl-4 pr-11 py-3 rounded-xl bg-stone-50 border border-stone-300 text-slate-900 text-sm focus:outline-none focus:border-[#C9A45C] focus:bg-white transition-colors"
                     />
                     <button
@@ -368,7 +383,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                   disabled={isSubmittingLogin}
                   className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#C9A45C] to-[#A77A32] text-[#0F172A] font-bold text-sm tracking-wide hover:from-[#d8b368] hover:to-[#b8893d] transition-all cursor-pointer shadow-lg shadow-[#C9A45C]/20 disabled:opacity-50 mt-2"
                 >
-                  {isSubmittingLogin ? 'Đang xác thực...' : 'Đăng Nhập'}
+                  {isSubmittingLogin ? 'Authenticating...' : 'Sign In'}
                 </button>
               </form>
 
@@ -376,7 +391,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               <div className="mt-6 pt-4 border-t border-stone-200 text-center">
                 <div className="inline-flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
                   <Shield className="w-3.5 h-3.5 text-[#C9A45C]" />
-                  <span>Xác thực TLS 1.3 & Phiên đăng nhập mã hóa an toàn</span>
+                  <span>TLS 1.3 Encrypted Session • Role-Based Access Control</span>
                 </div>
               </div>
             </div>
@@ -418,7 +433,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                   className="hover:text-[#C9A45C] transition-colors cursor-pointer flex items-center gap-1"
                 >
                   <ArrowLeft className="w-3 h-3" />
-                  <span>Website chính</span>
+                  <span>Main Website</span>
                 </button>
               </div>
             </div>
@@ -493,7 +508,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           </div>
         </div>
 
-        {/* Action Controls in Header (Return & Logout moved to Navigation Menu as requested) */}
+        {/* Action Controls in Header */}
         <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
@@ -502,10 +517,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               setShowProfileModal(true);
             }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 hover:border-[#C9A45C] bg-slate-800/80 hover:bg-slate-750 text-xs text-slate-200 transition-colors cursor-pointer"
-            title="Xem và chỉnh sửa thông tin tài khoản"
+            title="Account Information & Security Profile"
           >
             <UserCheck className="w-3.5 h-3.5 text-[#C9A45C]" />
-            <span className="hidden sm:inline">Thông tin tài khoản</span>
+            <span className="hidden sm:inline">Account Information</span>
           </button>
         </div>
       </header>
@@ -560,7 +575,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             })}
           </div>
 
-          {/* Desktop Sidebar Bottom Controls */}
+          {/* Desktop Sidebar Bottom Controls (Duplicate Account Information removed) */}
           <div className="pt-4 mt-6 border-t border-stone-200 space-y-2">
             <button
               type="button"
@@ -568,19 +583,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               className="w-full py-2 px-3 rounded-xl border border-stone-200 hover:border-[#C9A45C] text-xs font-semibold text-slate-700 hover:text-[#0F172A] hover:bg-stone-50 flex items-center gap-2 cursor-pointer transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-[#C9A45C]" />
-              <span>Quay về trang chủ</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setProfileFullName(user?.fullName || '');
-                setShowProfileModal(true);
-              }}
-              className="w-full py-2 px-3 rounded-xl border border-stone-200 hover:border-[#C9A45C] text-xs font-semibold text-slate-700 hover:text-[#0F172A] hover:bg-stone-50 flex items-center gap-2 cursor-pointer transition-colors"
-            >
-              <UserCheck className="w-3.5 h-3.5 text-[#A77A32]" />
-              <span>Thông tin tài khoản</span>
+              <span>Back to Main Website</span>
             </button>
 
             <button
@@ -589,7 +592,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               className="w-full py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>Đăng xuất</span>
+              <span>Logout</span>
             </button>
           </div>
         </aside>
@@ -675,7 +678,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                   className="w-full py-2.5 rounded-xl border-2 border-slate-300 hover:border-[#C9A45C] bg-white text-xs font-bold text-slate-800 flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                 >
                   <ArrowLeft className="w-4 h-4 text-[#C9A45C]" />
-                  <span>Quay về trang chủ</span>
+                  <span>Back to Main Website</span>
                 </button>
 
                 <button
@@ -688,7 +691,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                   className="w-full py-2.5 rounded-xl border border-stone-300 bg-white text-xs font-bold text-slate-800 flex items-center justify-center gap-2 cursor-pointer hover:bg-stone-50"
                 >
                   <UserCheck className="w-4 h-4 text-[#A77A32]" />
-                  <span>Thông tin tài khoản</span>
+                  <span>Account Information</span>
                 </button>
 
                 <button
@@ -697,7 +700,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                   className="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span>Đăng xuất</span>
+                  <span>Logout</span>
                 </button>
               </div>
             </div>
@@ -709,10 +712,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           {/* Active section breadcrumb on mobile for instant clarity */}
           <div className="md:hidden bg-[#FDFBF7] px-3.5 py-2 border-b border-stone-200 flex items-center justify-between text-[11px] text-slate-600 shrink-0">
             <span className="font-semibold text-slate-800">
-              Mục đang mở: <span className="text-[#A77A32]">{visibleNavItems.find(i => i.id === activeNav)?.label}</span>
+              Active View: <span className="text-[#A77A32]">{visibleNavItems.find(i => i.id === activeNav)?.label}</span>
             </span>
             <span className="text-[10px] text-slate-500">
-              Quyền: <span className="font-mono text-slate-700 font-bold">{user?.role}</span>
+              Role: <span className="font-mono text-slate-700 font-bold">{user?.role}</span>
             </span>
           </div>
 
@@ -799,10 +802,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 </div>
                 <div>
                   <h3 className="font-serif text-lg sm:text-xl font-bold text-[#0F172A]">
-                    Thông tin tài khoản
+                    Account Information
                   </h3>
                   <p className="text-xs text-slate-500 font-light">
-                    Quản lý thông tin định danh và bảo mật tài khoản quản trị
+                    Manage profile identity, security credentials, and role privileges
                   </p>
                 </div>
               </div>
@@ -838,20 +841,20 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             {/* 1. Account Profile View & Edit */}
             <form onSubmit={handleUpdateProfile} className="space-y-4 text-xs">
               <div>
-                <label className="font-bold block mb-1 text-slate-700">Họ và tên hiển thị</label>
+                <label className="font-bold block mb-1 text-slate-700">Display Full Name</label>
                 <input
                   type="text"
                   required
                   value={profileFullName}
                   onChange={e => setProfileFullName(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-white font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#C9A45C]"
-                  placeholder="Nhập họ và tên..."
+                  placeholder="Enter full name..."
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="font-semibold block mb-1 text-slate-500">Email tài khoản</label>
+                  <label className="font-semibold block mb-1 text-slate-500">Account Email</label>
                   <input
                     type="email"
                     disabled
@@ -860,7 +863,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="font-semibold block mb-1 text-slate-500">Mã định danh (ID)</label>
+                  <label className="font-semibold block mb-1 text-slate-500">User ID</label>
                   <input
                     type="text"
                     disabled
@@ -872,7 +875,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
               <div className="flex items-center justify-between p-3 rounded-xl bg-[#FDFBF7] border border-stone-200">
                 <div>
-                  <span className="text-[11px] font-bold text-slate-500 block">Cấp bậc & Phân quyền:</span>
+                  <span className="text-[11px] font-bold text-slate-500 block">Role & Privileges:</span>
                   <span className="font-bold text-slate-800 text-xs">{user?.role}</span>
                 </div>
                 {getRoleBadge()}
@@ -884,7 +887,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                   disabled={isUpdatingProfile}
                   className="px-5 py-2.5 rounded-xl bg-[#0F172A] hover:bg-slate-800 text-white font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
                 >
-                  {isUpdatingProfile ? 'Đang lưu...' : 'Lưu thay đổi thông tin'}
+                  {isUpdatingProfile ? 'Saving...' : 'Save Profile Changes'}
                 </button>
               </div>
             </form>
@@ -899,12 +902,12 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 <div className="flex items-center gap-2">
                   <KeyRound className="w-4 h-4 text-[#A77A32]" />
                   <span className="text-xs font-bold text-[#0F172A]">
-                    Đổi mật khẩu tài khoản (Change Password)
+                    Change Account Password
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-slate-500">
                   <span className="text-[11px] font-medium hidden sm:inline">
-                    {isPasswordAccordionOpen ? 'Thu gọn' : 'Mở rộng'}
+                    {isPasswordAccordionOpen ? 'Collapse' : 'Expand'}
                   </span>
                   {isPasswordAccordionOpen ? (
                     <ChevronUp className="w-4 h-4 text-slate-600" />
@@ -917,7 +920,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               {isPasswordAccordionOpen && (
                 <div className="p-4 sm:p-5 border-t border-stone-200 space-y-4 animate-in fade-in duration-150">
                   <p className="text-[11px] text-slate-500 font-light">
-                    Để đảm bảo an toàn, sau khi đổi mật khẩu thành công, tất cả phiên làm việc khác trên các thiết bị sẽ tự động đăng xuất.
+                    For enterprise security, successfully changing your password revokes all active sessions across devices. You will be required to sign in again.
                   </p>
 
                   {passMsg && (
@@ -935,14 +938,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
                   <form onSubmit={handleChangePassword} className="space-y-3.5 text-xs">
                     <div>
-                      <label className="font-semibold block mb-1 text-slate-700">Mật khẩu hiện tại</label>
+                      <label className="font-semibold block mb-1 text-slate-700">Current Password</label>
                       <div className="relative">
                         <input
                           type={showCurrPass ? 'text' : 'password'}
                           required
                           value={currPass}
                           onChange={e => setCurrPass(e.target.value)}
-                          placeholder="Nhập mật khẩu hiện tại..."
+                          placeholder="Enter current password..."
                           className="w-full pl-3 pr-10 py-2.5 rounded-xl border border-stone-300 bg-white"
                         />
                         <button
@@ -956,7 +959,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                     </div>
 
                     <div>
-                      <label className="font-semibold block mb-1 text-slate-700">Mật khẩu mới (Tối thiểu 8 ký tự)</label>
+                      <label className="font-semibold block mb-1 text-slate-700">New Password (Min. 8 characters)</label>
                       <div className="relative">
                         <input
                           type={showNewPass ? 'text' : 'password'}
@@ -964,7 +967,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                           minLength={8}
                           value={newPass}
                           onChange={e => setNewPass(e.target.value)}
-                          placeholder="Nhập mật khẩu mới..."
+                          placeholder="Enter new strong password..."
                           className="w-full pl-3 pr-10 py-2.5 rounded-xl border border-stone-300 bg-white"
                         />
                         <button
@@ -978,7 +981,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                     </div>
 
                     <div>
-                      <label className="font-semibold block mb-1 text-slate-700">Xác nhận mật khẩu mới</label>
+                      <label className="font-semibold block mb-1 text-slate-700">Confirm New Password</label>
                       <div className="relative">
                         <input
                           type={showConfirmPass ? 'text' : 'password'}
@@ -986,7 +989,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                           minLength={8}
                           value={confirmPass}
                           onChange={e => setConfirmPass(e.target.value)}
-                          placeholder="Nhập lại mật khẩu mới để xác nhận..."
+                          placeholder="Re-enter new password to confirm..."
                           className="w-full pl-3 pr-10 py-2.5 rounded-xl border border-stone-300 bg-white"
                         />
                         <button
@@ -1005,14 +1008,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                         onClick={() => setIsPasswordAccordionOpen(false)}
                         className="px-4 py-2 rounded-xl border border-stone-300 text-xs font-semibold text-slate-600 hover:bg-stone-50 cursor-pointer"
                       >
-                        Đóng
+                        Close
                       </button>
                       <button
                         type="submit"
                         disabled={isChangingPass}
                         className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#C9A45C] to-[#A77A32] text-[#0F172A] text-xs font-bold hover:from-[#d8b368] hover:to-[#b8893d] cursor-pointer shadow-sm disabled:opacity-50"
                       >
-                        {isChangingPass ? 'Đang cập nhật...' : 'Cập nhật mật khẩu mới'}
+                        {isChangingPass ? 'Updating...' : 'Update Password'}
                       </button>
                     </div>
                   </form>

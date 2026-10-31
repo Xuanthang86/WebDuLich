@@ -48,7 +48,7 @@ export const INITIAL_DATABASE_STATE: DatabaseState = {
   users: [
     {
       id: 'usr_admin_xuanthang',
-      email: 'bienxuanthang01.qb@gmail.com',
+      email: 'xuanthang@wanderersjourneys.com',
       passwordHash: 'scrypt:1f772985d0e2a7aadb360c5b33bd507b:c45fb77f6de3db3bf2c98e8053f7028de8ebcdd30e6d22854e19d14a92fb1e7d41f2c610aaf4bb6d6f55ad60933ea4ec877fde9dac54aec27622bbc9414bba15',
       fullName: 'Xuan Thang (Super Admin)',
       role: 'ADMIN',

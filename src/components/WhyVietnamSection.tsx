@@ -43,7 +43,7 @@ export const WhyVietnamSection: React.FC<WhyVietnamSectionProps> = ({
         </div>
 
         {/* 4 Pillars Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-8 sm:mb-10">
           {items.map((item) => (
             <div
               key={item.id}
